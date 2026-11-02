@@ -228,7 +228,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <input type="range" class="cr" id="cHue" min="0" max="359" step="1">
   <input type="range" class="cr" id="cSat" min="0" max="100" step="1">
   <input type="range" class="cr" id="cLig" min="5" max="95" step="1">
-  <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><span class="sw" id="cPrev" style="width:34px;height:34px"></span><span id="cHex" style="font-family:ui-monospace,monospace;color:var(--muted);flex:1"></span><button class="btn pri" id="cOk">Nehmen</button></div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><span class="sw" id="cPrev" style="width:34px;height:34px"></span><span id="cHex" style="font-family:ui-monospace,monospace;color:var(--muted);flex:1"></span><button class="btn pri" id="cPickOk">Nehmen</button></div>
 </div>
 <div id="selbar" class="bar">
   <button id="selEdit">Bearbeiten</button>
@@ -1240,7 +1240,7 @@ function renderColorPop(){
 function pickColor(c){ S.color=c; S.custom=c; S.recent=[c,...(S.recent||[]).filter(x=>x!==c)].slice(0,8); saveSettings(); renderSwatches(); updateSize(); closePops(); if(S.tool==='eraser'||S.tool==='select'&&!selection.length) setTool('pen'); }
 $('#cGrid').onclick=e=>{ const b=e.target.closest('[data-c]'); if(b) pickColor(b.dataset.c); };
 ['#cHue','#cSat','#cLig'].forEach((id,i)=>$(id).addEventListener('input',e=>{ cpick[i]=+e.target.value; renderColorPop(); }));
-$('#cOk').onclick=()=>pickColor(hsl2hex(...cpick));
+$('#cPickOk').onclick=()=>pickColor(hsl2hex(...cpick));
 $('#swatches').addEventListener('click',e=>{ if(!e.target.closest('#customSw')) return; const p=$('#colorPop'); if(p.classList.contains('open')) return closePops();
   if(!PALETTE[S.color]) cpick=hex2hsl(S.color); renderColorPop(); openPop(p,e.target.closest('#customSw')); });
 $('#swatches').addEventListener('click',e=>{ const b=e.target.closest('[data-color]'); if(!b) return; S.color=b.dataset.color; saveSettings(); renderSwatches(); updateSize(); if(S.tool==='eraser'||S.tool==='select'&&!selection.length) setTool('pen'); });
@@ -1590,9 +1590,22 @@ $('#notes').addEventListener('click',async e=>{
   const fr=e.target.closest('.frow');
   if(fr){ const f=fById(fr.dataset.fid);
     if(e.target.closest('[data-edit-f]')){ const r=await folderDialog(f); if(!r) return;
-      if(r.del){ if(!await confirmBox('Ordner „'+esc(f.name)+'“ löschen? Notizen und Unterordner darin wandern eine Ebene nach oben.','Ordner löschen')) return;
-        notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
-        meta.folders=meta.folders.filter(x=>x!==f); saveMeta(); renderNotes(); return; }
+      if(r.del){
+        const allF=[f.id]; for(let i=0;i<allF.length;i++) meta.folders.forEach(x=>{ if(x.parent===allF[i]) allF.push(x.id); });
+        const nN=notes.filter(n=>allF.includes(n.folder)).length, nF=allF.length-1;
+        const choice=await new Promise(res=>{ modal(`<h3 style="margin:0 0 8px">Ordner „${esc(f.name)}“ löschen?</h3>
+          <p style="margin:0;color:var(--muted)">Darin: ${nN} Notiz${nN===1?'':'en'}${nF?' und '+nF+' Unterordner':''}.</p>
+          <div class="fsel" style="margin-top:14px">
+            <button class="btn" id="fdKeep">Inhalt behalten – rutscht eine Ebene nach oben</button>
+            <button class="btn" id="fdAll" style="background:var(--danger);border-color:var(--danger);color:#fff">Alles löschen (Ordner, Unterordner und Notizen)</button>
+            <button class="btn" id="fdCancel">Abbrechen</button></div>`);
+          $('#fdKeep').onclick=()=>{closeModal();res('keep')}; $('#fdAll').onclick=()=>{closeModal();res('all')}; $('#fdCancel').onclick=()=>{closeModal();res(null)}; });
+        if(!choice) return;
+        if(choice==='keep'){ notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
+          meta.folders=meta.folders.filter(x=>x!==f); toast('Ordner gelöscht, Inhalt ist eine Ebene höher'); }
+        else { const gone=notes.filter(n=>allF.includes(n.folder)); gone.forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!gone.includes(n));
+          meta.folders=meta.folders.filter(x=>!allF.includes(x.id)); if(!notes.includes(note)) openNote(notes[0]||createNote('Neue Notiz')); toast('Ordner mit allem Inhalt gelöscht'); }
+        saveMeta(); renderNotes(); return; }
       Object.assign(f,r); saveMeta(); renderNotes(); return; }
     curFolder=f.id; renderNotes(); return; }
 });
