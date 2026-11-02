@@ -137,6 +137,19 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 #nSort{padding:6px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:13px}
 #tagRow{display:flex;gap:4px;flex-wrap:wrap}
 #tagRow:empty{display:none}
+.sel{padding:7px 8px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit}
+#pseGrid{display:grid;grid-template-columns:repeat(18,1fr);gap:2px;font-size:10px}
+#pseGrid .el{aspect-ratio:1/1.08;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;padding:0;min-width:0;border:1px solid transparent}
+#pseGrid .el b{font-size:13px}
+#pseGrid .el small{font-size:8px;opacity:.75}
+#pseGrid .el.on{border-color:var(--text)}
+#pseGrid .gap{grid-column:1/-1;height:6px}
+body.bar-right #side{left:auto;right:10px}
+body.bar-bottom #side{top:auto;bottom:10px;left:50%;transform:translateX(-50%);width:auto;max-width:calc(100% - 20px);height:56px;max-height:none;flex-direction:row;padding:0 6px;overflow-x:auto;overflow-y:hidden}
+body.bar-bottom #side .sep{width:1px;height:30px;margin:0 4px}
+body.bar-bottom #swatches,body.bar-bottom #quickSizes{flex-direction:row!important}
+body.read #side{display:none}
+body.bar-bottom #toast{bottom:84px}
 #drawer{position:fixed;z-index:40;top:0;left:0;bottom:0;width:320px;max-width:88vw;background:var(--solid);border-right:1px solid var(--border);
   box-shadow:var(--shadow);transform:translateX(-105%);transition:transform .2s;display:flex;flex-direction:column}
 #drawer.open{transform:none}
@@ -200,10 +213,12 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <button id="title" title="Heft umbenennen">Heft</button>
   <div class="grow"></div>
   <button class="ib" data-panel="ruler" id="rulerBtn" title="Lineal"><svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></svg></button>
+  <button class="ib" id="compBtn" title="Zirkel"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="1.6"/><path d="M11.2 5.4L6 20M12.8 5.4L18 20M8 14.5h8"/></svg></button>
   <button class="ib" id="geoBtn" title="Geodreieck"><svg viewBox="0 0 24 24"><path d="M2 18h20L12 8z"/><path d="M8.5 18a3.5 3.5 0 0 1 7 0"/></svg></button>
   <button class="ib" data-open="plot" title="Funktionsplotter"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M6.5 16c2.5-9 5.5-9 7.5-3s3.5 3 5-6"/></svg></button>
   <button class="ib" data-open="calc" title="Rechner"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg></button>
   <button class="ib" data-open="formulas" title="Formeln &amp; Konstanten"><span class="glyph">Σ</span></button>
+  <button class="ib" data-open="science" title="Einheiten &amp; Periodensystem"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/></svg></button>
   <button class="ib" id="insertBtn" title="Bild oder PDF einfügen"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></button>
   <input type="file" id="insertFile" accept="image/*,application/pdf,.pdf" style="display:none">
   <button class="ib" data-open="paper" title="Papier &amp; Seite"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8.5h16M4 14h16M9.5 3v18M15 3v18"/></svg></button>
@@ -217,6 +232,8 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="sep"></div>
   <button class="ib" id="undoBtn" title="Rückgängig"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   <button class="ib" id="redoBtn" title="Wiederholen"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+  <button class="ib" id="splitBtn" title="Zwei Seiten nebeneinander"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="8.5" height="15" rx="1.5"/><rect x="13" y="4.5" width="8.5" height="15" rx="1.5"/></svg></button>
+  <button class="ib" id="readBtn" title="Lesemodus"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   <button class="ib" id="themeBtn" title="Hell / Dunkel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
   <button class="ib" data-open="settings" title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
 </div>
@@ -305,6 +322,20 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 </div>
 
 <!-- Formeln -->
+<div class="panel bar" id="p-science" style="width:min(720px,calc(100% - 86px))">
+  <div class="ph"><h3>Einheiten &amp; Periodensystem</h3><button class="x" data-close>×</button></div>
+  <div class="chips" id="sciTabs"><button class="chip on" data-st="units">⇄ Einheiten umrechnen</button><button class="chip" data-st="pse">⚛ Periodensystem</button></div>
+  <div id="sciUnits" style="margin-top:10px">
+    <div class="chips" id="uCats"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input type="text" id="uVal" value="1" inputmode="decimal" style="width:120px;font-size:18px"><select id="uFrom" class="sel"></select><span>→</span><select id="uTo" class="sel"></select><button class="chip" id="uSwap" title="Tauschen">⇅</button></div>
+    <div id="uRes" style="font-size:24px;font-weight:600;margin:12px 0 4px"></div>
+    <div class="btns" style="justify-content:flex-start;margin-top:4px"><button class="btn" id="uIns">Als Text einfügen</button></div>
+    <div id="uAll" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7"></div>
+  </div>
+  <div id="sciPse" style="display:none;margin-top:10px">
+    <div id="pseGrid"></div><div id="pseInfo" style="margin-top:10px;min-height:60px"></div>
+  </div>
+</div>
 <div class="panel bar" id="p-formulas">
   <div class="ph"><h3>Formeln &amp; Konstanten</h3><button class="x" data-close>×</button></div>
   <div class="tabs" id="fTabs"></div>
@@ -324,6 +355,9 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
     <div style="display:flex;gap:10px;align-items:center"><input type="range" id="gsRange" min="3" max="15" step="0.5" style="flex:1"><button class="chip" id="gsReset">Standard</button></div></div>
   <div class="btns">
     <button class="btn" id="exportPng">Seite als Bild speichern</button>
+    <button class="btn" id="sharePng">📤 Seite als Bild teilen</button>
+    <button class="btn" id="exportPdf">📄 Notiz als PDF speichern</button>
+    <button class="btn" id="sharePdf">📤 Notiz als PDF teilen</button>
     <button class="btn dng" id="delPage">Seite löschen</button>
   </div>
 </div>
@@ -337,6 +371,9 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
   <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:130px"></div>
   <div class="toggle"><div>In der Luft radieren<small>Stifttaste gedrückt halten und über die Seite fahren, ohne aufzusetzen. Aus: Stift muss aufliegen.</small></div><button class="sw2" data-set="airErase"></button></div>
+  <div class="toggle"><div>Werkzeugleiste<small>Wo die Stifte und Farben sind</small></div><div class="chips" id="barChips"><button class="chip" data-bp="left">Links</button><button class="chip" data-bp="right">Rechts</button><button class="chip" data-bp="bottom">Unten</button></div></div>
+  <div class="toggle"><div>Stifttaste 2× drücken = Lasso<small>In der Luft zweimal schnell die S-Pen-Taste drücken: Lasso an / aus</small></div><button class="sw2" data-set="penDbl"></button></div>
+  <div class="toggle"><div>Tägliche Sicherung<small>Speichert einmal am Tag alles in Download/Schreibheft</small></div><button class="sw2" data-set="autoBackup"></button></div>
   <div class="toggle"><div>Glättung der Schrift<small id="smLbl">leicht</small></div><input type="range" id="smRange" min="0" max="10" step="1" style="width:130px"></div>
   <div class="toggle"><div>Durchkritzeln zum Löschen<small>Schnell hin und her über etwas kritzeln → es wird gelöscht</small></div><button class="sw2" data-set="scratch"></button></div>
   <div class="toggle"><div>Automatisch weiterscrollen<small>Schreibst du unten am Rand, rutscht die Seite nach oben</small></div><button class="sw2" data-set="autoScroll"></button></div>
@@ -388,7 +425,7 @@ const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
 const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',airErase:true,pressure:true,snap:true,holdMs:500,
-  fingerDraw:false,shape:'line',penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
+  fingerDraw:false,shape:'line',barPos:'left',split:false,penDbl:true,autoBackup:!!window.AndroidApp,lastAutoBk:0,penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
 function saveSettings(){ try{ localStorage.setItem('sh-settings',JSON.stringify(S)); }catch(e){} }
@@ -424,7 +461,8 @@ function resize(){
   for(const c of [cv,lv]){ c.width=Math.round(W*DPR); c.height=Math.round(H*DPR); c.style.width=W+'px'; c.style.height=H+'px'; }
   render(); drawLive();
 }
-const isDark = () => document.documentElement.dataset.theme==='dark';
+let forceLight=false;
+const isDark = () => !forceLight && document.documentElement.dataset.theme==='dark';
 const colorOf = c => PALETTE[c] ? PALETTE[c][isDark()?1:0] : c;
 const V = () => page().view;
 const toWorld = (x,y) => { const v=V(); return [(x-v.x)/v.s,(y-v.y)/v.s]; };
@@ -692,11 +730,19 @@ function renderPage(c,pg,v,w,h,list){
 function render(){
   if(!note) return;
   ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  if(S.split){ for(const i of [splitBase,splitBase+1]){ const pg=note.pages[i]; if(!pg) continue; const [L,R]=regionOf(i); clampView(pg,i);
+      ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.beginPath(); ctx.rect(L-4,0,R-L+8,H); ctx.clip(); const v=pg.view; ctx.setTransform(DPR*v.s,0,0,DPR*v.s,DPR*v.x,DPR*v.y);
+      renderPage(ctx,pg,v,W,H,pg.objects); ctx.restore();
+      if(i===pageIdx && note.pages[splitBase+1]){ ctx.setTransform(DPR,0,0,DPR,0,0); ctx.fillStyle=colorOf('blue'); ctx.globalAlpha=.7; ctx.fillRect(L+(R-L)/2-24,H-8,48,4); ctx.globalAlpha=1; } }
+    schedHiRes(); return; }
   applyView(ctx); renderPage(ctx,page(),V(),W,H,objs()); schedHiRes();
 }
 function contentRect(){ const r=sheetRects(); if(!r) return null; return [Math.min(...r.map(q=>q[0])),Math.min(...r.map(q=>q[1])),Math.max(...r.map(q=>q[2])),Math.max(...r.map(q=>q[3]))]; }
-function clampView(){
-  const r=contentRect(); if(!r) return; const v=V(); const left=72, top=72, pad=24;
+let splitBase=0;
+function fullRegion(){ const bp=S.barPos||'left'; return [bp==='left'?72:20, W-(bp==='right'?72:24)]; }
+function regionOf(i){ const [L,R]=fullRegion(); if(!S.split) return [L,R]; const m=(L+R)/2; return i===splitBase?[L,m-8]:[m+8,R]; }
+function clampView(pg,idx){ pg=pg||page(); if(idx===undefined) idx=pageIdx;
+  const r=sheetRects(pg)?[Math.min(...sheetRects(pg).map(q=>q[0])),Math.min(...sheetRects(pg).map(q=>q[1])),Math.max(...sheetRects(pg).map(q=>q[2])),Math.max(...sheetRects(pg).map(q=>q[3]))]:null; if(!r) return; const v=pg.view; const [left,RR]=regionOf(idx), top=72, pad=W-RR;
   const w=(r[2]-r[0])*v.s;
   if(w<=W-left-pad) v.x=left+(W-left-pad-w)/2-r[0]*v.s;
   else v.x=clamp(v.x, W-pad-r[2]*v.s, left-r[0]*v.s);
@@ -704,7 +750,7 @@ function clampView(){
   if(r[3]===Infinity) v.y=Math.min(v.y,maxY);
   else { const minY=H-pad-r[3]*v.s; v.y = minY>maxY ? maxY : clamp(v.y,minY,maxY); }
 }
-function fitView(pg){ const r=sheetRects(pg); if(!r) return; const s=clamp((W-72-40)/pw(pg),0.3,1.25); pg.view={s,x:0,y:72+16}; }
+function fitView(pg){ const r=sheetRects(pg); if(!r) return; const i=note&&note.pages?note.pages.indexOf(pg):-1, [L,R]=regionOf(i<0?pageIdx:i); const s=clamp((R-L-16)/pw(pg),0.2,1.25); pg.view={s,x:0,y:72+16}; }
 function addButtons(){
   if(lay()!=='sheets') return [];
   const sh=page().sheets||[[0,0]], has=(c,r)=>sh.some(q=>q[0]===c&&q[1]===r), out=[];
@@ -724,11 +770,24 @@ function drawAddButtons(){
 /* ---------------- Werkzeuge: Lineal & Geodreieck ---------------- */
 const TOOLS = {
   ruler:{on:false,x:0,y:0,a:0,raw:0,len:760,w:74},
-  geo:{on:false,x:0,y:0,a:0,raw:0,L:560}
+  geo:{on:false,x:0,y:0,a:0,raw:0,L:560},
+  compass:{on:false,x:0,y:0,a:0,raw:0,r:160}
 };
+function compTip(){ const t=TOOLS.compass; return [t.x+Math.cos(t.a)*t.r, t.y+Math.sin(t.a)*t.r]; }
+function compKnob(x,y){ const [kx,ky]=compTip(); return dist(x,y,kx,ky)<26; }
+function drawCompass(c){ const t=TOOLS.compass, [kx,ky]=compTip(), ink=isDark()?'#cfd6e6':'#3a4252';
+  const mx=(t.x+kx)/2, my=(t.y+ky)/2, nx=-Math.sin(t.a), ny=Math.cos(t.a), hgt=Math.max(70,t.r*0.55), hx=mx-nx*hgt, hy=my-ny*hgt;
+  c.save(); c.globalAlpha=.25; c.strokeStyle=colorOf('blue'); c.setLineDash([5,6]); c.lineWidth=1; c.beginPath(); c.arc(t.x,t.y,t.r,0,Math.PI*2); c.stroke(); c.setLineDash([]); c.globalAlpha=.85;
+  c.lineCap='round'; c.strokeStyle=ink; c.lineWidth=7; c.beginPath(); c.moveTo(hx,hy); c.lineTo(t.x,t.y); c.moveTo(hx,hy); c.lineTo(kx,ky); c.stroke();
+  c.fillStyle=ink; c.beginPath(); c.arc(hx,hy,8,0,7); c.fill();
+  c.fillStyle='#e23c3c'; c.beginPath(); c.arc(t.x,t.y,5,0,7); c.fill();
+  c.globalAlpha=1; c.fillStyle=isDark()?'#25272d':'#fff'; c.strokeStyle=colorOf('blue'); c.lineWidth=3; c.beginPath(); c.arc(kx,ky,13,0,7); c.fill(); c.stroke();
+  c.fillStyle=colorOf('blue'); c.beginPath(); c.arc(kx,ky,4,0,7); c.fill();
+  c.font='600 13px '+FONT; c.textAlign='center'; c.fillStyle=ink; c.fillText('r = '+fmt(t.r/V().s/UNIT,1)+' cm',hx,hy-16); c.restore(); }
 function local(t,x,y){ const dx=x-t.x, dy=y-t.y, c=Math.cos(-t.a), s=Math.sin(-t.a); return [dx*c-dy*s, dx*s+dy*c]; }
 function global(t,lx,ly){ const c=Math.cos(t.a), s=Math.sin(t.a); return [t.x+lx*c-ly*s, t.y+lx*s+ly*c]; }
 function toolHit(x,y){
+  if(TOOLS.compass.on && dist(x,y,TOOLS.compass.x,TOOLS.compass.y)<30) return TOOLS.compass;
   for(const k of ['geo','ruler']){ const t=TOOLS[k]; if(!t.on) continue; const [lx,ly]=local(t,x,y);
     if(k==='ruler' && Math.abs(lx)<=t.len/2 && Math.abs(ly)<=t.w/2) return t;
     if(k==='geo' && ly<=4 && ly>=-(t.L/2-Math.abs(lx))-4 && Math.abs(lx)<=t.L/2) return t; }
@@ -740,12 +799,13 @@ function toolEdges(k){ const t=TOOLS[k];
 }
 function segDist(px,py,ax,ay,bx,by){ const dx=bx-ax, dy=by-ay, l=dx*dx+dy*dy; let t=l?((px-ax)*dx+(py-ay)*dy)/l:0; t=clamp(t,0,1); return Math.hypot(px-ax-t*dx,py-ay-t*dy); }
 function findEdge(x,y){
+  const C=TOOLS.compass; if(C.on && Math.abs(dist(x,y,C.x,C.y)-C.r)<30 && dist(x,y,C.x,C.y)>20) return {k:'compass',c:[C.x,C.y],r:C.r};
   let best=null, bd=28;
   for(const k of ['geo','ruler']){ const t=TOOLS[k]; if(!t.on) continue; const [lx,ly]=local(t,x,y);
     for(const e of toolEdges(k)){ const d=segDist(lx,ly,...e); if(d<bd){ bd=d; const A=global(t,e[0],e[1]), B=global(t,e[2],e[3]); best={A,B,k}; } } }
   return best;
 }
-function projectEdge(e,x,y){ const [ax,ay]=e.A,[bx,by]=e.B, dx=bx-ax, dy=by-ay, l=dx*dx+dy*dy; const t=((x-ax)*dx+(y-ay)*dy)/l; return [ax+t*dx, ay+t*dy]; }
+function projectEdge(e,x,y){ if(e.k==='compass'){ const a=Math.atan2(y-e.c[1],x-e.c[0]); TOOLS.compass.a=a; return [e.c[0]+Math.cos(a)*e.r, e.c[1]+Math.sin(a)*e.r]; } const [ax,ay]=e.A,[bx,by]=e.B, dx=bx-ax, dy=by-ay, l=dx*dx+dy*dy; const t=((x-ax)*dx+(y-ay)*dy)/l; return [ax+t*dx, ay+t*dy]; }
 function snapAngle(raw){ let d=raw*180/Math.PI; const n=Math.round(d/15)*15; if(Math.abs(d-n)<2.2) d=n; else d=Math.round(d); return d*Math.PI/180; }
 function normDeg(d){ d%=360; if(d<0) d+=360; return d; }
 
@@ -832,6 +892,7 @@ function drawLive(){
   drawAddButtons();
   if(TOOLS.ruler.on) drawRuler(lctx,TOOLS.ruler);
   if(TOOLS.geo.on) drawGeo(lctx,TOOLS.geo);
+  if(TOOLS.compass.on) drawCompass(lctx);
   if(cur && cur.geoAngle){ const g=TOOLS.geo, a=cur.geoAngle;
     lctx.strokeStyle=colorOf('red'); lctx.lineWidth=1.2; lctx.setLineDash([4,4]); lctx.beginPath(); lctx.moveTo(g.x,g.y); lctx.lineTo(a.x,a.y); lctx.stroke(); lctx.setLineDash([]);
     label(g.x+Math.cos(g.a-Math.PI/2)*40, g.y+Math.sin(g.a-Math.PI/2)*40, '∠ '+fmt(a.deg,0)+'°'); }
@@ -1049,10 +1110,15 @@ function startFling(vx,vy){ stopFling(); if(Math.hypot(vx,vy)<0.25) return; let 
   flingRaf=requestAnimationFrame(step); }
 function capture(e){ try{ lv.setPointerCapture(e.pointerId); }catch(_){} }
 lv.addEventListener('contextmenu',e=>e.preventDefault());
+function splitPick(x){ if(!S.split||cur||touches.size) return; const o=pageIdx===splitBase?splitBase+1:splitBase; if(!note.pages[o]) return; const [L,R]=regionOf(o); if(x>=L-8&&x<=R+8){ pageIdx=o; clearSel(); note.lastPage=o; pageLabel(); updateUndo(); render(); drawLive(); } }
+let READ=false;
 lv.addEventListener('pointerdown',e=>{
   closePops(); stopFling();
   const [x,y]=pt(e);
-  if(!cur && !touches.size){ const ab=hitAdd(x,y); if(ab){ addSheet(ab); return; } }
+  splitPick(x);
+  if(READ && e.pointerType!=='touch' && !cur){ capture(e); cur={kind:'pan',id:e.pointerId,ptype:e.pointerType,last:[x,y]}; return; }
+  if(TOOLS.compass.on && !cur && compKnob(x,y)){ capture(e); cur={kind:'ckn',id:e.pointerId,ptype:e.pointerType}; return; }
+  if(!cur && !touches.size && !READ){ const ab=hitAdd(x,y); if(ab){ addSheet(ab); return; } }
   if(e.pointerType==='pen') penSeen=true;
   if(e.pointerType==='touch'){
     if(cur && cur.ptype!=='touch') return;               // Handballen ignorieren
@@ -1070,7 +1136,9 @@ lv.addEventListener('pointerdown',e=>{
 let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
 let btnReleasedAt=0;
+let lastBtnPress=0, prevTool='pen';
 window.__penButton=b=>{ penBtnDown=!!b;
+  if(b && S.penDbl && !cur){ const now=Date.now(); if(now-lastBtnPress<450 && !(airSt&&airSt.did)){ lastBtnPress=0; if(S.tool==='select'){ setTool(prevTool||'pen'); toast('Zurück zum '+(prevTool==='hl'?'Textmarker':'Stift')); } else { prevTool=S.tool; setTool('select'); toast('Lasso'); } penBtnDown=false; return; } lastBtnPress=now; }
   if(b){ if(cur && cur.ptype==='pen') penToErase(); if(lastHover){ hover=lastHover; drawLive(); } }
   else { btnReleasedAt=Date.now(); setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen')) endAir(); },350); } };
 let lastHover=null;
@@ -1153,6 +1221,7 @@ lv.addEventListener('pointermove',e=>{
   }
   const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
   if(cur.kind==='pan'){ const v=V(); v.x+=x-cur.last[0]; v.y+=y-cur.last[1]; cur.last=[x,y]; clampView(); render(); drawLive(); return; }
+  if(cur.kind==='ckn'){ const t=TOOLS.compass; t.r=Math.max(12,dist(x,y,t.x,t.y)); t.a=Math.atan2(y-t.y,x-t.x); drawLive(); return; }
   if(cur.kind==='mtool'){ cur.t.x+=x-cur.last[0]; cur.t.y+=y-cur.last[1]; cur.last=[x,y]; drawLive(); return; }
   if(cur.kind==='stroke' && cur.ptype==='pen' && ((e.buttons&(2|32)) || penBtnDown)){ penToErase(); }
   if(cur.kind==='stroke'){
@@ -1172,7 +1241,7 @@ lv.addEventListener('pointermove',e=>{
       const [wx,wy]=toWorld(x,y); const r={kind:'line',a:cur.snap.a,b:snapLineAngle(cur.snap.a,[wx,wy])}; cur.shape=r; o.p=shapeToPoints(r);
       const [sx,sy]=toScreen(...r.b); liveLabel={x:sx,y:sy-34,text:shapeInfo(r)};
     } else if(!cur.snap && cur.holdAt && dist(x,y,cur.holdAt[0],cur.holdAt[1])>5) armHold(x,y);
-    if(cur.edge){ const l=dist(cur.edgeStart[0],cur.edgeStart[1],cur.lastS[0],cur.lastS[1])/V().s; liveLabel={x:cur.lastS[0],y:cur.lastS[1]-36,text:fmt(l/UNIT,1)+' cm'}; }
+    if(cur.edge && cur.edge.k!=='compass'){ const l=dist(cur.edgeStart[0],cur.edgeStart[1],cur.lastS[0],cur.lastS[1])/V().s; liveLabel={x:cur.lastS[0],y:cur.lastS[1]-36,text:fmt(l/UNIT,1)+' cm'}; }
     if(TOOLS.geo.on){ const g=TOOLS.geo, [lx,ly]=local(g,x,y); const r=Math.hypot(lx,ly);
       if(ly<0 && r<g.L*0.62 && r>20){ cur.geoAngle={x,y,deg:Math.atan2(-ly,lx)*180/Math.PI}; } else cur.geoAngle=null; }
     drawLive(); return;
@@ -1223,7 +1292,7 @@ function endPointer(e,cancel){
 lv.addEventListener('pointerup',e=>endPointer(e,false));
 lv.addEventListener('pointercancel',e=>endPointer(e,true));
 lv.addEventListener('pointerleave',e=>{ lastHover=null; if(airSt) endAir(); if(hover){hover=null;drawLive();} });
-lv.addEventListener('wheel',e=>{ e.preventDefault(); const v=V();
+lv.addEventListener('wheel',e=>{ e.preventDefault(); splitPick(e.clientX); const v=V();
   if(e.ctrlKey){ const ns=clamp(v.s*Math.exp(-e.deltaY*0.01),0.2,8), k=ns/v.s; v.x=e.clientX-(e.clientX-v.x)*k; v.y=e.clientY-(e.clientY-v.y)*k; v.s=ns; }
   else { v.x-=e.deltaX; v.y-=e.deltaY; }
   clampView(); render(); drawLive(); scheduleSave(); },{passive:false});
@@ -1438,7 +1507,10 @@ function ask(title,val,okText='OK'){ return new Promise(res=>{ modal(`<h3 style=
 function confirmBox(text,okText='Löschen'){ return new Promise(res=>{ modal(`<p style="margin:4px 0 0;font-size:16px">${text}</p><div class="btns"><button class="btn" id="cNo">Abbrechen</button><button class="btn pri" id="cOk" style="background:var(--danger);border-color:var(--danger)">${okText}</button></div>`);
   $('#cNo').onclick=()=>{closeModal();res(false)}; $('#cOk').onclick=()=>{closeModal();res(true)}; }); }
 let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200); }
-function openPop(pop,btn){ closePops(); const r=btn.getBoundingClientRect(); pop.classList.add('open'); pop.style.left=(r.right+8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; }
+function openPop(pop,btn){ closePops(); const r=btn.getBoundingClientRect(); pop.classList.add('open'); const inSide=!!btn.closest('#side'), bp=S.barPos||'left';
+  if(inSide&&bp==='right'){ pop.style.left=(r.left-pop.offsetWidth-8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; }
+  else if(inSide&&bp==='bottom'){ pop.style.left=clamp(r.left+r.width/2-pop.offsetWidth/2,8,W-pop.offsetWidth-8)+'px'; pop.style.top=Math.max(8,r.top-pop.offsetHeight-8)+'px'; }
+  else { pop.style.left=(r.right+8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; } }
 function closePops(){ $$('.pop.open').forEach(p=>p.classList.remove('open')); }
 document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#favBtn') && !e.target.closest('#insertBtn') && !e.target.closest('#selMore') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl')) closePops(); },true);
 
@@ -1513,6 +1585,12 @@ $('#sizePresets').onclick=e=>{ const b=e.target.closest('[data-sz]'); if(!b) ret
 /* Lineal / Geodreieck */
 function toggleTool(k,btn){ const t=TOOLS[k]; t.on=!t.on; if(t.on){ t.x=W/2+30; t.y=k==='ruler'?H*0.45:H*0.62; t.a=t.raw=0; toast(k==='ruler'?'Lineal: mit Finger ziehen, mit 2 Fingern drehen':'Geodreieck: ziehen & drehen, Stift zeigt Winkel'); } btn.classList.toggle('on',t.on); drawLive(); }
 $('#rulerBtn').onclick=()=>toggleTool('ruler',$('#rulerBtn'));
+$('#compBtn').onclick=()=>{ const t=TOOLS.compass; t.on=!t.on; if(t.on){ t.x=W/2; t.y=H*0.5; t.r=Math.min(160,W/4); t.a=0; toast('Zirkel: Spitze ziehen = verschieben, runden Griff ziehen = Radius, dann mit dem Stift am Griff entlang zeichnen'); } $('#compBtn').classList.toggle('on',t.on); drawLive(); };
+$('#splitBtn').onclick=()=>{ S.split=!S.split; saveSettings(); $('#splitBtn').classList.toggle('on',S.split);
+  if(S.split){ if(note.pages.length<2){ const np=newPage(page().bg,lay(),page().gs); if(page().land) np.land=1; note.pages.splice(pageIdx+1,0,np); scheduleSave(); } splitBase=Math.min(pageIdx,note.pages.length-2); [splitBase,splitBase+1].forEach(i=>{ const pg=note.pages[i]; if(pg&&lay(pg)!=='free'){ fitView(pg); } }); toast('Zwei Seiten nebeneinander – tippe auf eine Seite, um auf ihr zu schreiben'); }
+  else { [splitBase,splitBase+1].forEach(i=>{ const pg=note.pages[i]; if(pg&&lay(pg)!=='free') fitView(pg); }); }
+  gotoPage(pageIdx); };
+$('#readBtn').onclick=()=>{ READ=!READ; document.body.classList.toggle('read',READ); $('#readBtn').classList.toggle('on',READ); clearSel(); toast(READ?'📖 Lesemodus: nur anschauen und blättern':'Lesemodus aus'); drawLive(); };
 $('#geoBtn').onclick=()=>toggleTool('geo',$('#geoBtn'));
 
 /* Panels */
@@ -1715,6 +1793,45 @@ $('#delPage').onclick=async()=>{
     pg.sheets.splice(i,1); clampView(); commit(); drawLive(); return; }
   if(note.pages.length===1){ if(!await confirmBox('Diese Seite leeren?','Leeren')) return; pushUndo(); pg.objects=[]; commit(); return; }
   if(!await confirmBox('Seite '+(pageIdx+1)+' wirklich löschen?')) return; note.pages.splice(pageIdx,1); pageIdx=Math.min(pageIdx,note.pages.length-1); gotoPage(pageIdx); scheduleSave(); };
+function exportRects(pg){ const L=lay(pg), list=pg.objects;
+  if(L==='sheets') return sheetRects(pg);
+  if(L==='roll'){ const bottom=list.reduce((m,o)=>Math.max(m,bbox(o)[3]),0), n=Math.max(1,Math.ceil((bottom+20)/ph(pg))), out=[]; for(let k=0;k<n;k++) out.push([0,k*ph(pg),pw(pg),(k+1)*ph(pg)]); return out; }
+  if(!list.length) return [];
+  let b=[1e9,1e9,-1e9,-1e9]; list.forEach(o=>{ const q=bbox(o); b=[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]; }); return [[b[0]-40,b[1]-40,b[2]+40,b[3]+40]]; }
+function rectCanvas(pg,b,kmax=2){ const w=b[2]-b[0], h=b[3]-b[1], k=Math.min(kmax,3200/Math.max(w,h)); const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
+  const g=c.getContext('2d'); const v={s:k,x:-b[0]*k,y:-b[1]*k}; forceLight=true; try{ g.fillStyle=PAPER[0]; g.fillRect(0,0,c.width,c.height); g.setTransform(v.s,0,0,v.s,v.x,v.y); renderPage(g,pg,v,c.width,c.height,pg.objects); } finally{ forceLight=false; } return c; }
+const toBlob=(c,t,q)=>new Promise(r=>c.toBlob(r,t,q));
+async function notePdf(n){ const parts=[], offs=[]; let pos=0; const enc=new TextEncoder(); const add=x=>{ const u=typeof x==='string'?enc.encode(x):x; parts.push(u); pos+=u.length; };
+  const imgs=[]; for(const pg of n.pages){ for(const r of exportRects(pg)){ const c=rectCanvas(pg,r,2); const bl=await toBlob(c,'image/jpeg',0.9); imgs.push({w:c.width,h:c.height,rw:r[2]-r[0],rh:r[3]-r[1],data:new Uint8Array(await bl.arrayBuffer())}); } }
+  if(!imgs.length) throw new Error('leer');
+  const N=imgs.length; add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  const obj=(id,body)=>{ offs[id]=pos; add(id+' 0 obj\n'); body(); add('\nendobj\n'); };
+  obj(1,()=>add('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2,()=>add('<< /Type /Pages /Count '+N+' /Kids ['+imgs.map((_,i)=>(3+i*3)+' 0 R').join(' ')+'] >>'));
+  imgs.forEach((im,i)=>{ const pid=3+i*3, cid=pid+1, iid=pid+2; const PW=595.28*(im.rw/A4W), PH=PW*im.rh/im.rw;
+    obj(pid,()=>add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW.toFixed(2)+' '+PH.toFixed(2)+'] /Resources << /XObject << /Im0 '+iid+' 0 R >> >> /Contents '+cid+' 0 R >>'));
+    const cs='q '+PW.toFixed(2)+' 0 0 '+PH.toFixed(2)+' 0 0 cm /Im0 Do Q'; obj(cid,()=>{ add('<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream'); });
+    obj(iid,()=>{ add('<< /Type /XObject /Subtype /Image /Width '+im.w+' /Height '+im.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+im.data.length+' >>\nstream\n'); add(im.data); add('\nendstream'); }); });
+  const xref=pos, total=3+N*3; let x='xref\n0 '+total+'\n0000000000 65535 f \n'; for(let i=1;i<total;i++) x+=String(offs[i]).padStart(10,'0')+' 00000 n \n';
+  add(x+'trailer\n<< /Size '+total+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
+  return new Blob(parts,{type:'application/pdf'}); }
+const safeName=t=>(t||'Notiz').replace(/[\\/:*?"<>|]+/g,'_');
+async function exportPdf(n,share){ if(n.pinHash && !(await unlockNote(n))) return; toast('PDF wird erstellt …'); try{ const bl=await notePdf(n); const name=safeName(n.title)+'.pdf'; if(share) shareBlob(bl,name); else download(bl,name); } catch(e){ console.error(e); toast(e.message==='leer'?'Die Notiz ist noch leer':'PDF ging nicht'); } }
+async function shareBlob(blob,name){
+  if(window.AndroidApp && window.AndroidApp.share){ const fr=new FileReader(); fr.onload=()=>{ const ok=window.AndroidApp.share(name,String(fr.result).split(',')[1]||'',blob.type); if(!ok) toast('Teilen ging nicht'); }; fr.readAsDataURL(blob); return; }
+  try{ const f=new File([blob],name,{type:blob.type}); if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:name}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  if(window.AndroidApp) toast('Zum Teilen bitte die neue APK (2.2) installieren – ich speichere die Datei'); download(blob,name); }
+async function makeBackupBlob(){ const ids=new Set(); notes.forEach(n=>n.pages.forEach(p=>p.objects.forEach(o=>{ if(o.t==='i'){ ids.add(o.a); if(o.pdf) ids.add(o.pdf.a); } })));
+  const assets=[]; for(const id of ids){ const a=await DB.getAsset(id); if(a) assets.push(a); }
+  return new Blob([JSON.stringify({app:'schreibheft',v:3,folders:meta.folders,notes,assets})],{type:'application/json'}); }
+async function autoBackup(){ if(!S.autoBackup||!notes.length) return; if(Date.now()-(S.lastAutoBk||0)<20*3600e3) return;
+  S.lastAutoBk=Date.now(); saveSettings(); try{ download(await makeBackupBlob(),'schreibheft-auto-'+new Date().toISOString().slice(0,10)+'.json'); }catch(e){ console.warn(e); } }
+setTimeout(autoBackup,8000); setInterval(autoBackup,3600e3);
+$('#exportPdf').onclick=()=>exportPdf(note,false);
+$('#sharePdf').onclick=()=>exportPdf(note,true);
+$('#sharePng').onclick=async()=>{ const pg=page(), L=lay(); let r;
+  if(L==='sheets'){ r=sheetRects(pg)[Math.max(0,sheetAtCenter())]; } else { const rs=exportRects(pg); if(!rs.length) return toast('Die Seite ist noch leer'); r=L==='roll'?[0,0,pw(pg),Math.max(ph(pg),pg.objects.reduce((m,o)=>Math.max(m,bbox(o)[3]),0)+40)]:rs[0]; }
+  const c=rectCanvas(pg,r,2); shareBlob(await toBlob(c,'image/png'),safeName(note.title)+' – Seite '+(pageIdx+1)+'.png'); };
 $('#exportPng').onclick=()=>{
   const pg=page(), list=objs(), L=lay();
   let b;
@@ -1882,7 +1999,8 @@ async function pdfOnPage(doc,pdfId){
 }
 
 /* ---------------- Seiten & Hefte ---------------- */
-function gotoPage(i){ pageIdx=clamp(i,0,note.pages.length-1); clearSel(); $('#pageLbl').textContent=(pageIdx+1)+' / '+note.pages.length; note.lastPage=pageIdx; clampView(); render(); drawLive(); updateUndo(); if($('#p-paper').classList.contains('open')) renderPapers(); }
+function pageLabel(){ $('#pageLbl').textContent = S.split&&note.pages[splitBase+1] ? (splitBase+1)+'–'+(splitBase+2)+' / '+note.pages.length : (pageIdx+1)+' / '+note.pages.length; }
+function gotoPage(i){ pageIdx=clamp(i,0,note.pages.length-1); if(S.split){ if(pageIdx>splitBase+1) splitBase=pageIdx; else if(pageIdx<splitBase) splitBase=Math.max(0,pageIdx-1); if(splitBase>note.pages.length-1) splitBase=Math.max(0,note.pages.length-2); } clearSel(); pageLabel(); note.lastPage=pageIdx; clampView(); render(); drawLive(); updateUndo(); if($('#p-paper').classList.contains('open')) renderPapers(); }
 function renderPageList(){
   $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">${pg.bm?'🔖 ':''}Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
 $('#pageLbl').onclick=e=>{ const p=$('#pagePop'); if(p.classList.contains('open')) return closePops(); renderPageList(); closePops(); p.classList.add('open'); const r=e.currentTarget.getBoundingClientRect(); p.style.left=clamp(r.left-90,8,W-260)+'px'; p.style.top=(r.bottom+8)+'px'; };
@@ -1938,8 +2056,8 @@ $('#sgrid').addEventListener('click',async e=>{ const b=e.target.closest('[data-
   else if(a==='dup'){ dupPage(i); }
   else if(a==='del'){ if(note.pages.length===1) return toast('Die letzte Seite kann nicht gelöscht werden'); if(!await confirmBox('Seite '+(i+1)+' wirklich löschen?')) return; note.pages.splice(i,1); gotoPage(Math.min(i<=pageIdx?pageIdx-1:pageIdx,note.pages.length-1)); scheduleSave(); }
   renderSorter(); });
-$('#prevPg').onclick=()=>gotoPage(pageIdx-1);
-$('#nextPg').onclick=()=>{ if(pageIdx===note.pages.length-1) return toast('Letzte Seite – mit + kommt eine neue'); gotoPage(pageIdx+1); };
+$('#prevPg').onclick=()=>{ if(S.split){ if(splitBase===0) return; splitBase=Math.max(0,splitBase-2); return gotoPage(splitBase); } gotoPage(pageIdx-1); };
+$('#nextPg').onclick=()=>{ if(S.split){ if(splitBase+2>note.pages.length-1) return toast('Letzte Seiten – mit + kommt eine neue'); splitBase+=2; return gotoPage(splitBase); } if(pageIdx===note.pages.length-1) return toast('Letzte Seite – mit + kommt eine neue'); gotoPage(pageIdx+1); };
 $('#addPg').onclick=()=>{ const np=newPage(page().bg,lay(),page().gs); if(np.layout!=='free') fitView(np); note.pages.splice(pageIdx+1,0,np); gotoPage(pageIdx+1); scheduleSave(); toast('Neue Seite '+(pageIdx+1)); };
 function openNote(n){ if(note&&note!==n&&note.pinHash) UNLOCKED.delete(note.id); note=n; fixAll(n); n.opened=Date.now(); S.lastNote=n.id; saveSettings(); $('#title').textContent=n.title; gotoPage(n.lastPage||0); renderNotes(); }
 function fixAll(n){ n.pages.forEach(p=>{ p.view=p.view||{s:1,x:0,y:0}; p.objects.forEach(o=>{ fixNulls(o); if(o.bg){ o.lk=1; delete o.bg; } }); if(!p.ord){ p.objects=[...p.objects.filter(o=>o.t==='i'),...p.objects.filter(o=>o.t!=='i')]; p.ord=1; } }); }
@@ -2014,7 +2132,7 @@ async function unlockNote(n){ if(!n.pinHash||UNLOCKED.has(n.id)) return true;
 async function noteMenu(n){
   const act=await new Promise(res=>{ modal(`<h3 style="margin:0 0 10px">${esc(n.title)}</h3><div class="fsel">
     <button class="btn" data-a="ren">✏️ Umbenennen</button><button class="btn" data-a="mv">📁 In Ordner verschieben</button><button class="btn" data-a="tags">🏷️ Tags bearbeiten</button>
-    <button class="btn" data-a="pin">${n.pinHash?'🔓 PIN entfernen':'🔒 Mit PIN sperren'}</button><button class="btn" data-a="dup">⧉ Notiz kopieren</button><button class="btn dng" data-a="del">🗑 In den Papierkorb</button></div>
+    <button class="btn" data-a="pin">${n.pinHash?'🔓 PIN entfernen':'🔒 Mit PIN sperren'}</button><button class="btn" data-a="dup">⧉ Notiz kopieren</button><button class="btn" data-a="pdf">📄 Als PDF speichern</button><button class="btn" data-a="spdf">📤 Als PDF teilen</button><button class="btn dng" data-a="del">🗑 In den Papierkorb</button></div>
     <div class="btns"><button class="btn" id="nmNo">Schließen</button></div>`);
     $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b){ closeModal(); res(b.dataset.a); } }; $('#nmNo').onclick=()=>{ closeModal(); res(null); }; });
   if(act==='ren'){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; } }
@@ -2026,6 +2144,7 @@ async function noteMenu(n){
       n.pinHash=await pinHash(p,n.id); delete n.thumb; UNLOCKED.add(n.id); DB.put(n); toast('🔒 Notiz ist jetzt mit PIN gesperrt'); } }
   else if(act==='dup'){ const cp=JSON.parse(JSON.stringify(n)); cp.id=uid(); cp.title=n.title+' (Kopie)'; cp.created=cp.updated=Date.now(); delete cp.fav; fixAll(cp); notes.unshift(cp); DB.put(cp); toast('Kopie erstellt'); }
   else if(act==='del'){ trashNote(n); toast('In den Papierkorb gelegt'); }
+  else if(act==='pdf'||act==='spdf'){ fixAll(n); exportPdf(n,act==='spdf'); }
   renderNotes(); }
 $('#crumbs').onclick=e=>{ const b=e.target.closest('[data-go]'); if(!b) return; curFolder=b.dataset.go||null; renderNotes(); };
 function folderDialog(f){ return new Promise(res=>{
@@ -2095,9 +2214,7 @@ $('#newNote').onclick=()=>{
 function toggleDrawer(o){ $('#drawer').classList.toggle('open',o); $('#scrim').classList.toggle('open',o); if(o) renderNotes(); }
 $('#menuBtn').onclick=()=>toggleDrawer(true); $('#scrim').onclick=()=>toggleDrawer(false);
 $('#title').onclick=async()=>{ const t=await ask('Notiz umbenennen',note.title,'Speichern'); if(t&&t.trim()){ note.title=t.trim(); $('#title').textContent=note.title; scheduleSave(); } };
-$('#backupBtn').onclick=async()=>{ const ids=new Set(); notes.forEach(n=>n.pages.forEach(p=>p.objects.forEach(o=>{ if(o.t==='i') ids.add(o.a); })));
-  const assets=[]; for(const id of ids){ const a=await DB.getAsset(id); if(a) assets.push(a); }
-  download(new Blob([JSON.stringify({app:'schreibheft',v:3,folders:meta.folders,notes,assets})],{type:'application/json'}),'schreibheft-sicherung-'+new Date().toISOString().slice(0,10)+'.json'); };
+$('#backupBtn').onclick=async()=>{ download(await makeBackupBlob(),'schreibheft-sicherung-'+new Date().toISOString().slice(0,10)+'.json'); };
 $('#restoreBtn').onclick=()=>$('#restoreFile').click();
 $('#restoreFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); let c=0;
   for(const fo of (d.folders||[])) if(!meta.folders.some(x=>x.id===fo.id)) meta.folders.push(fo); saveMeta();
@@ -2121,7 +2238,58 @@ $('#themeChips').onclick=e=>{ const b=e.target.closest('[data-th]'); if(!b) retu
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S.theme==='system') applyTheme(); }); }catch(e){}
 
 /* Einstellungen */
-function renderSettings(){ $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+/* Einheiten */
+const UNITS={
+ 'Länge':[['m',1],['km',1e3],['dm',.1],['cm',.01],['mm',1e-3],['µm',1e-6],['nm',1e-9],['Meile (mi)',1609.344],['Fuß (ft)',.3048],['Zoll (in)',.0254],['AE',1.495978707e11],['Lichtjahr',9.4607304725808e15]],
+ 'Fläche':[['m²',1],['cm²',1e-4],['mm²',1e-6],['dm²',.01],['km²',1e6],['a',100],['ha',1e4]],
+ 'Volumen':[['m³',1],['dm³',1e-3],['cm³',1e-6],['l',1e-3],['ml',1e-6],['hl',.1]],
+ 'Masse':[['kg',1],['g',1e-3],['mg',1e-6],['t',1e3],['u',1.66053906660e-27],['Pfund (lb)',.45359237]],
+ 'Zeit':[['s',1],['ms',1e-3],['µs',1e-6],['min',60],['h',3600],['d',86400],['Jahr',31557600]],
+ 'Geschwindigkeit':[['m/s',1],['km/h',1/3.6],['mph',.44704],['Knoten',.514444],['c',299792458]],
+ 'Kraft':[['N',1],['kN',1e3],['mN',1e-3],['MN',1e6]],
+ 'Energie':[['J',1],['kJ',1e3],['MJ',1e6],['Wh',3600],['kWh',3.6e6],['cal',4.184],['kcal',4184],['eV',1.602176634e-19],['keV',1.602176634e-16],['MeV',1.602176634e-13]],
+ 'Leistung':[['W',1],['mW',1e-3],['kW',1e3],['MW',1e6],['PS',735.49875]],
+ 'Druck':[['Pa',1],['hPa',100],['kPa',1e3],['MPa',1e6],['bar',1e5],['mbar',100],['atm',101325],['mmHg',133.322387415]],
+ 'Temperatur':[['°C'],['K'],['°F']],
+ 'Winkel':[['°',Math.PI/180],['rad',1],['Umdrehung',2*Math.PI]],
+ 'Frequenz':[['Hz',1],['kHz',1e3],['MHz',1e6],['GHz',1e9],['1/min',1/60]],
+ 'Ladung':[['C',1],['mC',1e-3],['µC',1e-6],['Ah',3600],['mAh',3.6],['e',1.602176634e-19]]};
+let uCat='Länge';
+function fmtNum(v){ if(!isFinite(v)) return '–'; const a=Math.abs(v); if(a!==0&&(a>=1e9||a<1e-4)){ const e=Math.floor(Math.log10(a)), m=v/10**e; return (+m.toFixed(4)).toString().replace('.',',')+' · 10'+String(e).replace('-','⁻').replace(/\d/g,d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); } return (+v.toPrecision(7)).toLocaleString('de-DE',{maximumFractionDigits:6}); }
+function convTemp(v,a,b){ const k=a==='K'?v:a==='°C'?v+273.15:(v-32)*5/9+273.15; return b==='K'?k:b==='°C'?k-273.15:(k-273.15)*9/5+32; }
+function convert(v,cat,a,b){ if(cat==='Temperatur') return convTemp(v,a,b); const L=UNITS[cat], fa=L.find(u=>u[0]===a)[1], fb=L.find(u=>u[0]===b)[1]; return v*fa/fb; }
+function renderUnits(keep){ $('#uCats').innerHTML=Object.keys(UNITS).map(c=>`<button class="chip${c===uCat?' on':''}" data-uc="${c}">${c}</button>`).join('');
+  if(!keep){ const L=UNITS[uCat]; $('#uFrom').innerHTML=L.map(u=>`<option>${u[0]}</option>`).join(''); $('#uTo').innerHTML=L.map(u=>`<option>${u[0]}</option>`).join(''); $('#uTo').selectedIndex=Math.min(1,L.length-1); }
+  const v=parseFloat(String($('#uVal').value).replace(/\s/g,'').replace(',','.')), a=$('#uFrom').value, b=$('#uTo').value;
+  if(isNaN(v)){ $('#uRes').textContent='Zahl eingeben'; $('#uAll').innerHTML=''; return; }
+  const r=convert(v,uCat,a,b); $('#uRes').textContent=fmtNum(v)+' '+a+' = '+fmtNum(r)+' '+b;
+  $('#uAll').innerHTML=UNITS[uCat].filter(u=>u[0]!==a).map(u=>`${fmtNum(convert(v,uCat,a,u[0]))} ${u[0]}`).join(' · '); }
+$('#uCats').onclick=e=>{ const b=e.target.closest('[data-uc]'); if(!b) return; uCat=b.dataset.uc; renderUnits(false); };
+['#uVal','#uFrom','#uTo'].forEach(id=>$(id).addEventListener('input',()=>renderUnits(true)));
+$('#uSwap').onclick=()=>{ const a=$('#uFrom').value; $('#uFrom').value=$('#uTo').value; $('#uTo').value=a; renderUnits(true); };
+$('#uIns').onclick=()=>{ const t=$('#uRes').textContent; if(!t||t==='Zahl eingeben') return; insertObjCentered({t:'x',x:0,y:0,s:24,c:S.color==='yellow'?'ink':S.color,v:t}); };
+/* Periodensystem */
+const PSE='H Wasserstoff 1.008 n|He Helium 4.0026 g|Li Lithium 6.94 a|Be Beryllium 9.0122 e|B Bor 10.81 m|C Kohlenstoff 12.011 n|N Stickstoff 14.007 n|O Sauerstoff 15.999 n|F Fluor 18.998 h|Ne Neon 20.180 g|Na Natrium 22.990 a|Mg Magnesium 24.305 e|Al Aluminium 26.982 p|Si Silicium 28.085 m|P Phosphor 30.974 n|S Schwefel 32.06 n|Cl Chlor 35.45 h|Ar Argon 39.948 g|K Kalium 39.098 a|Ca Calcium 40.078 e|Sc Scandium 44.956 t|Ti Titan 47.867 t|V Vanadium 50.942 t|Cr Chrom 51.996 t|Mn Mangan 54.938 t|Fe Eisen 55.845 t|Co Cobalt 58.933 t|Ni Nickel 58.693 t|Cu Kupfer 63.546 t|Zn Zink 65.38 t|Ga Gallium 69.723 p|Ge Germanium 72.630 m|As Arsen 74.922 m|Se Selen 78.971 n|Br Brom 79.904 h|Kr Krypton 83.798 g|Rb Rubidium 85.468 a|Sr Strontium 87.62 e|Y Yttrium 88.906 t|Zr Zirconium 91.224 t|Nb Niob 92.906 t|Mo Molybdän 95.95 t|Tc Technetium 98 t|Ru Ruthenium 101.07 t|Rh Rhodium 102.91 t|Pd Palladium 106.42 t|Ag Silber 107.87 t|Cd Cadmium 112.41 t|In Indium 114.82 p|Sn Zinn 118.71 p|Sb Antimon 121.76 m|Te Tellur 127.60 m|I Iod 126.90 h|Xe Xenon 131.29 g|Cs Caesium 132.91 a|Ba Barium 137.33 e|La Lanthan 138.91 l|Ce Cer 140.12 l|Pr Praseodym 140.91 l|Nd Neodym 144.24 l|Pm Promethium 145 l|Sm Samarium 150.36 l|Eu Europium 151.96 l|Gd Gadolinium 157.25 l|Tb Terbium 158.93 l|Dy Dysprosium 162.50 l|Ho Holmium 164.93 l|Er Erbium 167.26 l|Tm Thulium 168.93 l|Yb Ytterbium 173.05 l|Lu Lutetium 174.97 l|Hf Hafnium 178.49 t|Ta Tantal 180.95 t|W Wolfram 183.84 t|Re Rhenium 186.21 t|Os Osmium 190.23 t|Ir Iridium 192.22 t|Pt Platin 195.08 t|Au Gold 196.97 t|Hg Quecksilber 200.59 t|Tl Thallium 204.38 p|Pb Blei 207.2 p|Bi Bismut 208.98 p|Po Polonium 209 p|At Astat 210 h|Rn Radon 222 g|Fr Francium 223 a|Ra Radium 226 e|Ac Actinium 227 c|Th Thorium 232.04 c|Pa Protactinium 231.04 c|U Uran 238.03 c|Np Neptunium 237 c|Pu Plutonium 244 c|Am Americium 243 c|Cm Curium 247 c|Bk Berkelium 247 c|Cf Californium 251 c|Es Einsteinium 252 c|Fm Fermium 257 c|Md Mendelevium 258 c|No Nobelium 259 c|Lr Lawrencium 266 c|Rf Rutherfordium 267 t|Db Dubnium 268 t|Sg Seaborgium 269 t|Bh Bohrium 270 t|Hs Hassium 277 t|Mt Meitnerium 278 t|Ds Darmstadtium 281 t|Rg Roentgenium 282 t|Cn Copernicium 285 t|Nh Nihonium 286 p|Fl Flerovium 289 p|Mc Moscovium 290 p|Lv Livermorium 293 p|Ts Tenness 294 h|Og Oganesson 294 g'.split('|').map((r,i)=>{ const [sy,n,m,c]=r.split(' '); return {z:i+1,sy,n,m:+m,c}; });
+const PSEC={a:['Alkalimetall','#ff8a65'],e:['Erdalkalimetall','#ffb74d'],t:['Übergangsmetall','#f6d365'],p:['Metall','#a5d6a7'],m:['Halbmetall','#80cbc4'],n:['Nichtmetall','#81d4fa'],h:['Halogen','#9fa8da'],g:['Edelgas','#ce93d8'],l:['Lanthanoid','#f48fb1'],c:['Actinoid','#ef9a9a']};
+function psePos(z){ const st=[1,3,11,19,37,55,87], p=z>=87?7:z>=55?6:z>=37?5:z>=19?4:z>=11?3:z>=3?2:1, i=z-st[p-1];
+  if(p===1) return [1,z===1?1:18]; if(p<=3) return [p,i<2?i+1:i+11]; if(p<=5) return [p,i+1];
+  if(i<2) return [p,i+1]; if(i===2) return [p,3]; if(i<=16) return [p===6?9:10,i+1]; return [p,i-13]; }
+let pseSel=null;
+function renderPse(){ const g=$('#pseGrid'); if(g.dataset.ok) return; g.dataset.ok=1; let h='';
+  for(const e of PSE){ const [r,c]=psePos(e.z); h+=`<button class="el" data-z="${e.z}" style="grid-row:${r+(r>=9?1:0)};grid-column:${c};background:${PSEC[e.c][1]}${isDark()?'cc':''};color:#1b1c21" title="${e.n}"><small>${e.z}</small><b>${e.sy}</b></button>`; }
+  h+='<div class="gap" style="grid-row:9"></div>'; g.innerHTML=h;
+  $('#pseInfo').innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px">'+Object.values(PSEC).map(([n,c])=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:10px;height:10px;border-radius:3px;background:${c};display:inline-block"></i>${n}</span>`).join('')+'</div><p style="color:var(--muted);font-size:13px">Tippe auf ein Element.</p>'; }
+$('#pseGrid').onclick=e=>{ const b=e.target.closest('[data-z]'); if(!b) return; const el=PSE[+b.dataset.z-1], [p]=psePos(el.z), [,grp]=psePos(el.z); pseSel=el; $$('#pseGrid .el').forEach(x=>x.classList.toggle('on',x===b));
+  const per=el.z>=87?7:el.z>=55?6:el.z>=37?5:el.z>=19?4:el.z>=11?3:el.z>=3?2:1;
+  $('#pseInfo').innerHTML=`<div style="display:flex;gap:14px;align-items:center"><div style="width:74px;height:80px;border-radius:10px;background:${PSEC[el.c][1]};color:#1b1c21;display:flex;flex-direction:column;align-items:center;justify-content:center"><small>${el.z}</small><b style="font-size:28px">${el.sy}</b><small>${fmtNum(el.m)}</small></div>
+    <div style="flex:1;line-height:1.6"><b style="font-size:18px">${el.n}</b><br>Ordnungszahl ${el.z} · Atommasse ${fmtNum(el.m)} u (g/mol)<br>${PSEC[el.c][0]} · Periode ${per}${el.c==='l'||el.c==='c'?'':' · Gruppe '+grp}<br><small style="color:var(--muted)">${el.z} Protonen, ${el.z} Elektronen, ca. ${Math.max(0,Math.round(el.m)-el.z)} Neutronen</small></div>
+    <button class="btn" id="pseIns">Einfügen</button></div>`;
+  $('#pseIns').onclick=()=>insertObjCentered({t:'x',x:0,y:0,s:24,c:S.color==='yellow'?'ink':S.color,v:el.sy+' – '+el.n+' (Z = '+el.z+', M = '+fmtNum(el.m)+' g/mol)'}); };
+$('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return; $$('#sciTabs .chip').forEach(x=>x.classList.toggle('on',x===b)); const u=b.dataset.st==='units'; $('#sciUnits').style.display=u?'':'none'; $('#sciPse').style.display=u?'none':''; if(!u) renderPse(); };
+renderUnits(false);
+function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
+$('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
+function renderSettings(){ applyBar(); $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
@@ -2160,6 +2328,7 @@ async function init(){
   openNote(first||pool.sort((a,b)=>b.updated-a.updated)[0]||createNote('Neue Notiz'));
   $('#nSort').value=S.sort||'updated';
   renderShapes(); renderCalc(); renderFormulas(); renderSettings(); setTool(S.tool); applyTheme();
+  $('#splitBtn').classList.toggle('on',!!S.split); if(S.split) gotoPage(pageIdx);
 }
 window.addEventListener('resize',resize);
 document.addEventListener('visibilitychange',()=>{ if(document.hidden && note){ clearTimeout(saveT); note.updated=Date.now(); DB.put(note); } });
