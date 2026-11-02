@@ -54,7 +54,7 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 #title:hover{background:var(--hover)}
 .grow{flex:1}
 #pageNav{display:flex;align-items:center;gap:0}
-#pageLbl{min-width:58px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+#pageLbl{padding:8px 6px;border-radius:8px;min-width:58px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--solid);box-shadow:0 0 0 1px var(--border);margin:3px 0;flex:none;position:relative}
 .sw.on{box-shadow:0 0 0 2.5px var(--accent)}
 .sw.custom{background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
@@ -124,6 +124,20 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .note .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .note .nm small{color:var(--muted)}
 .note .nm i{font-style:normal;color:var(--accent)}
+.frow{display:flex;align-items:center;gap:10px;border-radius:10px;padding:4px 4px 4px 8px}
+.frow:hover{background:var(--hover)}
+.frow .fic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;color:#fff}
+.frow .fnm{flex:1;text-align:left;padding:6px 0;min-width:0}
+.frow .fnm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .fnm small{color:var(--muted)}
+.crumb{padding:4px 8px;border-radius:8px;color:var(--accent);font-weight:500}
+.crumb:hover{background:var(--hover)}
+.icgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
+.icgrid button{height:42px;border-radius:10px;background:var(--hover);font-size:20px;border:2px solid transparent}
+.icgrid button.on{border-color:var(--accent)}
+.colrow{display:flex;gap:8px;flex-wrap:wrap}
+.colrow button{width:32px;height:32px;border-radius:50%;border:3px solid var(--solid);box-shadow:0 0 0 1px var(--border)}
+.colrow button.on{box-shadow:0 0 0 3px var(--accent)}
 .fsel{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .fsel button{text-align:left}
 #drawer .ft{padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
@@ -166,11 +180,13 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <button class="ib" data-open="plot" title="Funktionsplotter"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M6.5 16c2.5-9 5.5-9 7.5-3s3.5 3 5-6"/></svg></button>
   <button class="ib" data-open="calc" title="Rechner"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg></button>
   <button class="ib" data-open="formulas" title="Formeln &amp; Konstanten"><span class="glyph">Σ</span></button>
+  <button class="ib" id="insertBtn" title="Bild oder PDF einfügen"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></button>
+  <input type="file" id="insertFile" accept="image/*,application/pdf,.pdf" style="display:none">
   <button class="ib" data-open="paper" title="Papier &amp; Seite"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8.5h16M4 14h16M9.5 3v18M15 3v18"/></svg></button>
   <div class="sep"></div>
   <div id="pageNav">
     <button class="ib" id="prevPg" title="Vorherige Seite"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <span id="pageLbl">1 / 1</span>
+    <button id="pageLbl" title="Seiten verwalten">1 / 1</button>
     <button class="ib" id="nextPg" title="Nächste Seite"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
     <button class="ib" id="addPg" title="Neue Seite"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
@@ -195,6 +211,8 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <button class="ib" id="sizeBtn" title="Strichstärke genau einstellen"><span class="dot"></span><span class="tri"></span></button>
 </div>
 
+<div class="pop" id="pagePop" style="width:250px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">Seiten</div><div id="pageList" style="max-height:50vh;overflow:auto"></div>
+  <div class="btns" style="margin-top:8px"><button class="btn pri" id="pgNew">＋ Neue Seite</button></div></div>
 <div class="pop" id="shapePop"><div class="row" id="shapeRow"></div></div>
 <div class="pop" id="sizePop" style="width:230px">
   <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span id="sizeName">Stift</span><span id="sizeVal">3</span></div>
@@ -290,10 +308,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <div id="scrim"></div>
 <div id="drawer">
   <div class="hd"><b style="font-size:18px">Meine Notizen</b><button class="btn pri" id="newNote">+ Neue Notiz</button></div>
-  <div id="folderBar" style="padding:0 12px 10px">
-    <div class="chips" id="folders"></div>
-    <div id="folderActs" style="display:none;margin-top:8px;gap:6px"><button class="chip" id="folderRen">Ordner umbenennen</button><button class="chip" id="folderDel" style="color:var(--danger)">Ordner löschen</button></div>
-  </div>
+  <div id="crumbs" style="padding:0 12px 6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:14px"></div>
   <div class="notes" id="notes"></div>
   <div class="ft">
     <button class="btn" id="backupBtn">Sicherung speichern (alles)</button>
@@ -333,13 +348,16 @@ function saveSettings(){ try{ localStorage.setItem('sh-settings',JSON.stringify(
 /* ---------------- Speicher (IndexedDB) ---------------- */
 const DB = {
   db:null, mem:new Map(),
-  open(){ return new Promise(res=>{ try{ const r=indexedDB.open('schreibheft',1);
-    r.onupgradeneeded=()=>r.result.createObjectStore('notes',{keyPath:'id'});
+  open(){ return new Promise(res=>{ try{ const r=indexedDB.open('schreibheft',2);
+    r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains('notes')) d.createObjectStore('notes',{keyPath:'id'}); if(!d.objectStoreNames.contains('assets')) d.createObjectStore('assets',{keyPath:'id'}); };
     r.onsuccess=()=>{this.db=r.result;res()}; r.onerror=()=>res(); }catch(e){res()} }); },
   all(){ return new Promise(res=>{ if(!this.db) return res([...this.mem.values()]);
     try{ const q=this.db.transaction('notes').objectStore('notes').getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>res([]); }catch(e){res([])} }); },
   put(n){ if(n && n.id==='__meta') n=Object.assign({},n); if(!this.db){ this.mem.set(n.id,n); return; }
     try{ this.db.transaction('notes','readwrite').objectStore('notes').put(JSON.parse(JSON.stringify(n))); }catch(e){ console.warn(e) } },
+  amem:new Map(),
+  putAsset(a){ if(!this.db){ this.amem.set(a.id,a); return Promise.resolve(); } return new Promise(res=>{ try{ const t=this.db.transaction('assets','readwrite'); t.objectStore('assets').put(a); t.oncomplete=()=>res(); t.onerror=()=>res(); }catch(e){res()} }); },
+  getAsset(id){ if(!this.db) return Promise.resolve(this.amem.get(id)); return new Promise(res=>{ try{ const q=this.db.transaction('assets').objectStore('assets').get(id); q.onsuccess=()=>res(q.result); q.onerror=()=>res(null); }catch(e){res(null)} }); },
   del(id){ if(!this.db){ this.mem.delete(id); return; } try{ this.db.transaction('notes','readwrite').objectStore('notes').delete(id); }catch(e){} }
 };
 
@@ -510,7 +528,13 @@ function drawPlot(c,o){
     c.fillStyle=PAPER[isDark()?1:0]; c.globalAlpha=.85; c.fillRect(x+2,y+2+k*17,tw+8,17); c.globalAlpha=1;
     c.fillStyle=colorOf(PLOTCOL[k%PLOTCOL.length]); c.fillText(t, x+6, y+4+k*17); });
 }
-function drawObj(c,o,a=1){ if(o.t==='s') drawStroke(c,o,a); else if(o.t==='x') drawText(c,o); else if(o.t==='p') drawPlot(c,o); }
+const IMGS=new Map();
+function getImg(id){ let e=IMGS.get(id); if(e) return e; e={img:new Image(),ok:false}; IMGS.set(id,e);
+  e.img.onload=()=>{ e.ok=true; redraw(); drawLive(); }; DB.getAsset(id).then(a=>{ if(a&&a.data) e.img.src=a.data; }); return e; }
+function drawImage(c,o){ const e=getImg(o.a);
+  if(e.ok) c.drawImage(e.img,o.x,o.y,o.w,o.h);
+  else { c.fillStyle=isDark()?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)'; c.fillRect(o.x,o.y,o.w,o.h); } }
+function drawObj(c,o,a=1){ if(o.t==='s') drawStroke(c,o,a); else if(o.t==='x') drawText(c,o); else if(o.t==='p') drawPlot(c,o); else if(o.t==='i') drawImage(c,o); }
 
 /* Bounding boxes */
 const BB=new WeakMap();
@@ -522,7 +546,15 @@ function bbox(o){
     const m=o.w*1.2; b=[a-m,bb-m,cc+m,d+m]; }
   else if(o.t==='x'){ mctx.font=`${o.s}px ${FONT}`; const ls=o.v.split('\n'); const w=Math.max(10,...ls.map(l=>mctx.measureText(l).width)); b=[o.x,o.y,o.x+w,o.y+ls.length*o.s*1.25]; }
   else if(o.t==='p'){ b=[o.x-30,o.y-20,o.x+o.w+22,o.y+o.h+24]; }
+  else if(o.t==='i'){ b=[o.x,o.y,o.x+o.w,o.y+o.h]; }
   BB.set(o,b); return b;
+}
+function scaleObj(o,k,ax,ay){
+  const f=(v,a)=>a+(v-a)*k;
+  if(o.t==='s'){ for(let i=0;i<o.p.length;i+=3){ if(Number.isNaN(o.p[i])||o.p[i]===null) continue; o.p[i]=+f(o.p[i],ax).toFixed(2); o.p[i+1]=+f(o.p[i+1],ay).toFixed(2); } o.w=Math.max(0.3,o.w*k); }
+  else if(o.t==='x'){ o.x=f(o.x,ax); o.y=f(o.y,ay); o.s=Math.max(6,o.s*k); }
+  else { o.x=f(o.x,ax); o.y=f(o.y,ay); o.w*=k; o.h*=k; }
+  BB.delete(o);
 }
 function moveObj(o,dx,dy){
   if(o.t==='s'){ for(let i=0;i<o.p.length;i+=3){ if(Number.isNaN(o.p[i])||o.p[i]===null) continue; o.p[i]+=dx; o.p[i+1]+=dy; } }
@@ -540,7 +572,7 @@ function renderPage(c,pg,v,w,h,list){
     c.save(); c.beginPath(); for(const r of rects) c.rect(r[0],r[1],r[2]-r[0],Math.min(r[3],1e7)-r[1]); c.clip();
   } else drawPaper(c,pg,v,w,h,null);
   const vx0=-v.x/v.s, vy0=-v.y/v.s, vx1=vx0+w/v.s, vy1=vy0+h/v.s;
-  for(const o of list){ const b=bbox(o); if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1) continue; drawObj(c,o); }
+  for(const pass of [1,0]) for(const o of list){ if(!!o.bg!==!!pass) continue; const b=bbox(o); if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1) continue; drawObj(c,o); }
   if(rects) c.restore();
 }
 function render(){
@@ -657,6 +689,8 @@ let cur=null;          // aktive Eingabe
 let selection=[];      // ausgewählte Objekte
 let hover=null;        // Radierer-Cursor
 let liveLabel=null;    // {x,y,text}
+function selWorldBox(){ let b=[1e9,1e9,-1e9,-1e9]; for(const o of selection){ const q=bbox(o); b=[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]; } return b; }
+function handleAt(x,y){ const sb=selBox(); if(!sb) return null; for(const [hx,hy] of [[0,0],[1,0],[0,1],[1,1]]){ const px=hx?sb[2]:sb[0], py=hy?sb[3]:sb[1]; if(dist(x,y,px,py)<22) return [hx,hy]; } return null; }
 function selBox(){ if(!selection.length) return null; let b=[1e9,1e9,-1e9,-1e9];
   for(const o of selection){ const q=bbox(o); b=[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]; }
   const [a,bb]=toScreen(b[0],b[1]), [c,d]=toScreen(b[2],b[3]); return [a-6,bb-6,c+6,d+6]; }
@@ -674,6 +708,7 @@ function drawLive(){
   lctx.setTransform(DPR,0,0,DPR,0,0);
   const sb=selBox();
   if(sb){ lctx.strokeStyle=colorOf('blue'); lctx.lineWidth=1.5; lctx.setLineDash([6,4]); lctx.strokeRect(sb[0],sb[1],sb[2]-sb[0],sb[3]-sb[1]); lctx.setLineDash([]);
+    if(!(cur&&(cur.kind==='move'||cur.kind==='scale'))) for(const [px,py] of [[sb[0],sb[1]],[sb[2],sb[1]],[sb[0],sb[3]],[sb[2],sb[3]]]){ lctx.beginPath(); lctx.arc(px,py,9,0,Math.PI*2); lctx.fillStyle=isDark()?'#25272d':'#fff'; lctx.fill(); lctx.lineWidth=2.5; lctx.strokeStyle=colorOf('blue'); lctx.stroke(); }
     lctx.fillStyle=colorOf('blue'); lctx.globalAlpha=.05; lctx.fillRect(sb[0],sb[1],sb[2]-sb[0],sb[3]-sb[1]); lctx.globalAlpha=1; }
   drawAddButtons();
   if(TOOLS.ruler.on) drawRuler(lctx,TOOLS.ruler);
@@ -873,17 +908,29 @@ function moveGesture(){
   if(gest.kind==='tool'){ const t=gest.t; t.x+=m.c[0]-p.c[0]; t.y+=m.c[1]-p.c[1];
     if(m.a!==undefined && p.a!==undefined){ let da=m.a-p.a; if(da>Math.PI) da-=2*Math.PI; if(da<-Math.PI) da+=2*Math.PI; t.raw+=da; t.a=snapAngle(t.raw); }
     drawLive(); }
-  else { const v=V();
+  else { const v=V(); const now=performance.now();
+    if(m.d===undefined && p.d===undefined && gest.t){ const dt=Math.max(1,now-gest.t), vx=(m.c[0]-p.c[0])/dt, vy=(m.c[1]-p.c[1])/dt; gest.vx=(gest.vx||0)*0.3+vx*0.7; gest.vy=(gest.vy||0)*0.3+vy*0.7; }
+    else { gest.vx=gest.vy=0; }
+    gest.t=now;
     if(m.d!==undefined && p.d!==undefined){ const ns=clamp(v.s*m.d/p.d,0.2,8), k=ns/v.s; v.x=m.c[0]-(p.c[0]-v.x)*k; v.y=m.c[1]-(p.c[1]-v.y)*k; v.s=ns; }
     else { v.x+=m.c[0]-p.c[0]; v.y+=m.c[1]-p.c[1]; }
     clampView(); render(); drawLive(); scheduleSave(); }
   gest.prev=m;
 }
 
+let flingRaf=0;
+function stopFling(){ cancelAnimationFrame(flingRaf); flingRaf=0; }
+function startFling(vx,vy){ stopFling(); if(Math.hypot(vx,vy)<0.25) return; let last=performance.now();
+  const step=now=>{ const dt=Math.min(40,now-last); last=now; const v=V(); const ox=v.x, oy=v.y;
+    v.x+=vx*dt; v.y+=vy*dt; clampView(); render(); drawLive();
+    const decay=Math.exp(-dt/380); vx*=decay; vy*=decay;
+    if(Math.abs(v.x-ox)<0.01 && Math.abs(vx)>0.01) vx=0; if(Math.abs(v.y-oy)<0.01 && Math.abs(vy)>0.01) vy=0;
+    if(Math.hypot(vx,vy)>0.03) flingRaf=requestAnimationFrame(step); else { flingRaf=0; scheduleSave(); } };
+  flingRaf=requestAnimationFrame(step); }
 function capture(e){ try{ lv.setPointerCapture(e.pointerId); }catch(_){} }
 lv.addEventListener('contextmenu',e=>e.preventDefault());
 lv.addEventListener('pointerdown',e=>{
-  closePops();
+  closePops(); stopFling();
   const [x,y]=pt(e);
   if(!cur && !touches.size){ const ab=hitAdd(x,y); if(ab){ addSheet(ab); return; } }
   if(e.pointerType==='pen') penSeen=true;
@@ -902,12 +949,16 @@ lv.addEventListener('pointerdown',e=>{
 });
 let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
-window.__penButton=b=>{ penBtnDown=!!b; if(b && cur && cur.ptype==='pen') penToErase(); if(!b) endAir(); else if(lastHover){ hover=lastHover; drawLive(); } };
+let btnReleasedAt=0;
+window.__penButton=b=>{ penBtnDown=!!b;
+  if(b){ if(cur && cur.ptype==='pen') penToErase(); if(lastHover){ hover=lastHover; drawLive(); } }
+  else { btnReleasedAt=Date.now(); setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen')) endAir(); },350); } };
 let lastHover=null;
 function startInput(e,x,y){
   const pen=e.pointerType==='pen';
-  if(airSt) endAir();
-  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || penBtnDown));
+  const recentBtn = penBtnDown || (Date.now()-btnReleasedAt<350) || !!airSt;
+  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || recentBtn));
+  let carryDid=false; if(airSt){ if(eraserBtn){ carryDid=airSt.did; airSt=null; hover=null; } else endAir(); }
   const tool = eraserBtn ? 'eraser' : S.tool;
   const [wx,wy]=toWorld(x,y);
   const base={id:e.pointerId,ptype:e.pointerType,start:[x,y]};
@@ -919,10 +970,12 @@ function startInput(e,x,y){
     if(cur.edge){ const [qx,qy]=projectEdge(cur.edge,x,y); const [a,b]=toWorld(qx,qy); obj.p=[a,b,pr]; cur.pts=[[a,b]]; cur.edgeStart=[qx,qy]; }
     armHold(x,y);
   } else if(tool==='eraser'){
-    cur={...base,kind:'erase',did:false}; eraseAt(x,y);
+    cur={...base,kind:'erase',did:carryDid}; eraseAt(x,y);
   } else if(tool==='select'){
-    const sb=selBox();
-    if(sb && x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3]){ pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; hideSelbar(); }
+    const sb=selBox(), hd=sb&&handleAt(x,y);
+    if(hd){ pushUndo(); const wb=selWorldBox(); const anchor=[hd[0]?wb[0]:wb[2], hd[1]?wb[1]:wb[3]], corner=[hd[0]?wb[2]:wb[0], hd[1]?wb[3]:wb[1]];
+      cur={...base,kind:'scale',anchor,corner,orig:selection.map(o=>JSON.stringify(o))}; hideSelbar(); }
+    else if(sb && x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3]){ pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; hideSelbar(); }
     else { clearSel(); cur={...base,kind:'lasso',pts:[[wx,wy]]}; }
   } else if(tool==='text'){
     cur={...base,kind:'tap',w:[wx,wy]};
@@ -969,7 +1022,7 @@ lv.addEventListener('pointermove',e=>{
   const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
   if(cur.kind==='pan'){ const v=V(); v.x+=x-cur.last[0]; v.y+=y-cur.last[1]; cur.last=[x,y]; clampView(); render(); drawLive(); return; }
   if(cur.kind==='mtool'){ cur.t.x+=x-cur.last[0]; cur.t.y+=y-cur.last[1]; cur.last=[x,y]; drawLive(); return; }
-  if(cur.kind==='stroke' && cur.ptype==='pen' && (e.buttons&(2|32))){ penToErase(); }
+  if(cur.kind==='stroke' && cur.ptype==='pen' && ((e.buttons&(2|32)) || penBtnDown)){ penToErase(); }
   if(cur.kind==='stroke'){
     const o=cur.obj;
     for(const ev of evs){
@@ -993,6 +1046,10 @@ lv.addEventListener('pointermove',e=>{
   }
   if(cur.kind==='erase'){ for(const ev of evs) eraseAt(...pt(ev)); hover=[x,y]; drawLive(); return; }
   if(cur.kind==='lasso'){ cur.pts.push(toWorld(x,y)); drawLive(); return; }
+  if(cur.kind==='scale'){ const [wx,wy]=toWorld(x,y); const [ax,ay]=cur.anchor, [cx,cy]=cur.corner;
+    const dx=cx-ax, dy=cy-ay, L2=dx*dx+dy*dy||1; let k=((wx-ax)*dx+(wy-ay)*dy)/L2; k=clamp(k,0.05,20);
+    selection.forEach((o,i)=>{ const src=fixNulls(JSON.parse(cur.orig[i])); for(const key in o) delete o[key]; Object.assign(o,src); scaleObj(o,k,ax,ay); });
+    cur.moved=true; liveLabel={x,y:y-36,text:Math.round(k*100)+' %'}; render(); drawLive(); return; }
   if(cur.kind==='move'){ const [wx,wy]=toWorld(x,y); const dx=wx-cur.last[0], dy=wy-cur.last[1]; selection.forEach(o=>moveObj(o,dx,dy)); cur.last=[wx,wy]; cur.moved=true; render(); drawLive(); return; }
   if(cur.kind==='shape'){
     const b=toWorld(x,y); if(dist(...cur.a,...b)*V().s<4) return;
@@ -1004,7 +1061,7 @@ lv.addEventListener('pointermove',e=>{
 function endPointer(e,cancel){
   if(e.pointerType==='touch' && touches.has(e.pointerId)){
     touches.delete(e.pointerId);
-    if(!(cur && cur.ptype==='touch' && cur.id===e.pointerId)){ if(touches.size) startGesture(); else gest=null; return; }
+    if(!(cur && cur.ptype==='touch' && cur.id===e.pointerId)){ if(touches.size){ startGesture(); if(gest) gest.vx=gest.vy=0; } else { if(gest && gest.kind==='view' && gest.t && performance.now()-gest.t<80) startFling(gest.vx||0,gest.vy||0); gest=null; } return; }
   }
   if(!cur || cur.id!==e.pointerId) return;
   clearTimeout(holdT);
@@ -1019,7 +1076,7 @@ function endPointer(e,cancel){
     commit();
   } else if(c.kind==='erase'){ if(c.did) commit(); }
   else if(c.kind==='lasso'){ finishLasso(c.pts); }
-  else if(c.kind==='move'){ if(!c.moved) hist().u.pop(); commit(); showSelbar(); }
+  else if(c.kind==='move'||c.kind==='scale'){ if(!c.moved) hist().u.pop(); commit(); showSelbar(); }
   else if(c.kind==='tap'){ const [x,y]=pt(e); if(dist(x,y,...c.start)<12) textAt(c.w); }
   drawLive();
 }
@@ -1039,6 +1096,7 @@ function eraseAt(x,y,st){
   const before=()=>{ if(!st.did){ pushUndo(); st.did=true; } };
   for(let i=list.length-1;i>=0;i--){ const o=list[i], b=bbox(o);
     if(wx<b[0]-r||wx>b[2]+r||wy<b[1]-r||wy>b[3]+r) continue;
+    if(o.bg) continue;
     if(o.t!=='s'){ if(!point){ before(); list.splice(i,1); hit=true; } continue; }
     const p=o.p, rr=r+o.w/2; let h=false;
     for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue;
@@ -1082,15 +1140,16 @@ function inPoly(x,y,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.len
 function finishLasso(poly){
   if(poly.length<3){ clearSel(); return; }
   selection=objs().filter(o=>{
-    if(o.t==='s'){ let inside=0,tot=0; for(let i=0;i<o.p.length;i+=3){ if(Number.isNaN(o.p[i])||o.p[i]===null) continue; tot++; if(inPoly(o.p[i],o.p[i+1],poly)) inside++; } return tot && inside/tot>0.5; }
-    const b=bbox(o); return inPoly((b[0]+b[2])/2,(b[1]+b[3])/2,poly);
+    if(o.bg) return false;
+    if(o.t==='s'){ let inside=0,tot=0; for(let i=0;i<o.p.length;i+=3){ if(Number.isNaN(o.p[i])||o.p[i]===null) continue; tot++; if(inPoly(o.p[i],o.p[i+1],poly)) inside++; } if(!tot) return false; const b=bbox(o); return inside/tot>=0.15 || inPoly((b[0]+b[2])/2,(b[1]+b[3])/2,poly); }
+    const b=bbox(o); return [[ (b[0]+b[2])/2,(b[1]+b[3])/2 ],[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]].some(q=>inPoly(q[0],q[1],poly));
   });
   if(selection.length) showSelbar(); else hideSelbar();
   drawLive();
 }
 function clearSel(){ selection=[]; hideSelbar(); drawLive(); }
 function showSelbar(){ const sb=selBox(); if(!sb) return hideSelbar(); const bar=$('#selbar'); bar.classList.add('open');
-  $('#selEdit').style.display = (selection.length===1 && selection[0].t!=='s') ? '' : 'none';
+  $('#selEdit').style.display = (selection.length===1 && (selection[0].t==='x'||selection[0].t==='p')) ? '' : 'none';
   const w=bar.offsetWidth; bar.style.left=clamp((sb[0]+sb[2])/2-w/2,74,W-w-8)+'px'; bar.style.top=(sb[1]-56>70? sb[1]-56 : Math.min(sb[3]+10,H-56))+'px'; }
 function hideSelbar(){ $('#selbar').classList.remove('open'); }
 $('#selDel').onclick=()=>{ pushUndo(); page().objects=objs().filter(o=>!selection.includes(o)); clearSel(); commit(); };
@@ -1108,7 +1167,7 @@ function textAt(w,edit){
     <div class="grid-sym" id="tSyms">${SYMS.map(s=>`<button>${s}</button>`).join('')}</div>
     <label class="f">Größe</label><div class="chips" id="tSize">${sizes.map(([v,n])=>`<button class="chip${v===size?' on':''}" data-v="${v}">${n}</button>`).join('')}</div>
     <div class="btns">${edit?'<button class="btn dng" id="tDel">Löschen</button>':''}<button class="btn" id="tCancel">Abbrechen</button><button class="btn pri" id="tOk">Fertig</button></div>`);
-  const ta=$('#tIn'); setTimeout(()=>ta.focus(),50);
+  const ta=$('#tIn'); ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(_){}
   $('#tSyms').onclick=e=>{ if(e.target.tagName!=='BUTTON') return; insertAtCaret(ta,e.target.textContent); };
   $('#tSize').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; size=+b.dataset.v; $$('#tSize .chip').forEach(x=>x.classList.toggle('on',x===b)); };
   $('#tCancel').onclick=closeModal;
@@ -1136,7 +1195,7 @@ function confirmBox(text,okText='Löschen'){ return new Promise(res=>{ modal(`<p
 let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200); }
 function openPop(pop,btn){ closePops(); const r=btn.getBoundingClientRect(); pop.classList.add('open'); pop.style.left=(r.right+8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; }
 function closePops(){ $$('.pop.open').forEach(p=>p.classList.remove('open')); }
-document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]')) closePops(); },true);
+document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl')) closePops(); },true);
 
 /* ---------------- Werkzeugleiste ---------------- */
 const SHAPES={
@@ -1422,66 +1481,155 @@ function download(blob,name){
   if(window.AndroidApp){ const fr=new FileReader(); fr.onload=()=>{ const b64=String(fr.result).split(',')[1]||''; const where=window.AndroidApp.saveFile(name,b64,blob.type||'application/octet-stream'); toast(where?'Gespeichert in '+where.split('/').slice(0,-1).join('/'):'Speichern hat nicht geklappt'); }; fr.readAsDataURL(blob); return; }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000); toast('Gespeichert: '+name); }
 
+/* ---------------- Bilder & PDF ---------------- */
+$('#insertBtn').onclick=()=>$('#insertFile').click();
+$('#insertFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)) await importPdf(f); else await insertImage(f); }
+  catch(err){ console.error(err); toast('Datei konnte nicht geladen werden'); } };
+function fileToDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+async function storeImage(srcCanvasOrImg,w,h,keepPng){
+  const max=2000, k=Math.min(1,max/Math.max(w,h)); const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
+  const g=c.getContext('2d'); if(!keepPng){ g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); } g.drawImage(srcCanvasOrImg,0,0,c.width,c.height);
+  const data=c.toDataURL(keepPng?'image/png':'image/jpeg',0.88); const id='a'+uid(); await DB.putAsset({id,data,w:c.width,h:c.height});
+  const e={img:new Image(),ok:false}; e.img.onload=()=>{ e.ok=true; redraw(); }; e.img.src=data; IMGS.set(id,e); return {id,w:c.width,h:c.height}; }
+async function insertImage(f){
+  toast('Bild wird eingefügt …'); const src=await fileToDataURL(f); const img=await loadImg(src);
+  const a=await storeImage(img,img.naturalWidth,img.naturalHeight,/png|gif|webp/.test(f.type)&&f.size<1.5e6);
+  const maxW=Math.min(A4W*0.8,(W*0.6)/V().s), k=Math.min(1,maxW/a.w); insertObjCentered({t:'i',x:0,y:0,w:a.w*k,h:a.h*k,a:a.id});
+}
+let pdfLib=null;
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+async function getPdfLib(){ if(pdfLib) return pdfLib;
+  try{ await loadScript('lib/pdf.min.js'); window.pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js'; }
+  catch(e){ await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'); window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+  pdfLib=window.pdfjsLib; return pdfLib; }
+async function importPdf(f){
+  const where=await new Promise(res=>{ modal(`<h3 style="margin:0 0 6px">PDF einfügen</h3><p style="margin:0;color:var(--muted)">${esc(f.name)}</p><p style="margin:10px 0 0">Die PDF-Seiten kommen als A4-Blätter, auf die du direkt schreiben kannst.</p>
+    <div class="btns"><button class="btn" id="pdNo">Abbrechen</button><button class="btn" id="pdHere">In diese Notiz (neue Seite)</button><button class="btn pri" id="pdNew">Als neue Notiz</button></div>`);
+    $('#pdNo').onclick=()=>{closeModal();res(null)}; $('#pdHere').onclick=()=>{closeModal();res('here')}; $('#pdNew').onclick=()=>{closeModal();res('new')}; });
+  if(!where) return;
+  toast('PDF wird geladen …');
+  const lib=await getPdfLib(); const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf}).promise;
+  const pg=newPage('blank','sheets'); pg.sheets=[];
+  for(let i=1;i<=doc.numPages;i++){
+    toast('PDF-Seite '+i+' von '+doc.numPages+' …');
+    const p=await doc.getPage(i); const vp0=p.getViewport({scale:1}); const sc=1700/vp0.width; const vp=p.getViewport({scale:sc});
+    const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+    const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise;
+    const a=await storeImage(c,c.width,c.height,false);
+    const r=i-1, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
+    pg.sheets.push([0,r]); pg.objects.push({t:'i',bg:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id});
+  }
+  if(where==='new'){ const n=createNote(f.name.replace(/\.pdf$/i,''),{folder:curFolder}); n.pages=[pg]; fitView(pg); DB.put(n); openNote(n); }
+  else { fitView(pg); note.pages.splice(pageIdx+1,0,pg); gotoPage(pageIdx+1); scheduleSave(); }
+  toast('PDF eingefügt ('+doc.numPages+' Seite'+(doc.numPages>1?'n':'')+')');
+}
+
 /* ---------------- Seiten & Hefte ---------------- */
 function gotoPage(i){ pageIdx=clamp(i,0,note.pages.length-1); clearSel(); $('#pageLbl').textContent=(pageIdx+1)+' / '+note.pages.length; note.lastPage=pageIdx; clampView(); render(); drawLive(); updateUndo(); if($('#p-paper').classList.contains('open')) renderPapers(); }
+function renderPageList(){
+  $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
+$('#pageLbl').onclick=e=>{ const p=$('#pagePop'); if(p.classList.contains('open')) return closePops(); renderPageList(); closePops(); p.classList.add('open'); const r=e.currentTarget.getBoundingClientRect(); p.style.left=clamp(r.left-90,8,W-260)+'px'; p.style.top=(r.bottom+8)+'px'; };
+$('#pageList').onclick=async e=>{ const d=e.target.closest('[data-pgdel]'); if(d){ const i=+d.dataset.pgdel; closePops();
+    if(note.pages.length===1){ if(!await confirmBox('Das ist die einzige Seite. Inhalt leeren?','Leeren')) return; pushUndo(); page().objects=[]; commit(); return; }
+    if(!await confirmBox('Seite '+(i+1)+' wirklich löschen?')) return; note.pages.splice(i,1); gotoPage(Math.min(i<=pageIdx?pageIdx-1:pageIdx,note.pages.length-1)); scheduleSave(); toast('Seite gelöscht'); return; }
+  const b=e.target.closest('[data-pg]'); if(b){ gotoPage(+b.dataset.pg); closePops(); } };
+$('#pgNew').onclick=()=>{ closePops(); $('#addPg').click(); };
 $('#prevPg').onclick=()=>gotoPage(pageIdx-1);
 $('#nextPg').onclick=()=>{ if(pageIdx===note.pages.length-1) return toast('Letzte Seite – mit + kommt eine neue'); gotoPage(pageIdx+1); };
 $('#addPg').onclick=()=>{ const np=newPage(page().bg,lay(),page().gs); if(np.layout!=='free') fitView(np); note.pages.splice(pageIdx+1,0,np); gotoPage(pageIdx+1); scheduleSave(); toast('Neue Seite '+(pageIdx+1)); };
 function openNote(n){ note=n; fixAll(n); S.lastNote=n.id; saveSettings(); $('#title').textContent=n.title; gotoPage(n.lastPage||0); renderNotes(); }
 function fixAll(n){ n.pages.forEach(p=>{ p.view=p.view||{s:1,x:0,y:0}; p.objects.forEach(fixNulls); }); }
-let meta={id:'__meta',folders:[]}, curFolder='all';
+let meta={id:'__meta',folders:[]}, curFolder=null;
 function saveMeta(){ DB.put(meta); }
-function folderName(id){ const f=meta.folders.find(f=>f.id===id); return f?f.name:''; }
+const fById=id=>meta.folders.find(f=>f.id===id);
+function folderName(id){ const f=fById(id); return f?f.name:''; }
+function folderPath(id){ const out=[]; let f=fById(id), guard=0; while(f && guard++<50){ out.unshift(f); f=fById(f.parent); } return out; }
+function subFolders(id){ return meta.folders.filter(f=>(f.parent||null)===(id||null)).sort((a,b)=>a.name.localeCompare(b.name,'de')); }
+function notesIn(id){ return notes.filter(n=>id? n.folder===id : (!n.folder||!fById(n.folder))); }
+function countIn(id){ let c=notesIn(id).length; subFolders(id).forEach(f=>c+=countIn(f.id)); return c; }
+const FCOLORS=['#3b6fe0','#e04848','#2e9d57','#f08a24','#8e4fd6','#e0559a','#1fa3b4','#c9a400','#6b7280','#8a5a3c'];
+const FICONS=['📁','📐','➗','⚛️','🧪','🧬','🌍','🏛️','📖','✏️','🇬🇧','🇫🇷','🇪🇸','🎨','🎵','💻','⚽','💶','⚙️','🔌','🌱','🧠','⭐','📝'];
 function createNote(title,opt={}){ const L=opt.layout||'free';
   const pg=newPage(opt.bg||'grid',L); if(L!=='free') fitView(pg);
   const n={id:uid(),title,created:Date.now(),updated:Date.now(),folder:opt.folder||null,pages:[pg]}; notes.unshift(n); DB.put(n); return n; }
-const FI='<svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
+const EDIT_I='<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>';
 function renderNotes(){
-  $('#folders').innerHTML=[['all','Alle'],...meta.folders.map(f=>[f.id,f.name]),['none','Ohne Ordner']].map(([id,n])=>`<button class="chip${curFolder===id?' on':''}" data-f="${id}">${id==='all'||id==='none'?'':'📁 '}${esc(n)}</button>`).join('')+'<button class="chip" id="addFolder">＋ Ordner</button>';
-  $('#folderActs').style.display=(curFolder!=='all'&&curFolder!=='none')?'flex':'none';
-  const list=[...notes].filter(n=>curFolder==='all'||(curFolder==='none'?!n.folder||!folderName(n.folder):n.folder===curFolder)).sort((a,b)=>b.updated-a.updated);
+  if(curFolder && !fById(curFolder)) curFolder=null;
+  const path=folderPath(curFolder);
+  $('#crumbs').innerHTML=`<button class="crumb" data-go="">🏠 Alle</button>`+path.map(f=>`<span style="color:var(--muted)">›</span><button class="crumb" data-go="${f.id}">${esc(f.icon||'📁')} ${esc(f.name)}</button>`).join('');
   const LN={free:'Unendlich',roll:'A4 endlos',sheets:'A4 Seiten'};
-  $('#notes').innerHTML=list.length? list.map(n=>`<div class="note${n===note?' on':''}" data-id="${n.id}"><button class="nm"><b>${esc(n.title)}</b><small>${curFolder==='all'&&folderName(n.folder)?'<i>'+esc(folderName(n.folder))+'</i> · ':''}${LN[n.pages[0].layout||'free']} · ${new Date(n.updated).toLocaleDateString('de-DE')}</small></button>
-    <button class="ib" data-mv title="In Ordner verschieben">${FI}</button>
+  const fs=subFolders(curFolder), ns=notesIn(curFolder).sort((a,b)=>b.updated-a.updated);
+  $('#notes').innerHTML=
+    fs.map(f=>`<div class="frow" data-fid="${f.id}"><span class="fic" style="background:${f.color||FCOLORS[0]}">${esc(f.icon||'📁')}</span><button class="fnm" data-open-f><b>${esc(f.name)}</b><small>${countIn(f.id)} Notiz${countIn(f.id)===1?'':'en'}${subFolders(f.id).length?' · '+subFolders(f.id).length+' Unterordner':''}</small></button><button class="ib" data-edit-f title="Ordner bearbeiten">${EDIT_I}</button></div>`).join('')
+    + `<button class="btn" id="addFolder" style="margin:6px 4px 10px;width:calc(100% - 8px)">＋ ${curFolder?'Unterordner':'Ordner'} anlegen</button>`
+    + (ns.length? ns.map(n=>`<div class="note${n===note?' on':''}" data-id="${n.id}"><button class="nm"><b>${esc(n.title)}</b><small>${LN[n.pages[0].layout||'free']} · ${n.pages.length} Seite${n.pages.length>1?'n':''} · ${new Date(n.updated).toLocaleDateString('de-DE')}</small></button>
+    <button class="ib" data-mv title="Verschieben"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></button>
     <button class="ib" data-ren title="Umbenennen"><svg viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/></svg></button>
     <button class="ib" data-del title="Löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join('')
-    : '<div style="padding:20px 12px;color:var(--muted)">Noch keine Notizen in diesem Ordner.</div>';
+    : `<div style="padding:12px;color:var(--muted)">${fs.length?'Keine Notizen direkt hier.':'Noch keine Notizen hier. Tippe oben auf „＋ Neue Notiz“.'}</div>`);
 }
-$('#folders').onclick=async e=>{ if(e.target.closest('#addFolder')){ const t=await ask('Name für den neuen Ordner','','Erstellen'); if(t&&t.trim()){ const f={id:uid(),name:t.trim()}; meta.folders.push(f); saveMeta(); curFolder=f.id; } renderNotes(); return; }
-  const b=e.target.closest('[data-f]'); if(!b) return; curFolder=b.dataset.f; renderNotes(); };
-$('#folderRen').onclick=async()=>{ const f=meta.folders.find(f=>f.id===curFolder); if(!f) return; const t=await ask('Ordner umbenennen',f.name,'Speichern'); if(t&&t.trim()){ f.name=t.trim(); saveMeta(); } renderNotes(); };
-$('#folderDel').onclick=async()=>{ const f=meta.folders.find(f=>f.id===curFolder); if(!f) return; if(!await confirmBox('Ordner „'+esc(f.name)+'“ löschen? Die Notizen darin bleiben erhalten.','Ordner löschen')) return;
-  meta.folders=meta.folders.filter(x=>x!==f); notes.forEach(n=>{ if(n.folder===f.id){ n.folder=null; DB.put(n); } }); saveMeta(); curFolder='all'; renderNotes(); };
-function chooseFolder(title,current){ return new Promise(res=>{ modal(`<h3 style="margin:0">${title}</h3><div class="fsel">${[[null,'Ohne Ordner'],...meta.folders.map(f=>[f.id,'📁 '+f.name])].map(([id,n])=>`<button class="btn${(current||null)===id?' pri':''}" data-id="${id??''}">${esc(n)}</button>`).join('')}</div><div class="btns"><button class="btn" id="fsNo">Abbrechen</button></div>`);
+$('#crumbs').onclick=e=>{ const b=e.target.closest('[data-go]'); if(!b) return; curFolder=b.dataset.go||null; renderNotes(); };
+function folderDialog(f){ return new Promise(res=>{
+  let color=f?f.color||FCOLORS[0]:FCOLORS[Math.floor(Math.random()*FCOLORS.length)], icon=f?f.icon||'📁':'📁';
+  modal(`<h3 style="margin:0 0 10px">${f?'Ordner bearbeiten':(curFolder?'Neuer Unterordner in „'+esc(folderName(curFolder))+'“':'Neuer Ordner')}</h3>
+    <input type="text" id="fdName" value="${f?esc(f.name):''}" placeholder="z. B. Mathe">
+    <label class="f">Farbe</label><div class="colrow" id="fdCol">${FCOLORS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===color?'on':''}"></button>`).join('')}</div>
+    <label class="f">Symbol</label><div class="icgrid" id="fdIc">${FICONS.map(i=>`<button data-i="${i}" class="${i===icon?'on':''}">${i}</button>`).join('')}</div>
+    <div class="btns">${f?'<button class="btn dng" id="fdDel">Ordner löschen</button>':''}<button class="btn" id="fdNo">Abbrechen</button><button class="btn pri" id="fdOk">${f?'Speichern':'Erstellen'}</button></div>`);
+  const i=$('#fdName'); i.focus();
+  $('#fdCol').onclick=e=>{ const b=e.target.closest('[data-c]'); if(!b) return; color=b.dataset.c; $$('#fdCol button').forEach(x=>x.classList.toggle('on',x===b)); };
+  $('#fdIc').onclick=e=>{ const b=e.target.closest('[data-i]'); if(!b) return; icon=b.dataset.i; $$('#fdIc button').forEach(x=>x.classList.toggle('on',x===b)); };
+  $('#fdNo').onclick=()=>{ closeModal(); res(null); };
+  $('#fdOk').onclick=()=>{ const name=i.value.trim(); if(!name){ i.focus(); return toast('Bitte einen Namen eingeben'); } closeModal(); res({name,color,icon}); };
+  if(f) $('#fdDel').onclick=()=>{ closeModal(); res({del:true}); };
+}); }
+$('#notes').addEventListener('click',async e=>{
+  if(e.target.closest('#addFolder')){ const r=await folderDialog(null); if(r){ const f={id:uid(),name:r.name,color:r.color,icon:r.icon,parent:curFolder||null}; meta.folders.push(f); saveMeta(); } renderNotes(); return; }
+  const fr=e.target.closest('.frow');
+  if(fr){ const f=fById(fr.dataset.fid);
+    if(e.target.closest('[data-edit-f]')){ const r=await folderDialog(f); if(!r) return;
+      if(r.del){ if(!await confirmBox('Ordner „'+esc(f.name)+'“ löschen? Notizen und Unterordner darin wandern eine Ebene nach oben.','Ordner löschen')) return;
+        notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
+        meta.folders=meta.folders.filter(x=>x!==f); saveMeta(); renderNotes(); return; }
+      Object.assign(f,r); saveMeta(); renderNotes(); return; }
+    curFolder=f.id; renderNotes(); return; }
+});
+function folderOptions(){ const out=[]; const walk=(pid,d)=>subFolders(pid).forEach(f=>{ out.push([f.id,'   '.repeat(d)+(f.icon||'📁')+' '+f.name]); walk(f.id,d+1); }); walk(null,0); return out; }
+function chooseFolder(title,current){ return new Promise(res=>{ modal(`<h3 style="margin:0">${title}</h3><div class="fsel">${[[null,'🏠 Kein Ordner'],...folderOptions()].map(([id,n])=>`<button class="btn${(current||null)===id?' pri':''}" data-id="${id??''}">${esc(n)}</button>`).join('')}</div><div class="btns"><button class="btn" id="fsNo">Abbrechen</button></div>`);
   $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-id]'); if(!b) return; closeModal(); res({id:b.dataset.id||null}); }; $('#fsNo').onclick=()=>{closeModal();res(null)}; }); }
-$('#notes').onclick=async e=>{ const row=e.target.closest('.note'); if(!row) return; const n=notes.find(x=>x.id===row.dataset.id);
+$('#notes').addEventListener('click',async e=>{ const row=e.target.closest('.note'); if(!row) return; const n=notes.find(x=>x.id===row.dataset.id);
   if(e.target.closest('[data-mv]')){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); renderNotes(); toast(r.id?'Verschoben nach '+folderName(r.id):'Aus dem Ordner genommen'); } return; }
   if(e.target.closest('[data-ren]')){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; renderNotes(); } return; }
   if(e.target.closest('[data-del]')){ if(!await confirmBox('„'+esc(n.title)+'“ mit allen Seiten löschen?')) return; notes=notes.filter(x=>x!==n); DB.del(n.id); if(n===note) openNote(notes[0]||createNote('Neue Notiz')); renderNotes(); return; }
-  openNote(n); toggleDrawer(false); };
+  openNote(n); toggleDrawer(false); });
 $('#newNote').onclick=()=>{
-  let L='roll', bg='block', fo=(curFolder!=='all'&&curFolder!=='none')?curFolder:null;
+  let L='roll', bg='block', fo=curFolder||null;
   const BGS=[['block','Block-Karo'],['grid','Kariert'],['lines','Liniert'],['dots','Punkte'],['blank','Blanko'],['mm','Millimeter']];
   modal(`<h3 style="margin:0 0 10px">Neue Notiz</h3>
     <input type="text" id="nnName" value="Notiz ${notes.length+1}">
     <label class="f">Format</label><div class="chips" id="nnLay">${LAYOUTS.map(([k,n])=>`<button class="chip${k===L?' on':''}" data-v="${k}">${n}</button>`).join('')}</div>
     <div id="nnHint" style="font-size:12px;color:var(--muted);margin-top:6px">${LAYOUT_HINT[L]}</div>
     <label class="f">Papier</label><div class="chips" id="nnBg">${BGS.map(([k,n])=>`<button class="chip${k===bg?' on':''}" data-v="${k}">${n}</button>`).join('')}</div>
-    <label class="f">Ordner</label><div class="chips" id="nnF">${[[null,'Ohne Ordner'],...meta.folders.map(f=>[f.id,'📁 '+f.name])].map(([id,n])=>`<button class="chip${(fo||null)===id?' on':''}" data-v="${id??''}">${esc(n)}</button>`).join('')}</div>
+    <label class="f">Ordner</label><div class="chips" id="nnF">${[[null,'🏠 Kein Ordner'],...folderOptions().map(([id,n])=>[id,n.trim()])].map(([id,n])=>`<button class="chip${(fo||null)===id?' on':''}" data-v="${id??''}">${esc(n)}</button>`).join('')}</div>
     <div class="btns"><button class="btn" id="nnNo">Abbrechen</button><button class="btn pri" id="nnOk">Erstellen</button></div>`);
   const pick=(id,fn)=>$(id).onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; $$(id+' .chip').forEach(x=>x.classList.toggle('on',x===b)); fn(b.dataset.v); };
   pick('#nnLay',v=>{ L=v; $('#nnHint').textContent=LAYOUT_HINT[v]; }); pick('#nnBg',v=>bg=v); pick('#nnF',v=>fo=v||null);
-  setTimeout(()=>{ const i=$('#nnName'); i.focus(); i.select(); },50);
+  const ni=$('#nnName'); ni.focus(); ni.select();
   $('#nnNo').onclick=closeModal;
   $('#nnOk').onclick=()=>{ const t=$('#nnName').value.trim()||'Neue Notiz'; closeModal(); openNote(createNote(t,{layout:L,bg,folder:fo})); toggleDrawer(false); };
 };
 function toggleDrawer(o){ $('#drawer').classList.toggle('open',o); $('#scrim').classList.toggle('open',o); if(o) renderNotes(); }
 $('#menuBtn').onclick=()=>toggleDrawer(true); $('#scrim').onclick=()=>toggleDrawer(false);
 $('#title').onclick=async()=>{ const t=await ask('Notiz umbenennen',note.title,'Speichern'); if(t&&t.trim()){ note.title=t.trim(); $('#title').textContent=note.title; scheduleSave(); } };
-$('#backupBtn').onclick=()=>download(new Blob([JSON.stringify({app:'schreibheft',v:2,folders:meta.folders,notes})],{type:'application/json'}),'schreibheft-sicherung-'+new Date().toISOString().slice(0,10)+'.json');
+$('#backupBtn').onclick=async()=>{ const ids=new Set(); notes.forEach(n=>n.pages.forEach(p=>p.objects.forEach(o=>{ if(o.t==='i') ids.add(o.a); })));
+  const assets=[]; for(const id of ids){ const a=await DB.getAsset(id); if(a) assets.push(a); }
+  download(new Blob([JSON.stringify({app:'schreibheft',v:3,folders:meta.folders,notes,assets})],{type:'application/json'}),'schreibheft-sicherung-'+new Date().toISOString().slice(0,10)+'.json'); };
 $('#restoreBtn').onclick=()=>$('#restoreFile').click();
 $('#restoreFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); let c=0;
   for(const fo of (d.folders||[])) if(!meta.folders.some(x=>x.id===fo.id)) meta.folders.push(fo); saveMeta();
+  for(const a of (d.assets||[])) await DB.putAsset(a);
   for(const n of (d.notes||[])){ if(!n.id||!n.pages) continue; fixAll(n); const i=notes.findIndex(x=>x.id===n.id); if(i>=0) notes[i]=n; else notes.push(n); DB.put(n); c++; }
   renderNotes(); toast(c+' Notiz(en) geladen'); }catch(err){ toast('Datei konnte nicht gelesen werden'); } e.target.value=''; };
 
