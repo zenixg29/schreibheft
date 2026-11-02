@@ -113,6 +113,30 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .papers button{border:1px solid var(--border);border-radius:10px;padding:6px;font-size:13px}
 .papers button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);color:var(--accent)}
 .papers canvas{position:static;width:100%;height:56px;border-radius:6px;display:block;margin-bottom:4px}
+#sorter{position:fixed;inset:0;z-index:45;background:var(--bg);display:none;flex-direction:column}
+#sorter.open{display:flex}
+#sorter .shd{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--solid)}
+#sorter .sgrid{flex:1;overflow:auto;padding:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px;align-content:start}
+.scard{position:relative;background:var(--solid);border:2px solid transparent;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;touch-action:none;user-select:none}
+.scard.cur{border-color:var(--accent)}
+.scard.drag{opacity:.85;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.25);pointer-events:none}
+.scard.over{outline:3px dashed var(--accent);outline-offset:3px}
+.scard canvas{position:static!important;width:100%!important;height:auto!important;border-radius:6px;display:block;touch-action:none}
+.scard .sbar{display:flex;align-items:center;gap:2px}
+.scard .sbar b{flex:1;font-size:14px}
+.scard .sbar button{padding:4px 6px;border-radius:7px;font-size:15px}
+.scard .sbar button:hover{background:var(--hover)}
+.scard .bmk{position:absolute;top:2px;right:12px;font-size:22px}
+.note .th{width:44px;height:58px;border-radius:6px;flex:none;object-fit:cover;object-position:top;background:var(--hover);display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid var(--border)}
+.note .tg{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:2px 3px 0 0}
+.note .star{font-size:18px;opacity:.35;padding:6px}
+.note .star.on{opacity:1}
+#nTools{padding:0 12px 8px;display:flex;flex-direction:column;gap:6px}
+#nTools .r{display:flex;gap:6px;flex-wrap:wrap}
+#nSearch{flex:1 1 100%;width:100%;box-sizing:border-box;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit}
+#nSort{padding:6px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:13px}
+#tagRow{display:flex;gap:4px;flex-wrap:wrap}
+#tagRow:empty{display:none}
 #drawer{position:fixed;z-index:40;top:0;left:0;bottom:0;width:320px;max-width:88vw;background:var(--solid);border-right:1px solid var(--border);
   box-shadow:var(--shadow);transform:translateX(-105%);transition:transform .2s;display:flex;flex-direction:column}
 #drawer.open{transform:none}
@@ -212,7 +236,9 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 </div>
 
 <div class="pop" id="pagePop" style="width:250px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">Seiten</div><div id="pageList" style="max-height:50vh;overflow:auto"></div>
-  <div class="btns" style="margin-top:8px"><button class="btn pri" id="pgNew">＋ Neue Seite</button></div></div>
+  <div class="btns" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="pgSort">▦ Übersicht &amp; sortieren</button><button class="btn" id="pgBm">🔖 Merken</button><button class="btn" id="pgDup">⧉ Kopieren</button><button class="btn pri" id="pgNew">＋ Neue Seite</button></div></div>
+<div id="sorter"><div class="shd"><b style="font-size:18px">Seiten</b><span style="color:var(--muted);font-size:13px;flex:1">Zum Umsortieren eine Seite gedrückt halten und ziehen</span>
+  <button class="chip" id="soBm">🔖 Nur Lesezeichen</button><button class="btn pri" id="soClose">Fertig</button></div><div class="sgrid" id="sgrid"></div></div>
 <div class="pop" id="shapePop"><div class="row" id="shapeRow"></div></div>
 <div class="pop" id="sizePop" style="width:230px">
   <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span id="sizeName">Stift</span><span id="sizeVal">3</span></div>
@@ -275,6 +301,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="ph"><h3>Papier &amp; Seite</h3><button class="x" data-close>×</button></div>
   <label class="f" style="margin-top:0">Format</label>
   <div class="chips" id="layoutChips"></div>
+  <div class="chips" id="orientChips" style="margin-top:8px"><button class="chip" data-or="0">▯ Hochformat</button><button class="chip" data-or="1">▭ Querformat</button></div>
   <div id="layoutHint" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
   <label class="f">Papier</label>
   <div class="papers" id="papers"></div>
@@ -309,9 +336,11 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <div id="scrim"></div>
 <div id="drawer">
   <div class="hd"><b style="font-size:18px">Meine Notizen</b><button class="btn pri" id="newNote">+ Neue Notiz</button></div>
+  <div id="nTools"><div class="r"><input id="nSearch" type="search" placeholder="🔍 Suchen (Titel, Text, Tags)"><select id="nSort"><option value="updated">Zuletzt geändert</option><option value="opened">Zuletzt geöffnet</option><option value="name">Name A–Z</option><option value="created">Erstellt</option></select></div><div id="tagRow"></div></div>
   <div id="crumbs" style="padding:0 12px 6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:14px"></div>
   <div class="notes" id="notes"></div>
   <div class="ft">
+    <button class="btn" id="trashBtn">🗑 Papierkorb</button>
     <button class="btn" id="backupBtn">Sicherung speichern (alles)</button>
     <button class="btn" id="restoreBtn">Sicherung laden</button>
     <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
@@ -367,7 +396,7 @@ const newPage = (bg='grid',layout='free',gs) => { const pg={bg, layout, objects:
 const page = () => note.pages[pageIdx];
 const objs = () => page().objects;
 let saveT = null;
-function scheduleSave(){ clearTimeout(saveT); saveT=setTimeout(()=>{ note.updated=Date.now(); DB.put(note); },600); }
+function scheduleSave(){ clearTimeout(saveT); const n=note; saveT=setTimeout(()=>{ n.updated=Date.now(); if(!n.pinHash){ try{ n.thumb=pageThumb(n.pages[0],88).toDataURL('image/jpeg',0.7); }catch(e){} } DB.put(n); },600); }
 
 /* ---------------- Canvas ---------------- */
 const cv=$('#ink'), lv=$('#live'), ctx=cv.getContext('2d'), lctx=lv.getContext('2d');
@@ -388,11 +417,12 @@ function redraw(){ if(rq) return; rq=true; requestAnimationFrame(()=>{ rq=false;
 
 /* ---------------- Hintergrund ---------------- */
 const A4W=840, A4H=1188, GAP=64;      // DIN A4 = 21 × 29,7 cm
+const pw=pg=>(pg||page()).land?A4H:A4W, ph=pg=>(pg||page()).land?A4W:A4H; // Hoch-/Querformat
 const DESK=['#d5d8df','#0d0e11'];
 function lay(pg){ return (pg||page()).layout||'free'; }
 function sheetRects(pg){ pg=pg||page(); const L=lay(pg);
-  if(L==='roll') return [[0,0,A4W,Infinity]];
-  if(L==='sheets') return (pg.sheets||[[0,0]]).map(([c,r])=>[c*(A4W+GAP), r*(A4H+GAP), c*(A4W+GAP)+A4W, r*(A4H+GAP)+A4H]);
+  if(L==='roll') return [[0,0,pw(pg),Infinity]];
+  if(L==='sheets') return (pg.sheets||[[0,0]]).map(([c,r])=>[c*(pw(pg)+GAP), r*(ph(pg)+GAP), c*(pw(pg)+GAP)+pw(pg), r*(ph(pg)+GAP)+ph(pg)]);
   return null; }
 function defGs(bg){ return bg==='lines'?8:5; }
 function drawPaper(c, pg, v, w, h, rect){
@@ -615,13 +645,13 @@ function clampView(){
   if(r[3]===Infinity) v.y=Math.min(v.y,maxY);
   else { const minY=H-pad-r[3]*v.s; v.y = minY>maxY ? maxY : clamp(v.y,minY,maxY); }
 }
-function fitView(pg){ const r=sheetRects(pg); if(!r) return; const s=clamp((W-72-40)/A4W,0.3,1.25); pg.view={s,x:0,y:72+16}; }
+function fitView(pg){ const r=sheetRects(pg); if(!r) return; const s=clamp((W-72-40)/pw(pg),0.3,1.25); pg.view={s,x:0,y:72+16}; }
 function addButtons(){
   if(lay()!=='sheets') return [];
   const sh=page().sheets||[[0,0]], has=(c,r)=>sh.some(q=>q[0]===c&&q[1]===r), out=[];
-  for(const [c,r] of sh){ const x0=c*(A4W+GAP), y0=r*(A4H+GAP);
-    if(!has(c,r+1)) out.push({c,r:r+1,p:toScreen(x0+A4W/2,y0+A4H+GAP/2),dir:'unten'});
-    if(!has(c+1,r)) out.push({c:c+1,r,p:toScreen(x0+A4W+GAP/2,y0+A4H/2),dir:'rechts'}); }
+  for(const [c,r] of sh){ const x0=c*(pw()+GAP), y0=r*(ph()+GAP);
+    if(!has(c,r+1)) out.push({c,r:r+1,p:toScreen(x0+pw()/2,y0+ph()+GAP/2),dir:'unten'});
+    if(!has(c+1,r)) out.push({c:c+1,r,p:toScreen(x0+pw()+GAP/2,y0+ph()/2),dir:'rechts'}); }
   return out.filter(b=>b.p[0]>-30&&b.p[0]<W+30&&b.p[1]>-30&&b.p[1]<H+30);
 }
 function hitAdd(x,y){ return addButtons().find(b=>dist(x,y,b.p[0],b.p[1])<24); }
@@ -1480,7 +1510,7 @@ $('#plotInsert').onclick=()=>{ let o; try{ o=buildPlot(); }catch(e){ return toas
 const PAPERS=[['blank','Blanko'],['lines','Liniert'],['grid','Kariert'],['block','Block-Karo'],['dots','Punkte'],['mm','Millimeter'],['coord','Koordinaten']];
 const LAYOUTS=[['free','Unendlich'],['roll','DIN A4 endlos ↓'],['sheets','DIN A4 Seiten']];
 const LAYOUT_HINT={free:'Unendlich groß in alle Richtungen.',roll:'So breit wie ein A4-Blatt, nach unten geht es unendlich weiter.',sheets:'Echte A4-Blätter. Mit den ＋-Knöpfen hängst du unten oder rechts eine neue Seite an.'};
-function renderPapers(){
+function renderPapers(){ { const pg=page(); $('#orientChips').style.display=lay()==='free'?'none':''; $$('#orientChips [data-or]').forEach(b=>b.classList.toggle('on',(+b.dataset.or)===(pg.land?1:0))); }
   const pg=page();
   $('#layoutChips').innerHTML=LAYOUTS.map(([k,n])=>`<button class="chip${lay()===k?' on':''}" data-lay="${k}">${n}</button>`).join('');
   $('#layoutHint').textContent=LAYOUT_HINT[lay()];
@@ -1498,27 +1528,29 @@ $('#gsReset').onclick=()=>{ delete page().gs; renderPapers(); render(); schedule
 $('#papers').onclick=e=>{ const b=e.target.closest('[data-bg]'); if(!b) return; const pg=page(); if(pg.bg!==b.dataset.bg) delete pg.gs; pg.bg=b.dataset.bg;
   if(pg.bg==='coord' && !pg.o && lay()==='free'){ const [cx,cy]=toWorld(W/2,H/2); pg.o=[Math.round(cx/UNIT)*UNIT,Math.round(cy/UNIT)*UNIT]; }
   renderPapers(); commit(); };
+$('#orientChips').onclick=e=>{ const b=e.target.closest('[data-or]'); if(!b) return; const pg=page(); const L=+b.dataset.or; if(!!pg.land===!!L) return;
+  if(L) pg.land=1; else delete pg.land; fitView(pg); clampView(); renderPapers(); render(); drawLive(); scheduleSave(); toast(L?'Querformat':'Hochformat'); };
 $('#layoutChips').onclick=e=>{ const b=e.target.closest('[data-lay]'); if(!b) return; const pg=page(); const L=b.dataset.lay; if(L===lay()) return;
   pg.layout=L; if(L==='sheets' && !pg.sheets) pg.sheets=[[0,0]]; if(L!=='free'){ delete pg.o; fitView(pg); }
   clampView(); renderPapers(); render(); drawLive(); scheduleSave(); };
 function addSheet(b){ const pg=page(); pg.sheets=pg.sheets||[[0,0]]; pg.sheets.push([b.c,b.r]); scheduleSave(); render(); drawLive(); toast('Neue Seite '+b.dir+' angehängt'); }
 function sheetAtCenter(){ const [cx,cy]=toWorld(W/2,H/2); const sh=page().sheets||[]; let best=-1,bd=1e18;
-  sh.forEach(([c,r],i)=>{ const x=c*(A4W+GAP)+A4W/2, y=r*(A4H+GAP)+A4H/2, d=(x-cx)**2+(y-cy)**2; if(d<bd){bd=d;best=i;} }); return best; }
+  sh.forEach(([c,r],i)=>{ const x=c*(pw()+GAP)+pw()/2, y=r*(ph()+GAP)+ph()/2, d=(x-cx)**2+(y-cy)**2; if(d<bd){bd=d;best=i;} }); return best; }
 $('#delPage').onclick=async()=>{
   const pg=page();
   if(lay()==='sheets' && (pg.sheets||[]).length>1){ const i=sheetAtCenter(); if(!await confirmBox('Das A4-Blatt in der Bildschirmmitte mit seinem Inhalt löschen?')) return;
-    const [c,r]=pg.sheets[i], x0=c*(A4W+GAP), y0=r*(A4H+GAP); pushUndo();
-    pg.objects=pg.objects.filter(o=>{ const b=bbox(o), mx=(b[0]+b[2])/2, my=(b[1]+b[3])/2; return !(mx>=x0&&mx<=x0+A4W&&my>=y0&&my<=y0+A4H); });
+    const [c,r]=pg.sheets[i], x0=c*(pw(pg)+GAP), y0=r*(ph(pg)+GAP); pushUndo();
+    pg.objects=pg.objects.filter(o=>{ const b=bbox(o), mx=(b[0]+b[2])/2, my=(b[1]+b[3])/2; return !(mx>=x0&&mx<=x0+pw(pg)&&my>=y0&&my<=y0+ph(pg)); });
     pg.sheets.splice(i,1); clampView(); commit(); drawLive(); return; }
   if(note.pages.length===1){ if(!await confirmBox('Diese Seite leeren?','Leeren')) return; pushUndo(); pg.objects=[]; commit(); return; }
   if(!await confirmBox('Seite '+(pageIdx+1)+' wirklich löschen?')) return; note.pages.splice(pageIdx,1); pageIdx=Math.min(pageIdx,note.pages.length-1); gotoPage(pageIdx); scheduleSave(); };
 $('#exportPng').onclick=()=>{
   const pg=page(), list=objs(), L=lay();
   let b;
-  if(L==='sheets'){ const [c,r]=pg.sheets[sheetAtCenter()]; b=[c*(A4W+GAP), r*(A4H+GAP), c*(A4W+GAP)+A4W, r*(A4H+GAP)+A4H]; }
+  if(L==='sheets'){ const [c,r]=pg.sheets[sheetAtCenter()]; b=[c*(pw(pg)+GAP), r*(ph(pg)+GAP), c*(pw(pg)+GAP)+pw(pg), r*(ph(pg)+GAP)+ph(pg)]; }
   else { if(!list.length) return toast('Die Seite ist noch leer');
     b=[1e9,1e9,-1e9,-1e9]; list.forEach(o=>{ const q=bbox(o); b=[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]; });
-    if(L==='roll') b=[0,0,A4W,Math.max(A4H,b[3]+40)]; else b=[b[0]-40,b[1]-40,b[2]+40,b[3]+40]; }
+    if(L==='roll') b=[0,0,pw(pg),Math.max(ph(pg),b[3]+40)]; else b=[b[0]-40,b[1]-40,b[2]+40,b[3]+40]; }
   const w=b[2]-b[0], h=b[3]-b[1], k=Math.min(2.5, 8000/Math.max(w,h)); const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
   const g=c.getContext('2d'); const v={s:k,x:-b[0]*k,y:-b[1]*k}; g.setTransform(v.s,0,0,v.s,v.x,v.y);
   renderPage(g,pg,v,c.width,c.height,list);
@@ -1581,12 +1613,12 @@ async function pdfPageImg(doc,i){ const p=await doc.getPage(i); const vp0=p.getV
 // PDF-Seiten auf die aktuelle Seite unten anhängen (endloses A4, freie Seite oder Blätter)
 async function pdfOnPage(doc,pdfId){
   pushUndo(); const pg=page(), L=lay(), list=objs(); const added=[];
-  let y=0, x=0, colW=A4W;
-  if(L==='sheets'){ const sh=pg.sheets||(pg.sheets=[[0,0]]); let r=Math.max(...sh.map(q=>q[1])); const lastEmpty=!list.some(o=>{ const b=bbox(o); return b[3]>r*(A4H+GAP) && b[1]<r*(A4H+GAP)+A4H; });
+  let y=0, x=0, colW=pw(pg);
+  if(L==='sheets'){ const sh=pg.sheets||(pg.sheets=[[0,0]]); let r=Math.max(...sh.map(q=>q[1])); const lastEmpty=!list.some(o=>{ const b=bbox(o); return b[3]>r*(ph(pg)+GAP) && b[1]<r*(ph(pg)+GAP)+ph(pg); });
     for(let i=1;i<=doc.numPages;i++){ toast('PDF-Seite '+i+' von '+doc.numPages+' …'); const a=await pdfPageImg(doc,i);
-      if(!(i===1&&lastEmpty)){ r++; sh.push([0,r]); } const y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
-      const o={t:'i',lk:1,x:(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}}; list.push(o); added.push(o); } }
-  else { if(L==='free'){ const [cx,cy]=toWorld(W/2,90); x=cx-A4W/2; y=cy; }
+      if(!(i===1&&lastEmpty)){ r++; sh.push([0,r]); } const y0=r*(ph(pg)+GAP), k=Math.min(pw(pg)/a.w,ph(pg)/a.h), w=a.w*k, h=a.h*k;
+      const o={t:'i',lk:1,x:(pw(pg)-w)/2,y:y0+(ph(pg)-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}}; list.push(o); added.push(o); } }
+  else { if(L==='free'){ const [cx,cy]=toWorld(W/2,90); x=cx-pw(pg)/2; y=cy; }
     const bottom=list.reduce((m,o)=>Math.max(m,bbox(o)[3]),-1e9); y = bottom>-1e9 ? Math.max(L==='roll'?0:y,bottom+30) : (L==='roll'?0:y);
     for(let i=1;i<=doc.numPages;i++){ toast('PDF-Seite '+i+' von '+doc.numPages+' …'); const a=await pdfPageImg(doc,i);
       const k=colW/a.w, w=colW, h=a.h*k; const o={t:'i',lk:1,x,y,w,h,a:a.id,pdf:{a:pdfId,n:i}}; list.push(o); added.push(o); y+=h+24; } }
@@ -1597,17 +1629,64 @@ async function pdfOnPage(doc,pdfId){
 /* ---------------- Seiten & Hefte ---------------- */
 function gotoPage(i){ pageIdx=clamp(i,0,note.pages.length-1); clearSel(); $('#pageLbl').textContent=(pageIdx+1)+' / '+note.pages.length; note.lastPage=pageIdx; clampView(); render(); drawLive(); updateUndo(); if($('#p-paper').classList.contains('open')) renderPapers(); }
 function renderPageList(){
-  $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
+  $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">${pg.bm?'🔖 ':''}Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
 $('#pageLbl').onclick=e=>{ const p=$('#pagePop'); if(p.classList.contains('open')) return closePops(); renderPageList(); closePops(); p.classList.add('open'); const r=e.currentTarget.getBoundingClientRect(); p.style.left=clamp(r.left-90,8,W-260)+'px'; p.style.top=(r.bottom+8)+'px'; };
 $('#pageList').onclick=async e=>{ const d=e.target.closest('[data-pgdel]'); if(d){ const i=+d.dataset.pgdel; closePops();
     if(note.pages.length===1){ if(!await confirmBox('Das ist die einzige Seite. Inhalt leeren?','Leeren')) return; pushUndo(); page().objects=[]; commit(); return; }
     if(!await confirmBox('Seite '+(i+1)+' wirklich löschen?')) return; note.pages.splice(i,1); gotoPage(Math.min(i<=pageIdx?pageIdx-1:pageIdx,note.pages.length-1)); scheduleSave(); toast('Seite gelöscht'); return; }
   const b=e.target.closest('[data-pg]'); if(b){ gotoPage(+b.dataset.pg); closePops(); } };
 $('#pgNew').onclick=()=>{ closePops(); $('#addPg').click(); };
+$('#pgDup').onclick=()=>{ closePops(); dupPage(pageIdx); };
+$('#pgBm').onclick=()=>{ closePops(); const pg=page(); if(pg.bm) delete pg.bm; else pg.bm=1; scheduleSave(); toast(pg.bm?'🔖 Seite gemerkt':'Lesezeichen entfernt'); };
+$('#pgSort').onclick=()=>{ closePops(); openSorter(); };
+function dupPage(i){ const cp=JSON.parse(JSON.stringify(note.pages[i])); cp.objects.forEach(fixNulls); delete cp.bm; note.pages.splice(i+1,0,cp); gotoPage(i+1); scheduleSave(); toast('Seite kopiert → Seite '+(i+2)); }
+/* Seiten-Vorschau */
+function pageBounds(pg){ const L=lay(pg);
+  if(L==='sheets'){ const r=sheetRects(pg)[0]; return r; }
+  if(L==='roll') return [0,0,pw(pg),ph(pg)];
+  if(!pg.objects.length){ const v=pg.view; return [-v.x/v.s,-v.y/v.s,(-v.x+W)/v.s,(-v.y+H)/v.s]; }
+  let b=[1e9,1e9,-1e9,-1e9]; pg.objects.forEach(o=>{ const q=bbox(o); b=[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]; });
+  const w=Math.max(b[2]-b[0],300), h=Math.max(b[3]-b[1],w*1.3); return [b[0]-30,b[1]-30,b[0]+w+30,b[1]+h+30]; }
+function pageThumb(pg,cw){ const b=pageBounds(pg), k=cw/(b[2]-b[0]); const ch=Math.round(Math.min((b[3]-b[1])*k,cw*1.6));
+  const c=document.createElement('canvas'); c.width=cw; c.height=ch; const g=c.getContext('2d'); const v={s:k,x:-b[0]*k,y:-b[1]*k};
+  g.fillStyle=PAPER[isDark()?1:0]; g.fillRect(0,0,cw,ch); g.setTransform(v.s,0,0,v.s,v.x,v.y); try{ renderPage(g,pg,v,cw,ch,pg.objects); }catch(e){} return c; }
+let soBmOnly=false;
+function openSorter(){ $('#sorter').classList.add('open'); renderSorter(); }
+function renderSorter(){ const DP=Math.min(2,devicePixelRatio||1); $('#soBm').classList.toggle('on',soBmOnly);
+  const g=$('#sgrid'); g.innerHTML=''; note.pages.forEach((pg,i)=>{ if(soBmOnly&&!pg.bm) return;
+    const d=document.createElement('div'); d.className='scard'+(i===pageIdx?' cur':''); d.dataset.i=i;
+    const c=pageThumb(pg,Math.round(160*DP)); d.appendChild(c);
+    d.insertAdjacentHTML('beforeend',`${pg.bm?'<span class="bmk">🔖</span>':''}<div class="sbar"><b>Seite ${i+1}</b><button data-a="bm" title="Lesezeichen">${pg.bm?'🔖':'🏷️'}</button><button data-a="dup" title="Kopieren">⧉</button><button data-a="del" title="Löschen" style="color:var(--danger)">🗑</button></div>`);
+    g.appendChild(d); });
+  if(!g.children.length) g.innerHTML='<div style="color:var(--muted)">Keine Seiten mit Lesezeichen.</div>'; }
+$('#soClose').onclick=()=>$('#sorter').classList.remove('open');
+$('#soBm').onclick=()=>{ soBmOnly=!soBmOnly; renderSorter(); };
+(()=>{ let dr=null;
+  $('#sgrid').addEventListener('pointerdown',e=>{ const card=e.target.closest('.scard'); if(!card||e.target.closest('button')) return;
+    dr={card,i:+card.dataset.i,x:e.clientX,y:e.clientY,on:false,t:setTimeout(()=>{ if(dr&&!dr.moved) startDrag(); },300)}; });
+  function startDrag(){ dr.on=true; dr.card.classList.add('drag'); if(navigator.vibrate) navigator.vibrate(15); }
+  addEventListener('pointermove',e=>{ if(!dr) return; const dx=e.clientX-dr.x, dy=e.clientY-dr.y;
+    if(dr.scroll){ $('#sgrid').scrollTop-=e.clientY-dr.ly; dr.ly=e.clientY; return; }
+    if(!dr.on){ if(Math.hypot(dx,dy)>10){ if(e.pointerType==='touch'){ clearTimeout(dr.t); dr.scroll=true; dr.ly=e.clientY; return; } startDrag(); } else return; }
+    e.preventDefault(); dr.card.style.transform=`translate(${dx}px,${dy}px)`;
+    $$('.scard.over').forEach(x=>x.classList.remove('over')); const t=document.elementFromPoint(e.clientX,e.clientY); const oc=t&&t.closest('.scard'); if(oc&&oc!==dr.card){ oc.classList.add('over'); dr.to=+oc.dataset.i; } else dr.to=null;
+    const gr=$('#sgrid').getBoundingClientRect(); if(e.clientY>gr.bottom-60) $('#sgrid').scrollTop+=12; else if(e.clientY<gr.top+60) $('#sgrid').scrollTop-=12; },{passive:false});
+  addEventListener('pointerup',e=>{ if(!dr) return; clearTimeout(dr.t); const d=dr; dr=null;
+    if(d.scroll) return;
+    if(!d.on){ if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<10){ $('#sorter').classList.remove('open'); gotoPage(d.i); } return; }
+    if(d.to!=null && d.to!==d.i){ const cur=note.pages[pageIdx]; const [pg]=note.pages.splice(d.i,1); note.pages.splice(d.to,0,pg); pageIdx=note.pages.indexOf(cur); scheduleSave(); gotoPage(pageIdx); toast('Seite verschoben'); }
+    renderSorter(); });
+  addEventListener('pointercancel',()=>{ if(dr){ clearTimeout(dr.t); dr=null; renderSorter(); } });
+})();
+$('#sgrid').addEventListener('click',async e=>{ const b=e.target.closest('[data-a]'); if(!b) return; const i=+b.closest('.scard').dataset.i, a=b.dataset.a;
+  if(a==='bm'){ const pg=note.pages[i]; if(pg.bm) delete pg.bm; else pg.bm=1; scheduleSave(); }
+  else if(a==='dup'){ dupPage(i); }
+  else if(a==='del'){ if(note.pages.length===1) return toast('Die letzte Seite kann nicht gelöscht werden'); if(!await confirmBox('Seite '+(i+1)+' wirklich löschen?')) return; note.pages.splice(i,1); gotoPage(Math.min(i<=pageIdx?pageIdx-1:pageIdx,note.pages.length-1)); scheduleSave(); }
+  renderSorter(); });
 $('#prevPg').onclick=()=>gotoPage(pageIdx-1);
 $('#nextPg').onclick=()=>{ if(pageIdx===note.pages.length-1) return toast('Letzte Seite – mit + kommt eine neue'); gotoPage(pageIdx+1); };
 $('#addPg').onclick=()=>{ const np=newPage(page().bg,lay(),page().gs); if(np.layout!=='free') fitView(np); note.pages.splice(pageIdx+1,0,np); gotoPage(pageIdx+1); scheduleSave(); toast('Neue Seite '+(pageIdx+1)); };
-function openNote(n){ note=n; fixAll(n); S.lastNote=n.id; saveSettings(); $('#title').textContent=n.title; gotoPage(n.lastPage||0); renderNotes(); }
+function openNote(n){ if(note&&note!==n&&note.pinHash) UNLOCKED.delete(note.id); note=n; fixAll(n); n.opened=Date.now(); S.lastNote=n.id; saveSettings(); $('#title').textContent=n.title; gotoPage(n.lastPage||0); renderNotes(); }
 function fixAll(n){ n.pages.forEach(p=>{ p.view=p.view||{s:1,x:0,y:0}; p.objects.forEach(o=>{ fixNulls(o); if(o.bg){ o.lk=1; delete o.bg; } }); }); }
 let meta={id:'__meta',folders:[]}, curFolder=null;
 function saveMeta(){ DB.put(meta); }
@@ -1615,7 +1694,8 @@ const fById=id=>meta.folders.find(f=>f.id===id);
 function folderName(id){ const f=fById(id); return f?f.name:''; }
 function folderPath(id){ const out=[]; let f=fById(id), guard=0; while(f && guard++<50){ out.unshift(f); f=fById(f.parent); } return out; }
 function subFolders(id){ return meta.folders.filter(f=>(f.parent||null)===(id||null)).sort((a,b)=>a.name.localeCompare(b.name,'de')); }
-function notesIn(id){ return notes.filter(n=>id? n.folder===id : (!n.folder||!fById(n.folder))); }
+const liveNotes=()=>notes.filter(n=>!n.trash);
+function notesIn(id){ return liveNotes().filter(n=>id? n.folder===id : (!n.folder||!fById(n.folder))); }
 function countIn(id){ let c=notesIn(id).length; subFolders(id).forEach(f=>c+=countIn(f.id)); return c; }
 const FCOLORS=['#3b6fe0','#e04848','#2e9d57','#f08a24','#8e4fd6','#e0559a','#1fa3b4','#c9a400','#6b7280','#8a5a3c'];
 const FICONS=['📁','📐','➗','⚛️','🧪','🧬','🌍','🏛️','📖','✏️','🇬🇧','🇫🇷','🇪🇸','🎨','🎵','💻','⚽','💶','⚙️','🔌','🌱','🧠','⭐','📝'];
@@ -1628,16 +1708,70 @@ function renderNotes(){
   const path=folderPath(curFolder);
   $('#crumbs').innerHTML=`<button class="crumb" data-go="">🏠 Alle</button>`+path.map(f=>`<span style="color:var(--muted)">›</span><button class="crumb" data-go="${f.id}">${esc(f.icon||'📁')} ${esc(f.name)}</button>`).join('');
   const LN={free:'Unendlich',roll:'A4 endlos',sheets:'A4 Seiten'};
-  const fs=subFolders(curFolder), ns=notesIn(curFolder).sort((a,b)=>b.updated-a.updated);
+  const q=($('#nSearch').value||'').trim().toLowerCase();
+  const allTags=[...new Set(liveNotes().flatMap(n=>n.tags||[]))].sort((a,b)=>a.localeCompare(b,'de'));
+  if(tagFilter && !allTags.includes(tagFilter)) tagFilter=null;
+  $('#tagRow').innerHTML=allTags.map(t=>`<button class="chip${t===tagFilter?' on':''}" data-tag="${esc(t)}" style="font-size:12px;padding:3px 9px">#${esc(t)}</button>`).join('');
+  const searching=!!(q||tagFilter);
+  const SO=S.sort||'updated', cmp={updated:(a,b)=>b.updated-a.updated, opened:(a,b)=>(b.opened||0)-(a.opened||0), name:(a,b)=>a.title.localeCompare(b.title,'de',{numeric:true}), created:(a,b)=>(b.created||0)-(a.created||0)}[SO];
+  let ns=searching? liveNotes().filter(n=>(!tagFilter||(n.tags||[]).includes(tagFilter)) && (!q||noteMatches(n,q))) : notesIn(curFolder);
+  ns=ns.sort((a,b)=>((b.fav?1:0)-(a.fav?1:0))||cmp(a,b));
+  const fs=searching?[]:subFolders(curFolder);
+  if(searching) $('#crumbs').innerHTML=`<span style="color:var(--muted)">${ns.length} Treffer</span>`;
   $('#notes').innerHTML=
     fs.map(f=>`<div class="frow" data-fid="${f.id}"><span class="fic" style="background:${f.color||FCOLORS[0]}">${esc(f.icon||'📁')}</span><button class="fnm" data-open-f><b>${esc(f.name)}</b><small>${countIn(f.id)} Notiz${countIn(f.id)===1?'':'en'}${subFolders(f.id).length?' · '+subFolders(f.id).length+' Unterordner':''}</small></button><button class="ib" data-edit-f title="Ordner bearbeiten">${EDIT_I}</button></div>`).join('')
-    + `<button class="btn" id="addFolder" style="margin:6px 4px 10px;width:calc(100% - 8px)">＋ ${curFolder?'Unterordner':'Ordner'} anlegen</button>`
-    + (ns.length? ns.map(n=>`<div class="note${n===note?' on':''}" data-id="${n.id}"><button class="nm"><b>${esc(n.title)}</b><small>${LN[n.pages[0].layout||'free']} · ${n.pages.length} Seite${n.pages.length>1?'n':''} · ${new Date(n.updated).toLocaleDateString('de-DE')}</small></button>
-    <button class="ib" data-mv title="Verschieben"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></button>
-    <button class="ib" data-ren title="Umbenennen"><svg viewBox="0 0 24 24"><path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/></svg></button>
-    <button class="ib" data-del title="Löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join('')
-    : `<div style="padding:12px;color:var(--muted)">${fs.length?'Keine Notizen direkt hier.':'Noch keine Notizen hier. Tippe oben auf „＋ Neue Notiz“.'}</div>`);
+    + (searching?'':`<button class="btn" id="addFolder" style="margin:6px 4px 10px;width:calc(100% - 8px)">＋ ${curFolder?'Unterordner':'Ordner'} anlegen</button>`)
+    + (ns.length? ns.map(n=>`<div class="note${n===note?' on':''}" data-id="${n.id}">${n.pinHash?'<span class="th">🔒</span>':(n.thumb?`<img class="th" src="${n.thumb}" alt="">`:'<span class="th">📄</span>')}<button class="nm"><b>${esc(n.title)}</b><small>${searching&&n.folder&&fById(n.folder)?esc(folderName(n.folder))+' · ':''}${LN[n.pages[0].layout||'free']} · ${n.pages.length} S. · ${new Date(n.updated).toLocaleDateString('de-DE')}</small>${(n.tags||[]).length?'<div>'+n.tags.map(t=>`<span class="tg">#${esc(t)}</span>`).join('')+'</div>':''}</button>
+    <button class="star${n.fav?' on':''}" data-fav title="Favorit">⭐</button>
+    <button class="ib" data-more title="Mehr">${EDIT_I}</button></div>`).join('')
+    : `<div style="padding:12px;color:var(--muted)">${searching?'Nichts gefunden.':fs.length?'Keine Notizen direkt hier.':'Noch keine Notizen hier. Tippe oben auf „＋ Neue Notiz“.'}</div>`);
+  const tc=notes.filter(n=>n.trash).length; $('#trashBtn').textContent='🗑 Papierkorb'+(tc?' ('+tc+')':'');
 }
+let tagFilter=null;
+function noteMatches(n,q){ if(n.title.toLowerCase().includes(q)) return true; if((n.tags||[]).some(t=>t.toLowerCase().includes(q))) return true;
+  if(n.pinHash) return false; return n.pages.some(p=>p.objects.some(o=>(o.t==='x'&&o.v.toLowerCase().includes(q))||(o.t==='p'&&(o.fns||[]).join(' ').toLowerCase().includes(q)))); }
+$('#nSearch').addEventListener('input',()=>renderNotes());
+$('#nSort').onchange=e=>{ S.sort=e.target.value; saveSettings(); renderNotes(); };
+$('#tagRow').onclick=e=>{ const b=e.target.closest('[data-tag]'); if(!b) return; tagFilter = tagFilter===b.dataset.tag?null:b.dataset.tag; renderNotes(); };
+function trashNote(n){ n.trash=Date.now(); DB.put(n); if(n===note){ const nx=liveNotes().sort((a,b)=>b.updated-a.updated)[0]; openNote(nx||createNote('Neue Notiz')); } }
+function openTrash(){ const tr=notes.filter(n=>n.trash).sort((a,b)=>b.trash-a.trash);
+  modal(`<h3 style="margin:0 0 4px">🗑 Papierkorb</h3><p style="margin:0 0 10px;color:var(--muted);font-size:13px">Gelöschte Notizen bleiben 30 Tage hier, dann sind sie weg.</p>
+    <div style="max-height:55vh;overflow:auto">${tr.length?tr.map(n=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.title)}</b><small style="color:var(--muted)">noch ${Math.max(0,30-Math.floor((Date.now()-n.trash)/864e5))} Tage</small></div><button class="btn" data-rs="${n.id}">Wiederherstellen</button><button class="btn dng" data-kill="${n.id}">Weg</button></div>`).join(''):'<p style="color:var(--muted)">Der Papierkorb ist leer.</p>'}</div>
+    <div class="btns">${tr.length?'<button class="btn dng" id="trEmpty">Papierkorb leeren</button>':''}<button class="btn pri" id="trClose">Schließen</button></div>`);
+  $('#trClose').onclick=closeModal;
+  $('#modalBox').onclick=async e=>{ const r=e.target.closest('[data-rs]'), k=e.target.closest('[data-kill]');
+    if(r){ const n=notes.find(x=>x.id===r.dataset.rs); delete n.trash; if(n.folder&&!fById(n.folder)) n.folder=null; DB.put(n); toast('„'+n.title+'“ ist wieder da'); renderNotes(); openTrash(); }
+    else if(k){ const n=notes.find(x=>x.id===k.dataset.kill); if(!await confirmBox('„'+esc(n.title)+'“ endgültig löschen? Das geht nicht rückgängig.','Endgültig löschen')) return openTrash(); notes=notes.filter(x=>x!==n); DB.del(n.id); renderNotes(); openTrash(); }
+    else if(e.target.id==='trEmpty'){ if(!await confirmBox('Alle '+tr.length+' Notizen im Papierkorb endgültig löschen?','Leeren')) return openTrash(); tr.forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!n.trash); renderNotes(); toast('Papierkorb geleert'); } }; }
+$('#trashBtn').onclick=openTrash;
+/* PIN */
+const UNLOCKED=new Set();
+async function pinHash(pin,id){ const d=new TextEncoder().encode('schreibheft|'+id+'|'+pin);
+  if(crypto.subtle){ const h=await crypto.subtle.digest('SHA-256',d); return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  let h=2166136261; for(const b of d){ h^=b; h=Math.imul(h,16777619)>>>0; } return 'f'+h.toString(16); }
+function pinPrompt(title,sub){ return new Promise(res=>{ modal(`<h3 style="margin:0 0 6px">${title}</h3>${sub?`<p style="margin:0 0 10px;color:var(--muted);font-size:13px">${sub}</p>`:''}<input type="password" inputmode="numeric" id="pinIn" placeholder="PIN" autocomplete="off" style="font-size:22px;letter-spacing:6px;text-align:center"><div class="btns"><button class="btn" id="pinNo">Abbrechen</button><button class="btn pri" id="pinOk">OK</button></div>`);
+  const i=$('#pinIn'); setTimeout(()=>i.focus(),50); const ok=()=>{ const v=i.value.trim(); if(v.length<4){ toast('Mindestens 4 Ziffern'); return i.focus(); } closeModal(); res(v); };
+  $('#pinOk').onclick=ok; i.onkeydown=e=>{ if(e.key==='Enter') ok(); }; $('#pinNo').onclick=()=>{ closeModal(); res(null); }; }); }
+async function unlockNote(n){ if(!n.pinHash||UNLOCKED.has(n.id)) return true;
+  for(let t=0;t<5;t++){ const p=await pinPrompt('🔒 „'+esc(n.title)+'“',t?'Falsche PIN, nochmal versuchen':'Diese Notiz ist mit einer PIN geschützt.'); if(p===null) return false;
+    if(await pinHash(p,n.id)===n.pinHash){ UNLOCKED.add(n.id); return true; } }
+  toast('Zu viele Versuche'); return false; }
+async function noteMenu(n){
+  const act=await new Promise(res=>{ modal(`<h3 style="margin:0 0 10px">${esc(n.title)}</h3><div class="fsel">
+    <button class="btn" data-a="ren">✏️ Umbenennen</button><button class="btn" data-a="mv">📁 In Ordner verschieben</button><button class="btn" data-a="tags">🏷️ Tags bearbeiten</button>
+    <button class="btn" data-a="pin">${n.pinHash?'🔓 PIN entfernen':'🔒 Mit PIN sperren'}</button><button class="btn" data-a="dup">⧉ Notiz kopieren</button><button class="btn dng" data-a="del">🗑 In den Papierkorb</button></div>
+    <div class="btns"><button class="btn" id="nmNo">Schließen</button></div>`);
+    $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b){ closeModal(); res(b.dataset.a); } }; $('#nmNo').onclick=()=>{ closeModal(); res(null); }; });
+  if(act==='ren'){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; } }
+  else if(act==='mv'){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); toast(r.id?'Verschoben nach '+folderName(r.id):'Aus dem Ordner genommen'); } }
+  else if(act==='tags'){ const t=await ask('Tags (mit Komma trennen, z. B. Mathe, Klausur)',(n.tags||[]).join(', '),'Speichern'); if(t!==null&&t!==undefined){ n.tags=[...new Set(String(t).split(/[,;]/).map(x=>x.trim().replace(/^#/,'')).filter(Boolean))]; if(!n.tags.length) delete n.tags; DB.put(n); } }
+  else if(act==='pin'){
+    if(n.pinHash){ if(!await unlockNote(n)) return; delete n.pinHash; DB.put(n); toast('PIN entfernt'); }
+    else { const p=await pinPrompt('PIN festlegen','Merk sie dir gut – ohne PIN kommt niemand mehr an die Notiz, auch du nicht.'); if(!p) return; const p2=await pinPrompt('PIN wiederholen'); if(p2!==p) return toast('Die PINs sind nicht gleich');
+      n.pinHash=await pinHash(p,n.id); delete n.thumb; UNLOCKED.add(n.id); DB.put(n); toast('🔒 Notiz ist jetzt mit PIN gesperrt'); } }
+  else if(act==='dup'){ const cp=JSON.parse(JSON.stringify(n)); cp.id=uid(); cp.title=n.title+' (Kopie)'; cp.created=cp.updated=Date.now(); delete cp.fav; fixAll(cp); notes.unshift(cp); DB.put(cp); toast('Kopie erstellt'); }
+  else if(act==='del'){ trashNote(n); toast('In den Papierkorb gelegt'); }
+  renderNotes(); }
 $('#crumbs').onclick=e=>{ const b=e.target.closest('[data-go]'); if(!b) return; curFolder=b.dataset.go||null; renderNotes(); };
 function folderDialog(f){ return new Promise(res=>{
   let color=f?f.color||FCOLORS[0]:FCOLORS[Math.floor(Math.random()*FCOLORS.length)], icon=f?f.icon||'📁':'📁';
@@ -1660,7 +1794,7 @@ $('#notes').addEventListener('click',async e=>{
     if(e.target.closest('[data-edit-f]')){ const r=await folderDialog(f); if(!r) return;
       if(r.del){
         const allF=[f.id]; for(let i=0;i<allF.length;i++) meta.folders.forEach(x=>{ if(x.parent===allF[i]) allF.push(x.id); });
-        const nN=notes.filter(n=>allF.includes(n.folder)).length, nF=allF.length-1;
+        const nN=liveNotes().filter(n=>allF.includes(n.folder)).length, nF=allF.length-1;
         const choice=await new Promise(res=>{ modal(`<h3 style="margin:0 0 8px">Ordner „${esc(f.name)}“ löschen?</h3>
           <p style="margin:0;color:var(--muted)">Darin: ${nN} Notiz${nN===1?'':'en'}${nF?' und '+nF+' Unterordner':''}.</p>
           <div class="fsel" style="margin-top:14px">
@@ -1671,8 +1805,8 @@ $('#notes').addEventListener('click',async e=>{
         if(!choice) return;
         if(choice==='keep'){ notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
           meta.folders=meta.folders.filter(x=>x!==f); toast('Ordner gelöscht, Inhalt ist eine Ebene höher'); }
-        else { const gone=notes.filter(n=>allF.includes(n.folder)); gone.forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!gone.includes(n));
-          meta.folders=meta.folders.filter(x=>!allF.includes(x.id)); if(!notes.includes(note)) openNote(notes[0]||createNote('Neue Notiz')); toast('Ordner mit allem Inhalt gelöscht'); }
+        else { const gone=liveNotes().filter(n=>allF.includes(n.folder)); const t=Date.now(); gone.forEach(n=>{ n.trash=t; n.folder=null; DB.put(n); });
+          meta.folders=meta.folders.filter(x=>!allF.includes(x.id)); if(note.trash) openNote(liveNotes()[0]||createNote('Neue Notiz')); toast('Ordner gelöscht – Notizen sind im Papierkorb'); }
         saveMeta(); renderNotes(); return; }
       Object.assign(f,r); saveMeta(); renderNotes(); return; }
     curFolder=f.id; renderNotes(); return; }
@@ -1681,10 +1815,12 @@ function folderOptions(){ const out=[]; const walk=(pid,d)=>subFolders(pid).forE
 function chooseFolder(title,current){ return new Promise(res=>{ modal(`<h3 style="margin:0">${title}</h3><div class="fsel">${[[null,'🏠 Kein Ordner'],...folderOptions()].map(([id,n])=>`<button class="btn${(current||null)===id?' pri':''}" data-id="${id??''}">${esc(n)}</button>`).join('')}</div><div class="btns"><button class="btn" id="fsNo">Abbrechen</button></div>`);
   $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-id]'); if(!b) return; closeModal(); res({id:b.dataset.id||null}); }; $('#fsNo').onclick=()=>{closeModal();res(null)}; }); }
 $('#notes').addEventListener('click',async e=>{ const row=e.target.closest('.note'); if(!row) return; const n=notes.find(x=>x.id===row.dataset.id);
+  if(e.target.closest('[data-fav]')){ if(n.fav) delete n.fav; else n.fav=1; DB.put(n); renderNotes(); return; }
+  if(e.target.closest('[data-more]')){ noteMenu(n); return; }
   if(e.target.closest('[data-mv]')){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); renderNotes(); toast(r.id?'Verschoben nach '+folderName(r.id):'Aus dem Ordner genommen'); } return; }
   if(e.target.closest('[data-ren]')){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; renderNotes(); } return; }
   if(e.target.closest('[data-del]')){ if(!await confirmBox('„'+esc(n.title)+'“ mit allen Seiten löschen?')) return; notes=notes.filter(x=>x!==n); DB.del(n.id); if(n===note) openNote(notes[0]||createNote('Neue Notiz')); renderNotes(); return; }
-  openNote(n); toggleDrawer(false); });
+  if(!await unlockNote(n)) return; openNote(n); toggleDrawer(false); });
 $('#newNote').onclick=()=>{
   let L='roll', bg='block', fo=curFolder||null;
   const BGS=[['block','Block-Karo'],['grid','Kariert'],['lines','Liniert'],['dots','Punkte'],['blank','Blanko'],['mm','Millimeter']];
@@ -1759,7 +1895,11 @@ async function init(){
       {t:'x',x:110,y:160,s:19,c:'ink',v:'• S Pen = schreiben (fester drücken = dicker)\n• Finger = Seite verschieben, mit 2 Fingern zoomen\n• Beim Zeichnen kurz stillhalten = Linie/Kreis/Rechteck wird gerade\n• Oben: Lineal, Geodreieck, Funktionsplotter, Rechner, Formeln, Papier\n• S-Pen-Taste gedrückt halten = Radierer'});
     n.pages[0].view={s:1,x:0,y:0};
   }
-  openNote(notes.find(n=>n.id===S.lastNote)||notes.sort((a,b)=>b.updated-a.updated)[0]);
+  notes.filter(n=>n.trash&&Date.now()-n.trash>30*864e5).forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!(n.trash&&Date.now()-n.trash>30*864e5));
+  const pool=liveNotes().filter(n=>!n.pinHash); let first=liveNotes().find(n=>n.id===S.lastNote);
+  if(first&&first.pinHash&&!(await unlockNote(first))) first=null;
+  openNote(first||pool.sort((a,b)=>b.updated-a.updated)[0]||createNote('Neue Notiz'));
+  $('#nSort').value=S.sort||'updated';
   renderShapes(); renderCalc(); renderFormulas(); renderSettings(); setTool(S.tool); applyTheme();
 }
 window.addEventListener('resize',resize);
