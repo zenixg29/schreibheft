@@ -226,6 +226,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <button class="ib" data-tool="hl" title="Textmarker"><svg viewBox="0 0 24 24"><path d="M9.5 14.5l-4 4.5h5l1.5-1.5"/><path d="M9 14l6.5-10.5 4 3L13 17z"/><path d="M9 14l4 3"/></svg></button>
   <button class="ib" data-tool="eraser" title="Radierer (auch S-Pen-Taste)"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.5 15.5l9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19H8z"/><path d="M9 11l4.5 4.5"/></svg></button>
   <button class="ib" data-tool="select" title="Auswählen &amp; verschieben"><svg viewBox="0 0 24 24"><path d="M12 4c5 0 8.5 2.4 8.5 5.4S17 14.8 12 14.8 3.5 12.4 3.5 9.4 7 4 12 4z" stroke-dasharray="2.6 2.4"/><path d="M7.5 13.5c-1 2 .2 4.6 2.6 5.6"/></svg></button>
+  <button class="ib" data-tool="laser" title="Laserpointer"><svg viewBox="0 0 24 24"><circle cx="17" cy="7" r="2.4"/><path d="M15 9l-9.5 9.5M17 2.5v1.3M21.5 7h-1.3M20.2 3.8l-.9.9"/></svg></button>
   <button class="ib" data-tool="text" title="Text"><svg viewBox="0 0 24 24"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg></button>
   <button class="ib" data-tool="shape" id="shapeBtn" title="Formen"><span id="shapeIco"></span><span class="tri"></span></button>
   <div class="sep"></div>
@@ -233,17 +234,23 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="sep"></div>
   <div id="quickSizes"></div>
   <button class="ib" id="sizeBtn" title="Strichstärke genau einstellen"><span class="dot"></span><span class="tri"></span></button>
+  <button class="ib" id="favBtn" title="Lieblingsstifte" style="font-size:18px">⭐</button>
 </div>
 
 <div class="pop" id="pagePop" style="width:250px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">Seiten</div><div id="pageList" style="max-height:50vh;overflow:auto"></div>
   <div class="btns" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="pgSort">▦ Übersicht &amp; sortieren</button><button class="btn" id="pgBm">🔖 Merken</button><button class="btn" id="pgDup">⧉ Kopieren</button><button class="btn pri" id="pgNew">＋ Neue Seite</button></div></div>
 <div id="sorter"><div class="shd"><b style="font-size:18px">Seiten</b><span style="color:var(--muted);font-size:13px;flex:1">Zum Umsortieren eine Seite gedrückt halten und ziehen</span>
   <button class="chip" id="soBm">🔖 Nur Lesezeichen</button><button class="btn pri" id="soClose">Fertig</button></div><div class="sgrid" id="sgrid"></div></div>
-<div class="pop" id="shapePop"><div class="row" id="shapeRow"></div></div>
+<div class="pop" id="shapePop"><div class="row" id="shapeRow"></div>
+  <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Füllung</div><div class="chips" id="fillChips"><button class="chip" data-fill="0">Keine</button><button class="chip" data-fill="1">Hell</button><button class="chip" data-fill="2">Voll</button></div>
+  <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Linie</div><div class="chips" id="dashChips"><button class="chip" data-dash="0">───</button><button class="chip" data-dash="1">─ ─ ─</button><button class="chip" data-dash="2">· · · ·</button></div></div>
+<div class="pop" id="favPop" style="width:260px"><div style="font-size:13px;color:var(--muted);margin-bottom:8px">⭐ Lieblingsstifte</div><div id="favList" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+  <div class="btns" style="margin-top:10px"><button class="btn" id="favEdit">Bearbeiten</button><button class="btn pri" id="favAdd">＋ Aktuellen speichern</button></div></div>
 <div class="pop" id="sizePop" style="width:230px">
   <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span id="sizeName">Stift</span><span id="sizeVal">3</span></div>
   <input type="range" id="sizeRange" min="1" max="20" step="0.5" style="width:100%;margin:10px 0 4px">
   <div class="row" id="sizePresets" style="justify-content:space-between"></div>
+  <div id="penTypes" class="chips" style="margin-top:8px"><button class="chip" data-pt="ball">Kuli</button><button class="chip" data-pt="f">Füller</button><button class="chip" data-pt="pc">Bleistift</button><button class="chip" data-pt="br">Pinsel</button><button class="chip" data-pt="ca">Kalligrafie</button></div>
   <div id="erModes" class="chips" style="margin-top:8px"><button class="chip" data-em="stroke">Ganze Linie</button><button class="chip" data-em="point">Nur drüberfahren</button></div>
 </div>
 
@@ -259,6 +266,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <div id="selbar" class="bar">
   <button id="selEdit">Bearbeiten</button>
   <button id="selColor">Farbe übernehmen</button>
+  <button id="selFill">Füllen</button>
   <button id="selDup">Kopieren</button>
   <button id="selLock">Sperren</button>
   <button id="selDel" style="color:var(--danger)">Löschen</button>
@@ -322,6 +330,9 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
   <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:130px"></div>
   <div class="toggle"><div>In der Luft radieren<small>Stifttaste gedrückt halten und über die Seite fahren, ohne aufzusetzen. Aus: Stift muss aufliegen.</small></div><button class="sw2" data-set="airErase"></button></div>
+  <div class="toggle"><div>Glättung der Schrift<small id="smLbl">leicht</small></div><input type="range" id="smRange" min="0" max="10" step="1" style="width:130px"></div>
+  <div class="toggle"><div>Durchkritzeln zum Löschen<small>Schnell hin und her über etwas kritzeln → es wird gelöscht</small></div><button class="sw2" data-set="scratch"></button></div>
+  <div class="toggle"><div>Automatisch weiterscrollen<small>Schreibst du unten am Rand, rutscht die Seite nach oben</small></div><button class="sw2" data-set="autoScroll"></button></div>
   <div class="toggle"><div>Mit dem Finger schreiben<small>Aus: Finger verschiebt &amp; zoomt (empfohlen mit S Pen)</small></div><button class="sw2" data-set="fingerDraw"></button></div>
   <div class="btns" id="installRow" style="display:none"><button class="btn pri" id="installBtn">App installieren</button></div>
   <div style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5">
@@ -370,7 +381,7 @@ const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
 const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',airErase:true,pressure:true,snap:true,holdMs:500,
-  fingerDraw:false,shape:'line',calcDeg:true,lastNote:null,custom:'#ff3399'};
+  fingerDraw:false,shape:'line',penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
 function saveSettings(){ try{ localStorage.setItem('sh-settings',JSON.stringify(S)); }catch(e){} }
@@ -477,16 +488,29 @@ function drawPaper(c, pg, v, w, h, rect){
 
 /* ---------------- Objekte zeichnen ---------------- */
 const wf = pr => 0.3 + 1.4*pr;          // Druck -> Breitenfaktor
+const PENCIL=new WeakMap();
+function pencilPat(c,col){ let m=PENCIL.get(c); if(!m){ m=new Map(); PENCIL.set(c,m); } let pt=m.get(col); if(pt) return pt;
+  const t=document.createElement('canvas'); t.width=t.height=32; const g=t.getContext('2d'); g.fillStyle=col; let seed=7;
+  const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  for(let i=0;i<900;i++){ g.globalAlpha=0.45+rnd()*0.55; g.fillRect(Math.floor(rnd()*32),Math.floor(rnd()*32),1,1); }
+  pt=c.createPattern(t,'repeat'); m.set(col,pt); return pt; }
+function strokeFill(c,o,col){ const p=o.p; c.beginPath(); let down=false;
+  for(let i=0;i<p.length;i+=3){ const x=p[i]; if(Number.isNaN(x)||x===null){ if(down) break; continue; } if(!down){ c.moveTo(x,p[i+1]); down=true; } else c.lineTo(x,p[i+1]); }
+  c.closePath(); const a=c.globalAlpha; c.globalAlpha=a*(o.f===2?1:0.22); c.fillStyle=col; c.fill(); c.globalAlpha=a; }
 function drawStroke(c,o,alphaMul=1){
   const p=o.p, n=p.length/3, col=colorOf(o.c);
   c.strokeStyle=col; c.fillStyle=col; c.lineCap='round'; c.lineJoin='round';
   c.globalAlpha=(o.hl?0.38:1)*alphaMul;
+  if(o.f) strokeFill(c,o,col);
+  const K=o.k;
+  if(K==='pc'){ c.strokeStyle=pencilPat(c,col); c.fillStyle=c.strokeStyle; }
   if(o.u||o.hl||!S.pressure&&false){
+    if(o.d) c.setLineDash(o.d===1?[o.w*3.2,o.w*2.4]:[0.01,o.w*2.4]);
     c.lineWidth=o.w; c.beginPath(); let down=false, cnt=0;
     for(let i=0;i<n;i++){ const x=p[3*i],y=p[3*i+1]; if(Number.isNaN(x)||x===null){down=false;continue}
       if(!down){c.moveTo(x,y);down=true}else c.lineTo(x,y); cnt++; }
     if(cnt===1){ c.lineTo(p[0]+0.01,p[1]); }
-    c.stroke();
+    c.stroke(); if(o.d) c.setLineDash([]);
   } else if(n===1){
     c.beginPath(); c.arc(p[0],p[1],o.w*wf(p[2])/2,0,Math.PI*2); c.fill();
   } else if(n===2){
@@ -497,7 +521,7 @@ function drawStroke(c,o,alphaMul=1){
       const x=p[3*i], y=p[3*i+1];
       const last=i===n-1;
       const mx= last? x : (x+p[3*i+3])/2, my= last? y : (y+p[3*i+4])/2;
-      c.lineWidth=o.w*wf(p[3*i+2]);
+      c.lineWidth=o.w*(K?penF(K,p,i,n):wf(p[3*i+2]));
       c.beginPath(); c.moveTo(px,py);
       if(last) c.lineTo(mx,my); else c.quadraticCurveTo(x,y,mx,my);
       c.stroke(); px=mx; py=my;
@@ -505,6 +529,12 @@ function drawStroke(c,o,alphaMul=1){
   }
   c.globalAlpha=1;
 }
+function penF(K,p,i,n){ const pr=p[3*i+2];
+  if(K==='br') return 0.12+2.1*Math.pow(pr,1.4);
+  if(K==='pc') return 0.8+0.6*pr;
+  const a=Math.max(0,i-1), b=Math.min(n-1,i+1), ang=Math.atan2(p[3*b+1]-p[3*a+1],p[3*b]-p[3*a]), s=Math.abs(Math.sin(ang-Math.PI/4));
+  if(K==='ca') return 0.16+1.55*s;
+  return wf(pr)*(0.62+0.62*s); }
 const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 function drawText(c,o){
   c.fillStyle=colorOf(o.c); c.font=`${o.s}px ${FONT}`; c.textBaseline='top'; c.textAlign='left';
@@ -773,6 +803,7 @@ function drawLive(){
     label(g.x+Math.cos(g.a-Math.PI/2)*40, g.y+Math.sin(g.a-Math.PI/2)*40, '∠ '+fmt(a.deg,0)+'°'); }
   if(hover){ lctx.strokeStyle=colorOf('ink'); lctx.globalAlpha=.5; lctx.lineWidth=1; lctx.beginPath(); lctx.arc(hover[0],hover[1],eraserR(),0,Math.PI*2); lctx.stroke(); lctx.globalAlpha=1; }
   if(liveLabel) label(liveLabel.x,liveLabel.y,liveLabel.text);
+  drawLasers();
 }
 function label(x,y,t){
   lctx.font='600 13px '+FONT; const w=lctx.measureText(t).width+16;
@@ -1030,9 +1061,11 @@ function startInput(e,x,y){
     const pr=prOf(e,0.5);
     const obj={t:'s',c:S.color,w:(tool==='hl'?S.sizes.hl:S.sizes.pen)/(tool==='hl'?1:1),p:[wx,wy,pr]};
     if(tool==='hl'){ obj.hl=1; if(S.color==='ink') obj.c='yellow'; }
+    else if(S.penType && S.penType!=='ball') obj.k=S.penType;
     cur={...base,kind:'stroke',obj,pts:[[wx,wy]],lastS:[x,y],pr,edge:findEdge(x,y),len:0};
     if(cur.edge){ const [qx,qy]=projectEdge(cur.edge,x,y); const [a,b]=toWorld(qx,qy); obj.p=[a,b,pr]; cur.pts=[[a,b]]; cur.edgeStart=[qx,qy]; }
     armHold(x,y);
+  } else if(tool==='laser'){ cur={...base,kind:'laser'}; laserAdd(x,y,true);
   } else if(tool==='eraser'){
     cur={...base,kind:'erase',did:carryDid}; eraseAt(x,y);
   } else if(tool==='select'){
@@ -1095,7 +1128,8 @@ lv.addEventListener('pointermove',e=>{
       if(cur.edge){ [ex,ey]=projectEdge(cur.edge,ex,ey); }
       if(dist(ex,ey,cur.lastS[0],cur.lastS[1])<0.8) continue;
       const pr=prOf(ev,cur.pr); cur.pr=cur.pr*0.55+pr*0.45;
-      const [wx,wy]=toWorld(ex,ey);
+      let [wx,wy]=toWorld(ex,ey); cur.raw=[wx,wy];
+      if(S.smooth>0 && !cur.edge){ if(cur.sm){ const a=S.smooth/10*0.72; wx=cur.sm[0]+(wx-cur.sm[0])*(1-a); wy=cur.sm[1]+(wy-cur.sm[1])*(1-a); } cur.sm=[wx,wy]; }
       const lp=cur.pts[cur.pts.length-1]; cur.len+=dist(lp[0],lp[1],wx,wy);
       o.p.push(wx,wy,cur.pr); cur.pts.push([wx,wy]); cur.lastS=[ex,ey];
     }
@@ -1109,6 +1143,7 @@ lv.addEventListener('pointermove',e=>{
     drawLive(); return;
   }
   if(cur.kind==='erase'){ for(const ev of evs) eraseAt(...pt(ev)); hover=[x,y]; drawLive(); return; }
+  if(cur.kind==='laser'){ for(const ev of evs) laserAdd(...pt(ev)); return; }
   if(cur.kind==='lasso'){ cur.pts.push(toWorld(x,y)); drawLive(); return; }
   if(cur.kind==='scale'){ const [wx,wy]=toWorld(x,y); const [ax,ay]=cur.anchor, [cx,cy]=cur.corner;
     const dx=cx-ax, dy=cy-ay, L2=dx*dx+dy*dy||1; let k=((wx-ax)*dx+(wy-ay)*dy)/L2; k=clamp(k,0.05,20);
@@ -1118,7 +1153,7 @@ lv.addEventListener('pointermove',e=>{
   if(cur.kind==='shape'){
     const b=toWorld(x,y); if(dist(...cur.a,...b)*V().s<4) return;
     const r=shapeFromDrag(S.shape,cur.a,b); cur.shape=r;
-    cur.obj={t:'s',c:S.color,w:S.sizes.shape,u:1,p:shapeToPoints(r)};
+    cur.obj={t:'s',c:S.color,w:S.sizes.shape,u:1,p:shapeToPoints(r)}; if(S.fill && ['rect','ellipse','triangle','rtriangle'].includes(S.shape)) cur.obj.f=S.fill; if(S.dash) cur.obj.d=S.dash;
     liveLabel={x,y:y-36,text:shapeInfo(r)||'Koordinatensystem'}; drawLive(); return;
   }
 });
@@ -1134,7 +1169,9 @@ function endPointer(e,cancel){
   if(c.kind==='stroke'){
     const o=c.obj;
     if(!o.u){ for(let i=0;i<o.p.length;i++) o.p[i]=+o.p[i].toFixed(i%3===2?2:1); }
-    pushUndo(); objs().push(o); commit();
+    if(c.raw && c.sm && !c.snap && !o.u){ const L=o.p.length; if(dist(o.p[L-3],o.p[L-2],c.raw[0],c.raw[1])>0.5) o.p.push(+c.raw[0].toFixed(1),+c.raw[1].toFixed(1),o.p[L-1]); }
+    if(S.scratch && !o.u && !o.hl && scratchOut(o)) return;
+    pushUndo(); objs().push(o); commit(); autoScroll(o);
   } else if(c.kind==='shape' && c.obj){ pushUndo(); objs().push(c.obj);
     if(S.shape==='axes'){ const r=c.shape; objs().push({t:'x',x:r.x1-10,y:r.oy+8,s:18,c:S.color,v:'x'},{t:'x',x:r.ox+10,y:r.y0-4,s:18,c:S.color,v:'y'}); }
     commit();
@@ -1198,6 +1235,51 @@ let airSt=null;
 function airErase(x,y){ if(!airSt) airSt={did:false}; eraseAt(x,y,airSt); hover=[x,y]; drawLive(); }
 function endAir(){ if(airSt && airSt.did) commit(); airSt=null; hover=null; drawLive(); }
 
+/* Laserpointer */
+let lasers=[], laserRaf=0;
+function laserAdd(x,y,start){ const w=toWorld(x,y), t=performance.now(); if(start||!lasers.length||lasers[lasers.length-1].end) lasers.push({pts:[],end:0}); lasers[lasers.length-1].pts.push([w[0],w[1]]); if(!laserRaf) laserTick(); }
+function laserTick(){ const now=performance.now(); if(cur&&cur.kind!=='laser'||!cur){ lasers.forEach(l=>{ if(!l.end) l.end=now; }); }
+  lasers=lasers.filter(l=>!l.end||now-l.end<2000); drawLive(); laserRaf=lasers.length?requestAnimationFrame(laserTick):0; }
+function drawLasers(){ if(!lasers.length) return; const now=performance.now(); lctx.save(); applyView(lctx); const s=V().s;
+  for(const l of lasers){ const a=l.end?clamp(1-(now-l.end-1200)/800,0,1):1; if(!a||l.pts.length<1) continue;
+    lctx.globalAlpha=a; lctx.lineCap='round'; lctx.lineJoin='round'; lctx.shadowColor='#ff2d2d'; lctx.shadowBlur=14;
+    lctx.strokeStyle='rgba(255,45,45,.9)'; lctx.lineWidth=6/s; lctx.beginPath(); l.pts.forEach((q,i)=>i?lctx.lineTo(q[0],q[1]):lctx.moveTo(q[0],q[1])); if(l.pts.length===1) lctx.lineTo(l.pts[0][0]+0.1,l.pts[0][1]); lctx.stroke();
+    lctx.shadowBlur=0; lctx.strokeStyle='rgba(255,235,235,.95)'; lctx.lineWidth=2/s; lctx.stroke(); }
+  lctx.restore(); }
+/* Durchkritzeln */
+function scratchOut(o){ const P=[]; for(let i=0;i<o.p.length;i+=3){ const x=o.p[i]; if(!Number.isNaN(x)&&x!==null) P.push([x,o.p[i+1]]); } if(P.length<12) return false;
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9; for(const q of P){ mnx=Math.min(mnx,q[0]); mny=Math.min(mny,q[1]); mxx=Math.max(mxx,q[0]); mxy=Math.max(mxy,q[1]); }
+  const w=mxx-mnx, h=mxy-mny, ax=w>=h?0:1, span=Math.max(w,h); if(span*V().s<16) return false;
+  let L=0; for(let i=1;i<P.length;i++) L+=dist(P[i-1][0],P[i-1][1],P[i][0],P[i][1]); if(L<span*3) return false;
+  const th=span*0.14; let dir=0, ext=P[0][ax], rev=0;
+  for(const q of P){ const v=q[ax]; if(dir===0){ if(Math.abs(v-ext)>th){ dir=v>ext?1:-1; ext=v; } } else if(dir===1){ if(v>ext) ext=v; else if(ext-v>th){ rev++; dir=-1; ext=v; } } else { if(v<ext) ext=v; else if(v-ext>th){ rev++; dir=1; ext=v; } } }
+  if(rev<4) return false;
+  const m=4, list=objs(), hits=list.filter(q=>{ if(q.t!=='s'||q.lk) return false; let tot=0,ins=0; for(let i=0;i<q.p.length;i+=3){ const x=q.p[i]; if(Number.isNaN(x)||x===null) continue; tot++; if(x>=mnx-m&&x<=mxx+m&&q.p[i+1]>=mny-m&&q.p[i+1]<=mxy+m) ins++; } return tot&&ins/tot>=0.6; });
+  if(!hits.length) return false;
+  pushUndo(); page().objects=list.filter(q=>!hits.includes(q)); commit(); toast('Durchgekritzelt → gelöscht (Rückgängig geht)'); return true; }
+/* Automatisch weiterscrollen */
+function autoScroll(o){ if(!S.autoScroll||lay()==='sheets') return; const b=bbox(o); const sy=toScreen(0,b[3])[1]; if(sy<H-130) return;
+  const v=V(), from=v.y, to=v.y-(sy-H*0.55), t0=performance.now();
+  const step=()=>{ const k=Math.min(1,(performance.now()-t0)/380), e=1-Math.pow(1-k,3); v.y=from+(to-from)*e; clampView(); render(); drawLive(); if(k<1) requestAnimationFrame(step); else scheduleSave(); };
+  requestAnimationFrame(step); }
+/* Stiftarten & Lieblingsstifte */
+const PTN={ball:'Kuli',f:'Füller',pc:'Bleistift',br:'Pinsel',ca:'Kalligrafie'};
+function renderPenTypes(){ $('#penTypes').style.display=S.tool==='pen'?'flex':'none'; $$('#penTypes [data-pt]').forEach(b=>b.classList.toggle('on',b.dataset.pt===(S.penType||'ball'))); }
+$('#penTypes').onclick=e=>{ const b=e.target.closest('[data-pt]'); if(!b) return; S.penType=b.dataset.pt; saveSettings(); renderPenTypes(); toast('Stift: '+PTN[S.penType]); };
+let favEditing=false;
+function renderFavs(){ const L=S.favPens||[];
+  $('#favList').innerHTML=L.length?L.map((f,i)=>{ const col=colorOf(f.c), sz=clamp(f.t==='hl'?f.w/2:3+f.w*1.6,4,26);
+    return `<button class="ib" data-fav="${i}" title="${f.t==='hl'?'Textmarker':PTN[f.k||'ball']} ${fmt(f.w,1).replace(',0','')}" style="width:100%;height:52px;flex-direction:column;gap:3px;position:relative;border-radius:10px;border:1px solid var(--border)"><span style="display:block;width:${sz}px;height:${f.t==='hl'?Math.max(6,sz/2):sz}px;border-radius:${f.t==='hl'?'3px':'50%'};background:${col};opacity:${f.t==='hl'?.5:1}"></span><small style="font-size:10px;color:var(--muted)">${f.t==='hl'?'Marker':PTN[f.k||'ball']}</small>${favEditing?'<span style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:18px">×</span>':''}</button>`; }).join('')
+    :'<div style="grid-column:1/-1;color:var(--muted);font-size:13px">Noch keine. Stell einen Stift ein (Farbe, Dicke, Art) und tippe auf „＋ Aktuellen speichern“.</div>';
+  $('#favEdit').style.display=L.length?'':'none'; $('#favEdit').textContent=favEditing?'Fertig':'Bearbeiten'; }
+$('#favBtn').onclick=()=>{ const p=$('#favPop'); if(p.classList.contains('open')) return closePops(); favEditing=false; renderFavs(); openPop(p,$('#favBtn')); };
+$('#favEdit').onclick=()=>{ favEditing=!favEditing; renderFavs(); };
+$('#favAdd').onclick=()=>{ const t=S.tool==='hl'?'hl':'pen'; S.favPens=S.favPens||[]; if(S.favPens.length>=12) return toast('Maximal 12 Lieblingsstifte');
+  S.favPens.push({t,c:S.color,w:S.sizes[t],k:t==='pen'?(S.penType||'ball'):undefined}); saveSettings(); renderFavs(); toast('⭐ Gespeichert'); };
+$('#favList').onclick=e=>{ const b=e.target.closest('[data-fav]'); if(!b) return; const i=+b.dataset.fav, f=S.favPens[i];
+  if(favEditing){ S.favPens.splice(i,1); saveSettings(); renderFavs(); return; }
+  S.color=f.c; S.sizes[f.t]=f.w; if(f.t==='pen') S.penType=f.k||'ball'; saveSettings(); renderSwatches(); setTool(f.t); closePops(); toast((f.t==='hl'?'Textmarker':PTN[f.k||'ball'])+' gewählt'); };
+
 /* Auswahl */
 function inPoly(x,y,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,yi]=poly[i],[xj,yj]=poly[j]; if(((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi) ins=!ins; } return ins; }
 function finishLasso(poly){
@@ -1225,11 +1307,13 @@ function showSelbar(){ const sb=selBox(); if(!sb) return hideSelbar(); const bar
   for(const id of ['#selColor','#selDup','#selDel']) $(id).style.display=lk?'none':'';
   $('#selColor').style.display = (!lk && selection.some(o=>o.t==='s'||o.t==='x')) ? '' : 'none';
   $('#selLock').textContent = lk ? '🔓 Entsperren' : '🔒 Sperren';
+  $('#selFill').style.display = (!lk && selection.some(o=>o.t==='s'&&!o.hl)) ? '' : 'none';
   const w=bar.offsetWidth; bar.style.left=clamp((sb[0]+sb[2])/2-w/2,74,W-w-8)+'px'; bar.style.top=(sb[1]-56>70? sb[1]-56 : Math.min(sb[3]+10,H-56))+'px'; }
 function hideSelbar(){ $('#selbar').classList.remove('open'); }
 $('#selDel').onclick=()=>{ pushUndo(); page().objects=objs().filter(o=>!selection.includes(o)); clearSel(); commit(); };
 $('#selDup').onclick=()=>{ pushUndo(); const cp=selection.map(o=>fixNulls(JSON.parse(JSON.stringify(o)))); cp.forEach(o=>{moveObj(o,24,24); objs().push(o);}); selection=cp; commit(); drawLive(); showSelbar(); };
 $('#selColor').onclick=()=>{ pushUndo(); selection.forEach(o=>{ o.c = (o.hl && S.color==='ink') ? 'yellow' : S.color; }); commit(); };
+$('#selFill').onclick=()=>{ pushUndo(); const st=selection.filter(o=>o.t==='s'&&!o.hl); const nx=((st[0].f||0)+1)%3; st.forEach(o=>{ if(nx) o.f=nx; else delete o.f; }); commit(); toast(['Keine Füllung','Hell gefüllt','Voll gefüllt'][nx]); };
 $('#selLock').onclick=()=>{ pushUndo(); const lk=selLocked(); selection.forEach(o=>{ if(lk) delete o.lk; else o.lk=1; delete o.bg; });
   commit(); if(lk){ toast('Entsperrt – jetzt ziehen zum Verschieben'); showSelbar(); drawLive(); } else { toast('Gesperrt – wird nicht mehr aus Versehen verschoben'); clearSel(); } };
 $('#selEdit').onclick=()=>{ const o=selection[0]; if(!o) return; if(o.t==='x') textAt([o.x,o.y],o); else if(o.t==='p') openPlot(o); };
@@ -1272,7 +1356,7 @@ function confirmBox(text,okText='Löschen'){ return new Promise(res=>{ modal(`<p
 let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200); }
 function openPop(pop,btn){ closePops(); const r=btn.getBoundingClientRect(); pop.classList.add('open'); pop.style.left=(r.right+8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; }
 function closePops(){ $$('.pop.open').forEach(p=>p.classList.remove('open')); }
-document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl')) closePops(); },true);
+document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#favBtn') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl')) closePops(); },true);
 
 /* ---------------- Werkzeugleiste ---------------- */
 const SHAPES={
@@ -1289,7 +1373,10 @@ $$('[data-tool]').forEach(b=>b.addEventListener('click',()=>{
   if(['pen','hl','eraser'].includes(t) && S.tool===t){ const p=$('#sizePop'); if(p.classList.contains('open')) return closePops(); updateSize(); openPop(p,b); return; }
   setTool(t); if(t==='shape') openPop($('#shapePop'),b);
 }));
-function renderShapes(){ $('#shapeIco').innerHTML=svgI(SHAPES[S.shape][1]);
+function renderFillDash(){ $$('#fillChips [data-fill]').forEach(b=>b.classList.toggle('on',+b.dataset.fill===(S.fill||0))); $$('#dashChips [data-dash]').forEach(b=>b.classList.toggle('on',+b.dataset.dash===(S.dash||0))); }
+$('#fillChips').onclick=e=>{ const b=e.target.closest('[data-fill]'); if(!b) return; S.fill=+b.dataset.fill; saveSettings(); renderFillDash(); };
+$('#dashChips').onclick=e=>{ const b=e.target.closest('[data-dash]'); if(!b) return; S.dash=+b.dataset.dash; saveSettings(); renderFillDash(); };
+function renderShapes(){ renderFillDash(); $('#shapeIco').innerHTML=svgI(SHAPES[S.shape][1]);
   $('#shapeRow').innerHTML=Object.entries(SHAPES).map(([k,[n,p]])=>`<button class="ib${k===S.shape?' on':''}" data-shape="${k}" title="${n}">${svgI(p)}</button>`).join(''); }
 $('#shapeRow').onclick=e=>{ const b=e.target.closest('[data-shape]'); if(!b) return; S.shape=b.dataset.shape; saveSettings(); renderShapes(); setTool('shape'); closePops(); toast(SHAPES[S.shape][0]+' – auf der Seite aufziehen'); };
 function renderSwatches(){
@@ -1326,7 +1413,7 @@ const SIZER={pen:[0.5,20,[1.5,3,5,8]],hl:[6,50,[10,18,28,40]],eraser:[8,90,[14,2
 const SIZENAME={pen:'Stift',hl:'Textmarker',eraser:'Radierer (ganze Linie)',peraser:'Radierer (nur drüberfahren)',shape:'Formen'};
 const QUICK={pen:[1.5,3,6],hl:[10,18,32],eraser:[14,30,60],peraser:[8,18,40],shape:[1.5,3,6]};
 const dotPx=(k,p)=>clamp((k==='eraser'||k==='peraser')?4+p/4:k==='hl'?4+p/2.2:3+p*2.2,5,24);
-function updateSize(){ const k=SIZEKEY(), v=S.sizes[k];
+function updateSize(){ const k=SIZEKEY(), v=S.sizes[k]; renderPenTypes();
   $('#erModes').style.display=S.tool==='eraser'?'flex':'none'; $$('#erModes .chip').forEach(c=>c.classList.toggle('on',c.dataset.em===S.eraserMode));
   const qcol=(k==='eraser'||k==='peraser')?'var(--muted)':colorOf(k==='hl'&&S.color==='ink'?'yellow':S.color);
   $('#quickSizes').innerHTML=QUICK[k].map(p=>`<button class="ib${Math.abs(p-v)<0.01?' on':''}" data-qs="${p}" title="${fmt(p,1).replace(',0','')}"><span style="width:${dotPx(k,p)}px;height:${dotPx(k,p)}px;background:${qcol}"></span></button>`).join(''); const d=$('#sizeBtn .dot'); const px=dotPx(k,v);
@@ -1866,8 +1953,9 @@ $('#themeChips').onclick=e=>{ const b=e.target.closest('[data-th]'); if(!b) retu
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S.theme==='system') applyTheme(); }); }catch(e){}
 
 /* Einstellungen */
-function renderSettings(){ $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
+$('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('#installRow').style.display=''; });
