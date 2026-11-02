@@ -200,6 +200,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span id="sizeName">Stift</span><span id="sizeVal">3</span></div>
   <input type="range" id="sizeRange" min="1" max="20" step="0.5" style="width:100%;margin:10px 0 4px">
   <div class="row" id="sizePresets" style="justify-content:space-between"></div>
+  <div id="erModes" class="chips" style="margin-top:8px"><button class="chip" data-em="stroke">Ganze Linie</button><button class="chip" data-em="point">Nur drüberfahren</button></div>
 </div>
 
 <div class="pop" id="colorPop" style="width:290px">
@@ -274,6 +275,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="toggle"><div>Stiftdruck<small>Fester drücken = dickere Linie</small></div><button class="sw2" data-set="pressure"></button></div>
   <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
   <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:130px"></div>
+  <div class="toggle"><div>In der Luft radieren<small>Stifttaste gedrückt halten und über die Seite fahren, ohne aufzusetzen. Aus: Stift muss aufliegen.</small></div><button class="sw2" data-set="airErase"></button></div>
   <div class="toggle"><div>Mit dem Finger schreiben<small>Aus: Finger verschiebt &amp; zoomt (empfohlen mit S Pen)</small></div><button class="sw2" data-set="fingerDraw"></button></div>
   <div class="btns" id="installRow" style="display:none"><button class="btn pri" id="installBtn">App installieren</button></div>
   <div style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5">
@@ -322,7 +324,7 @@ const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
-const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,shape:3},pressure:true,snap:true,holdMs:500,
+const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',airErase:true,pressure:true,snap:true,holdMs:500,
   fingerDraw:false,shape:'line',calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
@@ -679,7 +681,7 @@ function drawLive(){
   if(cur && cur.geoAngle){ const g=TOOLS.geo, a=cur.geoAngle;
     lctx.strokeStyle=colorOf('red'); lctx.lineWidth=1.2; lctx.setLineDash([4,4]); lctx.beginPath(); lctx.moveTo(g.x,g.y); lctx.lineTo(a.x,a.y); lctx.stroke(); lctx.setLineDash([]);
     label(g.x+Math.cos(g.a-Math.PI/2)*40, g.y+Math.sin(g.a-Math.PI/2)*40, '∠ '+fmt(a.deg,0)+'°'); }
-  if(hover){ lctx.strokeStyle=colorOf('ink'); lctx.globalAlpha=.5; lctx.lineWidth=1; lctx.beginPath(); lctx.arc(hover[0],hover[1],S.sizes.eraser/2,0,Math.PI*2); lctx.stroke(); lctx.globalAlpha=1; }
+  if(hover){ lctx.strokeStyle=colorOf('ink'); lctx.globalAlpha=.5; lctx.lineWidth=1; lctx.beginPath(); lctx.arc(hover[0],hover[1],eraserR(),0,Math.PI*2); lctx.stroke(); lctx.globalAlpha=1; }
   if(liveLabel) label(liveLabel.x,liveLabel.y,liveLabel.text);
 }
 function label(x,y,t){
@@ -900,9 +902,11 @@ lv.addEventListener('pointerdown',e=>{
 });
 let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
-window.__penButton=b=>{ penBtnDown=!!b; if(b && cur && cur.ptype==='pen') penToErase(); };
+window.__penButton=b=>{ penBtnDown=!!b; if(b && cur && cur.ptype==='pen') penToErase(); if(!b) endAir(); else if(lastHover){ hover=lastHover; drawLive(); } };
+let lastHover=null;
 function startInput(e,x,y){
   const pen=e.pointerType==='pen';
+  if(airSt) endAir();
   const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || penBtnDown));
   const tool = eraserBtn ? 'eraser' : S.tool;
   const [wx,wy]=toWorld(x,y);
@@ -954,6 +958,11 @@ lv.addEventListener('pointermove',e=>{
   const [x,y]=pt(e);
   if(e.pointerType==='touch' && touches.has(e.pointerId) && !(cur && cur.ptype==='touch')){ touches.set(e.pointerId,[x,y]); moveGesture(); return; }
   if(!cur || cur.id!==e.pointerId){
+    if(!cur && e.pointerType==='pen'){ lastHover=[x,y];
+      const btn=penBtnDown || (e.buttons&(2|32));
+      if(btn && S.airErase){ airErase(x,y); return; }
+      if(!btn && airSt) endAir();
+      if(btn || S.tool==='eraser'){ hover=[x,y]; drawLive(); return; } }
     if(!cur && (S.tool==='eraser') && e.pointerType!=='touch'){ hover=[x,y]; drawLive(); }
     return;
   }
@@ -1016,27 +1025,57 @@ function endPointer(e,cancel){
 }
 lv.addEventListener('pointerup',e=>endPointer(e,false));
 lv.addEventListener('pointercancel',e=>endPointer(e,true));
-lv.addEventListener('pointerleave',e=>{ if(hover){hover=null;drawLive();} });
+lv.addEventListener('pointerleave',e=>{ lastHover=null; if(airSt) endAir(); if(hover){hover=null;drawLive();} });
 lv.addEventListener('wheel',e=>{ e.preventDefault(); const v=V();
   if(e.ctrlKey){ const ns=clamp(v.s*Math.exp(-e.deltaY*0.01),0.2,8), k=ns/v.s; v.x=e.clientX-(e.clientX-v.x)*k; v.y=e.clientY-(e.clientY-v.y)*k; v.s=ns; }
   else { v.x-=e.deltaX; v.y-=e.deltaY; }
   clampView(); render(); drawLive(); scheduleSave(); },{passive:false});
 
 /* Radierer */
-function eraseAt(x,y){
-  const [wx,wy]=toWorld(x,y), r=S.sizes.eraser/2/V().s; const list=objs(); let hit=false;
+const ERKEY=()=> S.eraserMode==='point'?'peraser':'eraser';
+function eraserR(){ return S.sizes[ERKEY()]/2; }
+function eraseAt(x,y,st){
+  st=st||cur; const [wx,wy]=toWorld(x,y), r=eraserR()/V().s; const list=objs(); let hit=false; const point=S.eraserMode==='point';
+  const before=()=>{ if(!st.did){ pushUndo(); st.did=true; } };
   for(let i=list.length-1;i>=0;i--){ const o=list[i], b=bbox(o);
     if(wx<b[0]-r||wx>b[2]+r||wy<b[1]-r||wy>b[3]+r) continue;
-    let h=false;
-    if(o.t==='s'){ const p=o.p, rr=r+o.w/2;
-      for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue;
-        let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;}
-        if(segDist(wx,wy,ax,ay,bx,by)<rr){h=true;break;} } }
-    else h=true;
-    if(h){ if(!cur.did){ pushUndo(); cur.did=true; } list.splice(i,1); hit=true; }
+    if(o.t!=='s'){ if(!point){ before(); list.splice(i,1); hit=true; } continue; }
+    const p=o.p, rr=r+o.w/2; let h=false;
+    for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue;
+      let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;}
+      if(segDist(wx,wy,ax,ay,bx,by)<rr){h=true;break;} }
+    if(!h) continue;
+    before(); hit=true;
+    if(point) list.splice(i,1,...pointErase(o,wx,wy,r+o.w*0.35)); else list.splice(i,1);
   }
   if(hit) redraw();
+  return hit;
 }
+// Punktradierer: nur den Teil unter dem Radierer entfernen, Rest in Stücke teilen
+function pointErase(o,cx,cy,r){
+  const p=o.p, lines=[]; let curL=[];
+  for(let k=0;k<p.length;k+=3){ const x=p[k]; if(Number.isNaN(x)||x===null){ if(curL.length) lines.push(curL); curL=[]; continue; } curL.push([x,p[k+1],p[k+2]]); }
+  if(curL.length) lines.push(curL);
+  const step=Math.max(0.6,r/3), out=[];
+  for(const L of lines){
+    const D=[L[0]];
+    for(let i=1;i<L.length;i++){ const a=L[i-1], b=L[i], d=dist(a[0],a[1],b[0],b[1]);
+      if(d>step && segDist(cx,cy,a[0],a[1],b[0],b[1])<r+d){ const n=Math.ceil(d/step); for(let j=1;j<n;j++){ const t=j/n; D.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]); } }
+      D.push(b); }
+    let run=[];
+    for(const q of D){ if(dist(q[0],q[1],cx,cy)<r){ if(run.length>1) out.push(run); run=[]; } else run.push(q); }
+    if(run.length>1 || (run.length===1 && L.length===1)) out.push(run);
+  }
+  if(o.u && lines.length>1){ // Formen mit Lücken (Pfeile, Achsen) zusammenlassen
+    const pp=[]; out.forEach((run,i)=>{ if(i) pp.push(NaN,NaN,0); run.forEach(q=>pp.push(+q[0].toFixed(2),+q[1].toFixed(2),q[2])); });
+    return pp.length? [Object.assign({},o,{p:pp})] : [];
+  }
+  return out.map(run=>{ const pp=[]; run.forEach(q=>pp.push(+q[0].toFixed(1),+q[1].toFixed(1),+(+q[2]).toFixed(2))); const n=Object.assign({},o,{p:pp}); return n; });
+}
+/* Radieren in der Luft mit gedrückter Stifttaste */
+let airSt=null;
+function airErase(x,y){ if(!airSt) airSt={did:false}; eraseAt(x,y,airSt); hover=[x,y]; drawLive(); }
+function endAir(){ if(airSt && airSt.did) commit(); airSt=null; hover=null; drawLive(); }
 
 /* Auswahl */
 function inPoly(x,y,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,yi]=poly[i],[xj,yj]=poly[j]; if(((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi) ins=!ins; } return ins; }
@@ -1146,19 +1185,21 @@ $('#cOk').onclick=()=>pickColor(hsl2hex(...cpick));
 $('#swatches').addEventListener('click',e=>{ if(!e.target.closest('#customSw')) return; const p=$('#colorPop'); if(p.classList.contains('open')) return closePops();
   if(!PALETTE[S.color]) cpick=hex2hsl(S.color); renderColorPop(); openPop(p,e.target.closest('#customSw')); });
 $('#swatches').addEventListener('click',e=>{ const b=e.target.closest('[data-color]'); if(!b) return; S.color=b.dataset.color; saveSettings(); renderSwatches(); updateSize(); if(S.tool==='eraser'||S.tool==='select'&&!selection.length) setTool('pen'); });
-const SIZEKEY=()=> S.tool==='hl'?'hl':S.tool==='eraser'?'eraser':S.tool==='shape'?'shape':'pen';
-const SIZER={pen:[0.5,20,[1.5,3,5,8]],hl:[6,50,[10,18,28,40]],eraser:[8,90,[14,24,44,70]],shape:[0.5,20,[1.5,3,5,8]]};
-const SIZENAME={pen:'Stift',hl:'Textmarker',eraser:'Radierer',shape:'Formen'};
-const QUICK={pen:[1.5,3,6],hl:[10,18,32],eraser:[14,30,60],shape:[1.5,3,6]};
-const dotPx=(k,p)=>clamp(k==='eraser'?4+p/4:k==='hl'?4+p/2.2:3+p*2.2,5,24);
+const SIZEKEY=()=> S.tool==='hl'?'hl':S.tool==='eraser'?ERKEY():S.tool==='shape'?'shape':'pen';
+const SIZER={pen:[0.5,20,[1.5,3,5,8]],hl:[6,50,[10,18,28,40]],eraser:[8,90,[14,24,44,70]],peraser:[4,80,[8,16,30,50]],shape:[0.5,20,[1.5,3,5,8]]};
+const SIZENAME={pen:'Stift',hl:'Textmarker',eraser:'Radierer (ganze Linie)',peraser:'Radierer (nur drüberfahren)',shape:'Formen'};
+const QUICK={pen:[1.5,3,6],hl:[10,18,32],eraser:[14,30,60],peraser:[8,18,40],shape:[1.5,3,6]};
+const dotPx=(k,p)=>clamp((k==='eraser'||k==='peraser')?4+p/4:k==='hl'?4+p/2.2:3+p*2.2,5,24);
 function updateSize(){ const k=SIZEKEY(), v=S.sizes[k];
-  const qcol=k==='eraser'?'var(--muted)':colorOf(k==='hl'&&S.color==='ink'?'yellow':S.color);
+  $('#erModes').style.display=S.tool==='eraser'?'flex':'none'; $$('#erModes .chip').forEach(c=>c.classList.toggle('on',c.dataset.em===S.eraserMode));
+  const qcol=(k==='eraser'||k==='peraser')?'var(--muted)':colorOf(k==='hl'&&S.color==='ink'?'yellow':S.color);
   $('#quickSizes').innerHTML=QUICK[k].map(p=>`<button class="ib${Math.abs(p-v)<0.01?' on':''}" data-qs="${p}" title="${fmt(p,1).replace(',0','')}"><span style="width:${dotPx(k,p)}px;height:${dotPx(k,p)}px;background:${qcol}"></span></button>`).join(''); const d=$('#sizeBtn .dot'); const px=dotPx(k,v);
-  d.style.width=d.style.height=px+'px'; d.style.background=k==='eraser'?'var(--muted)':colorOf(k==='hl'&&S.color==='ink'?'yellow':S.color);
+  d.style.width=d.style.height=px+'px'; d.style.background=(k==='eraser'||k==='peraser')?'var(--muted)':colorOf(k==='hl'&&S.color==='ink'?'yellow':S.color);
   $('#sizeName').textContent=SIZENAME[k]; $('#sizeVal').textContent=fmt(v,1).replace(',0',''); const r=$('#sizeRange'); r.min=SIZER[k][0]; r.max=SIZER[k][1]; r.value=v;
-  $('#sizePresets').innerHTML=SIZER[k][2].map(p=>`<button class="ib${p===v?' on':''}" data-sz="${p}"><span style="width:${clamp(k==='eraser'?p/3:k==='hl'?p/2:p*1.6,3,26)}px;height:${clamp(k==='eraser'?p/3:k==='hl'?p/2:p*1.6,3,26)}px;border-radius:50%;background:currentColor;display:block"></span></button>`).join(''); }
+  $('#sizePresets').innerHTML=SIZER[k][2].map(p=>`<button class="ib${p===v?' on':''}" data-sz="${p}"><span style="width:${clamp((k==='eraser'||k==='peraser')?p/3:k==='hl'?p/2:p*1.6,3,26)}px;height:${clamp((k==='eraser'||k==='peraser')?p/3:k==='hl'?p/2:p*1.6,3,26)}px;border-radius:50%;background:currentColor;display:block"></span></button>`).join(''); }
 $('#sizeBtn').onclick=()=>{ const p=$('#sizePop'); if(p.classList.contains('open')) return closePops(); updateSize(); openPop(p,$('#sizeBtn')); };
 $('#quickSizes').onclick=e=>{ const b=e.target.closest('[data-qs]'); if(!b) return; S.sizes[SIZEKEY()]=+b.dataset.qs; saveSettings(); updateSize(); toast(SIZENAME[SIZEKEY()]+': Stärke '+fmt(+b.dataset.qs,1).replace(',0','')); };
+$('#erModes').onclick=e=>{ const b=e.target.closest('[data-em]'); if(!b) return; S.eraserMode=b.dataset.em; saveSettings(); updateSize(); toast(b.dataset.em==='point'?'Radierer löscht nur, wo du drüberfährst':'Radierer löscht ganze Linien'); };
 $('#sizeRange').oninput=e=>{ S.sizes[SIZEKEY()]=+e.target.value; saveSettings(); updateSize(); };
 $('#sizePresets').onclick=e=>{ const b=e.target.closest('[data-sz]'); if(!b) return; S.sizes[SIZEKEY()]=+b.dataset.sz; saveSettings(); updateSize(); };
 
