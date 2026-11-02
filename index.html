@@ -234,6 +234,7 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <button id="selEdit">Bearbeiten</button>
   <button id="selColor">Farbe übernehmen</button>
   <button id="selDup">Kopieren</button>
+  <button id="selLock">Sperren</button>
   <button id="selDel" style="color:var(--danger)">Löschen</button>
 </div>
 
@@ -533,7 +534,31 @@ function getImg(id){ let e=IMGS.get(id); if(e) return e; e={img:new Image(),ok:f
   e.img.onload=()=>{ e.ok=true; redraw(); drawLive(); }; DB.getAsset(id).then(a=>{ if(a&&a.data) e.img.src=a.data; }); return e; }
 function drawImage(c,o){ const e=getImg(o.a);
   if(e.ok) c.drawImage(e.img,o.x,o.y,o.w,o.h);
-  else { c.fillStyle=isDark()?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)'; c.fillRect(o.x,o.y,o.w,o.h); } }
+  else { c.fillStyle=isDark()?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)'; c.fillRect(o.x,o.y,o.w,o.h); }
+  const h=o.pdf&&HIRES.get(o); if(h&&h.o===o.a) c.drawImage(h.cv,o.x+h.u0*o.w,o.y+h.v0*o.h,(h.u1-h.u0)*o.w,(h.v1-h.v0)*o.h); }
+/* PDF scharf: sichtbaren Ausschnitt in Bildschirmauflösung neu rendern */
+const HIRES=new WeakMap(), PDFDOCS=new Map(); let hiT=0, hiBusy=false, hiAgain=false;
+function pdfDoc(aid){ let p=PDFDOCS.get(aid); if(!p){ p=(async()=>{ const a=await DB.getAsset(aid); if(!a||!a.pdf) throw new Error('kein PDF');
+    const lib=await getPdfLib(); const bin=atob(a.pdf.slice(a.pdf.indexOf(',')+1)); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+    return lib.getDocument({data:u}).promise; })(); PDFDOCS.set(aid,p); p.catch(()=>PDFDOCS.delete(aid)); } return p; }
+function schedHiRes(){ clearTimeout(hiT); hiT=setTimeout(runHiRes,160); }
+async function runHiRes(){ if(!note) return; if(hiBusy){ hiAgain=true; return; } hiBusy=true;
+  try{ const v=V(), vx0=-v.x/v.s, vy0=-v.y/v.s, vx1=vx0+W/v.s, vy1=vy0+H/v.s;
+    for(const o of objs()){ if(o.t!=='i'||!o.pdf) continue;
+      const x0=Math.max(o.x,vx0), y0=Math.max(o.y,vy0), x1=Math.min(o.x+o.w,vx1), y1=Math.min(o.y+o.h,vy1); if(x1<=x0||y1<=y0) continue;
+      const fullW=o.w*v.s*DPR, e=IMGS.get(o.a), baseW=(e&&e.ok&&e.img.naturalWidth)||1700;
+      if(fullW<baseW*1.15){ continue; }
+      const u0=(x0-o.x)/o.w, v0=(y0-o.y)/o.h, u1=(x1-o.x)/o.w, v1=(y1-o.y)/o.h, h=HIRES.get(o);
+      if(h&&h.o===o.a&&h.fw>=fullW*0.97&&h.u0<=u0+1e-4&&h.v0<=v0+1e-4&&h.u1>=u1-1e-4&&h.v1>=v1-1e-4) continue;
+      const doc=await pdfDoc(o.pdf.a), p=await doc.getPage(o.pdf.n), vp0=p.getViewport({scale:1});
+      const sc=fullW/vp0.width, fullH=vp0.height*sc, cw=Math.ceil((u1-u0)*fullW), ch=Math.ceil((v1-v0)*fullH);
+      if(cw<2||ch<2||cw*ch>4096*4096) continue;
+      const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cw,ch);
+      await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetX:-u0*fullW,offsetY:-v0*fullH})}).promise;
+      HIRES.set(o,{cv,o:o.a,fw:fullW,u0,v0,u1:u0+cw/fullW,v1:v0+ch/fullH}); redraw();
+    }
+  }catch(err){ console.warn('PDF-Hochauflösung',err); }
+  hiBusy=false; if(hiAgain){ hiAgain=false; schedHiRes(); } }
 function drawObj(c,o,a=1){ if(o.t==='s') drawStroke(c,o,a); else if(o.t==='x') drawText(c,o); else if(o.t==='p') drawPlot(c,o); else if(o.t==='i') drawImage(c,o); }
 
 /* Bounding boxes */
@@ -572,13 +597,13 @@ function renderPage(c,pg,v,w,h,list){
     c.save(); c.beginPath(); for(const r of rects) c.rect(r[0],r[1],r[2]-r[0],Math.min(r[3],1e7)-r[1]); c.clip();
   } else drawPaper(c,pg,v,w,h,null);
   const vx0=-v.x/v.s, vy0=-v.y/v.s, vx1=vx0+w/v.s, vy1=vy0+h/v.s;
-  for(const pass of [1,0]) for(const o of list){ if(!!o.bg!==!!pass) continue; const b=bbox(o); if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1) continue; drawObj(c,o); }
+  for(const pass of [1,0]) for(const o of list){ if((o.t==='i')!==!!pass) continue; const b=bbox(o); if(b[2]<vx0||b[0]>vx1||b[3]<vy0||b[1]>vy1) continue; drawObj(c,o); }
   if(rects) c.restore();
 }
 function render(){
   if(!note) return;
   ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
-  applyView(ctx); renderPage(ctx,page(),V(),W,H,objs());
+  applyView(ctx); renderPage(ctx,page(),V(),W,H,objs()); schedHiRes();
 }
 function contentRect(){ const r=sheetRects(); if(!r) return null; return [Math.min(...r.map(q=>q[0])),Math.min(...r.map(q=>q[1])),Math.max(...r.map(q=>q[2])),Math.max(...r.map(q=>q[3]))]; }
 function clampView(){
@@ -708,7 +733,7 @@ function drawLive(){
   lctx.setTransform(DPR,0,0,DPR,0,0);
   const sb=selBox();
   if(sb){ lctx.strokeStyle=colorOf('blue'); lctx.lineWidth=1.5; lctx.setLineDash([6,4]); lctx.strokeRect(sb[0],sb[1],sb[2]-sb[0],sb[3]-sb[1]); lctx.setLineDash([]);
-    if(!(cur&&(cur.kind==='move'||cur.kind==='scale'))) for(const [px,py] of [[sb[0],sb[1]],[sb[2],sb[1]],[sb[0],sb[3]],[sb[2],sb[3]]]){ lctx.beginPath(); lctx.arc(px,py,9,0,Math.PI*2); lctx.fillStyle=isDark()?'#25272d':'#fff'; lctx.fill(); lctx.lineWidth=2.5; lctx.strokeStyle=colorOf('blue'); lctx.stroke(); }
+    if(!selLocked() && !(cur&&(cur.kind==='move'||cur.kind==='scale'))) for(const [px,py] of [[sb[0],sb[1]],[sb[2],sb[1]],[sb[0],sb[3]],[sb[2],sb[3]]]){ lctx.beginPath(); lctx.arc(px,py,9,0,Math.PI*2); lctx.fillStyle=isDark()?'#25272d':'#fff'; lctx.fill(); lctx.lineWidth=2.5; lctx.strokeStyle=colorOf('blue'); lctx.stroke(); }
     lctx.fillStyle=colorOf('blue'); lctx.globalAlpha=.05; lctx.fillRect(sb[0],sb[1],sb[2]-sb[0],sb[3]-sb[1]); lctx.globalAlpha=1; }
   drawAddButtons();
   if(TOOLS.ruler.on) drawRuler(lctx,TOOLS.ruler);
@@ -981,7 +1006,7 @@ function startInput(e,x,y){
   } else if(tool==='eraser'){
     cur={...base,kind:'erase',did:carryDid}; eraseAt(x,y);
   } else if(tool==='select'){
-    const sb=selBox(), hd=sb&&handleAt(x,y);
+    const sb=selLocked()?null:selBox(), hd=sb&&handleAt(x,y);
     if(hd){ pushUndo(); const wb=selWorldBox(); const anchor=[hd[0]?wb[0]:wb[2], hd[1]?wb[1]:wb[3]], corner=[hd[0]?wb[2]:wb[0], hd[1]?wb[3]:wb[1]];
       cur={...base,kind:'scale',anchor,corner,orig:selection.map(o=>JSON.stringify(o))}; hideSelbar(); }
     else if(sb && x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3]){ pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; hideSelbar(); }
@@ -1105,8 +1130,7 @@ function eraseAt(x,y,st){
   const before=()=>{ if(!st.did){ pushUndo(); st.did=true; } };
   for(let i=list.length-1;i>=0;i--){ const o=list[i], b=bbox(o);
     if(wx<b[0]-r||wx>b[2]+r||wy<b[1]-r||wy>b[3]+r) continue;
-    if(o.bg) continue;
-    if(o.t!=='s'){ if(!point){ before(); list.splice(i,1); hit=true; } continue; }
+    if(o.t!=='s'||o.lk) continue; // Bilder, PDFs, Text, Diagramme nur über Auswahl löschen
     const p=o.p, rr=r+o.w/2; let h=false;
     for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue;
       let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;}
@@ -1147,9 +1171,11 @@ function endAir(){ if(airSt && airSt.did) commit(); airSt=null; hover=null; draw
 /* Auswahl */
 function inPoly(x,y,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,yi]=poly[i],[xj,yj]=poly[j]; if(((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi) ins=!ins; } return ins; }
 function finishLasso(poly){
-  if(poly.length<3){ clearSel(); return; }
+  let mx=1e9,my=1e9,Mx=-1e9,My=-1e9; for(const q of poly){ mx=Math.min(mx,q[0]); my=Math.min(my,q[1]); Mx=Math.max(Mx,q[0]); My=Math.max(My,q[1]); }
+  if(poly.length<3 || Math.max(Mx-mx,My-my)*V().s<14){ // Antippen: oberstes Objekt auswählen (auch gesperrte)
+    const o=objAt((mx+Mx)/2,(my+My)/2); if(o){ selection=[o]; showSelbar(); drawLive(); if(o.lk) toast('Gesperrt – zum Verschieben „Entsperren“ tippen'); } else clearSel(); return; }
   selection=objs().filter(o=>{
-    if(o.bg) return false;
+    if(o.lk) return false;
     if(o.t==='s'){ let inside=0,tot=0; for(let i=0;i<o.p.length;i+=3){ if(Number.isNaN(o.p[i])||o.p[i]===null) continue; tot++; if(inPoly(o.p[i],o.p[i+1],poly)) inside++; } if(!tot) return false; const b=bbox(o); return inside/tot>=0.15 || inPoly((b[0]+b[2])/2,(b[1]+b[3])/2,poly); }
     const b=bbox(o); return [[ (b[0]+b[2])/2,(b[1]+b[3])/2 ],[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]].some(q=>inPoly(q[0],q[1],poly));
   });
@@ -1157,13 +1183,25 @@ function finishLasso(poly){
   drawLive();
 }
 function clearSel(){ selection=[]; hideSelbar(); drawLive(); }
+function objAt(wx,wy){ const list=objs(), tol=10/V().s;
+  for(let i=list.length-1;i>=0;i--){ const o=list[i], b=bbox(o); if(wx<b[0]-tol||wx>b[2]+tol||wy<b[1]-tol||wy>b[3]+tol) continue;
+    if(o.t!=='s') return o;
+    const p=o.p, rr=o.w/2+tol; for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue; let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;} if(segDist(wx,wy,ax,ay,bx,by)<rr) return o; } }
+  return null; }
+const selLocked=()=>selection.length>0 && selection.every(o=>o.lk);
 function showSelbar(){ const sb=selBox(); if(!sb) return hideSelbar(); const bar=$('#selbar'); bar.classList.add('open');
-  $('#selEdit').style.display = (selection.length===1 && (selection[0].t==='x'||selection[0].t==='p')) ? '' : 'none';
+  const lk=selLocked();
+  $('#selEdit').style.display = (!lk && selection.length===1 && (selection[0].t==='x'||selection[0].t==='p')) ? '' : 'none';
+  for(const id of ['#selColor','#selDup','#selDel']) $(id).style.display=lk?'none':'';
+  $('#selColor').style.display = (!lk && selection.some(o=>o.t==='s'||o.t==='x')) ? '' : 'none';
+  $('#selLock').textContent = lk ? '🔓 Entsperren' : '🔒 Sperren';
   const w=bar.offsetWidth; bar.style.left=clamp((sb[0]+sb[2])/2-w/2,74,W-w-8)+'px'; bar.style.top=(sb[1]-56>70? sb[1]-56 : Math.min(sb[3]+10,H-56))+'px'; }
 function hideSelbar(){ $('#selbar').classList.remove('open'); }
 $('#selDel').onclick=()=>{ pushUndo(); page().objects=objs().filter(o=>!selection.includes(o)); clearSel(); commit(); };
 $('#selDup').onclick=()=>{ pushUndo(); const cp=selection.map(o=>fixNulls(JSON.parse(JSON.stringify(o)))); cp.forEach(o=>{moveObj(o,24,24); objs().push(o);}); selection=cp; commit(); drawLive(); showSelbar(); };
 $('#selColor').onclick=()=>{ pushUndo(); selection.forEach(o=>{ o.c = (o.hl && S.color==='ink') ? 'yellow' : S.color; }); commit(); };
+$('#selLock').onclick=()=>{ pushUndo(); const lk=selLocked(); selection.forEach(o=>{ if(lk) delete o.lk; else o.lk=1; delete o.bg; });
+  commit(); if(lk){ toast('Entsperrt – jetzt ziehen zum Verschieben'); showSelbar(); drawLive(); } else { toast('Gesperrt – wird nicht mehr aus Versehen verschoben'); clearSel(); } };
 $('#selEdit').onclick=()=>{ const o=selection[0]; if(!o) return; if(o.t==='x') textAt([o.x,o.y],o); else if(o.t==='p') openPlot(o); };
 
 /* ---------------- Text ---------------- */
@@ -1514,12 +1552,14 @@ async function getPdfLib(){ if(pdfLib) return pdfLib;
   catch(e){ await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'); window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
   pdfLib=window.pdfjsLib; return pdfLib; }
 async function importPdf(f){
-  const where=await new Promise(res=>{ modal(`<h3 style="margin:0 0 6px">PDF einfügen</h3><p style="margin:0;color:var(--muted)">${esc(f.name)}</p><p style="margin:10px 0 0">Die PDF-Seiten kommen als A4-Blätter, auf die du direkt schreiben kannst.</p>
-    <div class="btns"><button class="btn" id="pdNo">Abbrechen</button><button class="btn" id="pdHere">In diese Notiz (neue Seite)</button><button class="btn pri" id="pdNew">Als neue Notiz</button></div>`);
-    $('#pdNo').onclick=()=>{closeModal();res(null)}; $('#pdHere').onclick=()=>{closeModal();res('here')}; $('#pdNew').onclick=()=>{closeModal();res('new')}; });
+  const where=await new Promise(res=>{ modal(`<h3 style="margin:0 0 6px">PDF einfügen</h3><p style="margin:0;color:var(--muted)">${esc(f.name)}</p><p style="margin:10px 0 0">Du kannst direkt auf die PDF schreiben. Sie ist gesperrt, damit sie nicht verrutscht – zum Verschieben mit dem Auswahl-Werkzeug antippen und „Entsperren“.</p>
+    <div class="btns" style="flex-wrap:wrap"><button class="btn" id="pdNo">Abbrechen</button><button class="btn" id="pdOn">Auf diese Seite (unten dran)</button><button class="btn" id="pdHere">Neue Seite in dieser Notiz</button><button class="btn pri" id="pdNew">Als neue Notiz</button></div>`);
+    $('#pdNo').onclick=()=>{closeModal();res(null)}; $('#pdOn').onclick=()=>{closeModal();res('on')}; $('#pdHere').onclick=()=>{closeModal();res('here')}; $('#pdNew').onclick=()=>{closeModal();res('new')}; });
   if(!where) return;
   toast('PDF wird geladen …');
-  const lib=await getPdfLib(); const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf}).promise;
+  const lib=await getPdfLib(); const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf.slice(0)}).promise;
+  const pdfA={id:'a'+uid(), pdf:await fileToDataURL(f)}; await DB.putAsset(pdfA);
+  if(where==='on') return pdfOnPage(doc,pdfA.id);
   const pg=newPage('blank','sheets'); pg.sheets=[];
   for(let i=1;i<=doc.numPages;i++){
     toast('PDF-Seite '+i+' von '+doc.numPages+' …');
@@ -1528,11 +1568,30 @@ async function importPdf(f){
     const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise;
     const a=await storeImage(c,c.width,c.height,false);
     const r=i-1, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
-    pg.sheets.push([0,r]); pg.objects.push({t:'i',bg:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id});
+    pg.sheets.push([0,r]); pg.objects.push({t:'i',lk:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfA.id,n:i}});
   }
   if(where==='new'){ const n=createNote(f.name.replace(/\.pdf$/i,''),{folder:curFolder}); n.pages=[pg]; fitView(pg); DB.put(n); openNote(n); }
   else { fitView(pg); note.pages.splice(pageIdx+1,0,pg); gotoPage(pageIdx+1); scheduleSave(); }
   toast('PDF eingefügt ('+doc.numPages+' Seite'+(doc.numPages>1?'n':'')+')');
+}
+
+async function pdfPageImg(doc,i){ const p=await doc.getPage(i); const vp0=p.getViewport({scale:1}); const vp=p.getViewport({scale:1700/vp0.width});
+  const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise; return storeImage(c,c.width,c.height,false); }
+// PDF-Seiten auf die aktuelle Seite unten anhängen (endloses A4, freie Seite oder Blätter)
+async function pdfOnPage(doc,pdfId){
+  pushUndo(); const pg=page(), L=lay(), list=objs(); const added=[];
+  let y=0, x=0, colW=A4W;
+  if(L==='sheets'){ const sh=pg.sheets||(pg.sheets=[[0,0]]); let r=Math.max(...sh.map(q=>q[1])); const lastEmpty=!list.some(o=>{ const b=bbox(o); return b[3]>r*(A4H+GAP) && b[1]<r*(A4H+GAP)+A4H; });
+    for(let i=1;i<=doc.numPages;i++){ toast('PDF-Seite '+i+' von '+doc.numPages+' …'); const a=await pdfPageImg(doc,i);
+      if(!(i===1&&lastEmpty)){ r++; sh.push([0,r]); } const y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
+      const o={t:'i',lk:1,x:(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}}; list.push(o); added.push(o); } }
+  else { if(L==='free'){ const [cx,cy]=toWorld(W/2,90); x=cx-A4W/2; y=cy; }
+    const bottom=list.reduce((m,o)=>Math.max(m,bbox(o)[3]),-1e9); y = bottom>-1e9 ? Math.max(L==='roll'?0:y,bottom+30) : (L==='roll'?0:y);
+    for(let i=1;i<=doc.numPages;i++){ toast('PDF-Seite '+i+' von '+doc.numPages+' …'); const a=await pdfPageImg(doc,i);
+      const k=colW/a.w, w=colW, h=a.h*k; const o={t:'i',lk:1,x,y,w,h,a:a.id,pdf:{a:pdfId,n:i}}; list.push(o); added.push(o); y+=h+24; } }
+  commit(); const b=bbox(added[0]); const v=V(); v.y=90-b[1]*v.s; clampView(); render(); drawLive();
+  toast('PDF eingefügt ('+doc.numPages+' Seite'+(doc.numPages>1?'n':'')+') – gesperrt, zum Verschieben antippen');
 }
 
 /* ---------------- Seiten & Hefte ---------------- */
@@ -1549,7 +1608,7 @@ $('#prevPg').onclick=()=>gotoPage(pageIdx-1);
 $('#nextPg').onclick=()=>{ if(pageIdx===note.pages.length-1) return toast('Letzte Seite – mit + kommt eine neue'); gotoPage(pageIdx+1); };
 $('#addPg').onclick=()=>{ const np=newPage(page().bg,lay(),page().gs); if(np.layout!=='free') fitView(np); note.pages.splice(pageIdx+1,0,np); gotoPage(pageIdx+1); scheduleSave(); toast('Neue Seite '+(pageIdx+1)); };
 function openNote(n){ note=n; fixAll(n); S.lastNote=n.id; saveSettings(); $('#title').textContent=n.title; gotoPage(n.lastPage||0); renderNotes(); }
-function fixAll(n){ n.pages.forEach(p=>{ p.view=p.view||{s:1,x:0,y:0}; p.objects.forEach(fixNulls); }); }
+function fixAll(n){ n.pages.forEach(p=>{ p.view=p.view||{s:1,x:0,y:0}; p.objects.forEach(o=>{ fixNulls(o); if(o.bg){ o.lk=1; delete o.bg; } }); }); }
 let meta={id:'__meta',folders:[]}, curFolder=null;
 function saveMeta(){ DB.put(meta); }
 const fById=id=>meta.folders.find(f=>f.id===id);
