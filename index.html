@@ -954,6 +954,15 @@ window.__penButton=b=>{ penBtnDown=!!b;
   if(b){ if(cur && cur.ptype==='pen') penToErase(); if(lastHover){ hover=lastHover; drawLive(); } }
   else { btnReleasedAt=Date.now(); setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen')) endAir(); },350); } };
 let lastHover=null;
+// vom Android-Teil: Radieren mit gedrückter Stifttaste (aufgesetzt)
+let natSt=null;
+window.__nativeErase=(ph,pts)=>{
+  if(ph==='down'){ clearTimeout(holdT); cur=null; liveLabel=null; natSt={did:airSt?airSt.did:false}; airSt=null; }
+  if(!natSt||!pts||pts.length<2) return;
+  for(let i=0;i<pts.length;i+=2) eraseAt(pts[i],pts[i+1],natSt);
+  hover=[pts[pts.length-2],pts[pts.length-1]];
+  if(ph==='up'){ if(natSt.did) commit(); natSt=null; hover=null; }
+  drawLive(); };
 function startInput(e,x,y){
   const pen=e.pointerType==='pen';
   const recentBtn = penBtnDown || (Date.now()-btnReleasedAt<350) || !!airSt;
