@@ -509,10 +509,12 @@ body.setOpen #scrim{display:block;z-index:45}
   <div class="toggle"><div>Glättung der Schrift<small id="smLbl">leicht</small></div><input type="range" id="smRange" min="0" max="10" step="1" style="width:150px"></div>
   <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
   <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:150px"></div>
+  <div class="toggle"><div>Rechnungen automatisch lösen<small>Schreib z. B. 11 + 10 = und das Ergebnis erscheint in deiner Schrift</small></div><button class="sw2" data-set="mathSolve"></button></div>
+  <div class="toggle"><div>Handschrift lernen<small>Einmal alle Ziffern schreiben – dann klappt das Erkennen viel besser</small></div><button class="btn" id="hwTrainBtn"><i data-ic="pen"></i>Lernen</button></div>
   <div class="toggle"><div>Durchkritzeln zum Löschen<small>Schnell hin und her über etwas kritzeln → es wird gelöscht</small></div><button class="sw2" data-set="scratch"></button></div>
   </div>
   <div class="sgh">S Pen</div><div class="sgc">
-  <div class="toggle"><div>Radieren mit der Stifttaste<small>Taste drücken (auch in der Luft), dann Stift aufsetzen und über das Falsche fahren. Radiert wird nur, wenn der Stift aufliegt.</small></div><span class="ic-ok"><i data-ic="eraser"></i></span></div>
+  <div class="toggle"><div>Radieren mit der Stifttaste<small>Taste gedrückt halten und mit aufgesetztem Stift über das Falsche fahren. Taste loslassen = wieder Stift.</small></div><span class="ic-ok"><i data-ic="eraser"></i></span></div>
   <div class="toggle"><div>Stifttaste 2× drücken = Lasso<small>In der Luft zweimal schnell die S-Pen-Taste drücken: Lasso an / aus</small></div><button class="sw2" data-set="penDbl"></button></div>
   </div>
   <div class="sgh">Bedienung</div><div class="sgc">
@@ -567,7 +569,7 @@ body.setOpen #scrim{display:block;z-index:45}
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast"></div>
-<div id="armBadge"><i data-ic="eraser"></i>Radierer bereit – Stift aufsetzen</div>
+<div id="armBadge"><i data-ic="eraser"></i>Radierer – solange die Taste gedrückt ist</div>
 
 <script>
 'use strict';
@@ -654,7 +656,7 @@ const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
-const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',pressure:true,snap:true,holdMs:500,
+const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',mathSolve:true,pressure:true,snap:true,holdMs:500,
   fingerDraw:false,shape:'line',barPos:'left',split:false,penDbl:true,autoBackup:!!window.AndroidApp,lastAutoBk:0,penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
@@ -1371,11 +1373,11 @@ let lastBtnPress=0, prevTool='pen';
 let armed=false, armT=0, hoverBtn=false;
 function setArmed(on,ms){ clearTimeout(armT); armed=!!on; document.body.classList.toggle('erArmed',armed);
   if(armed) armT=setTimeout(()=>setArmed(false),ms||8000); else if(!cur){ hover=null; drawLive(); } }
-function disarmSoon(){ if(armed) setArmed(true,1500); }
+function disarmSoon(){ if(armed && !penBtnDown) setArmed(false); }
 window.__penButton=b=>{ b=!!b; if(b===penBtnDown) return; penBtnDown=b;
   if(b && S.penDbl && !cur){ const now=Date.now(); if(now-lastBtnPress<450){ lastBtnPress=0; setArmed(false); if(S.tool==='select'){ setTool(prevTool||'pen'); toast('Zurück zum '+(prevTool==='hl'?'Textmarker':'Stift')); } else { prevTool=S.tool; setTool('select'); toast('Lasso'); } return; } lastBtnPress=now; }
-  if(b){ if(cur && cur.ptype==='pen') penToErase(); else if(!cur){ setArmed(true); if(lastHover){ hover=lastHover; drawLive(); } } }
-  else btnReleasedAt=Date.now(); };
+  if(b){ if(cur && cur.ptype==='pen') penToErase(); else if(!cur){ setArmed(true,60000); if(lastHover){ hover=lastHover; drawLive(); } } }
+  else { btnReleasedAt=Date.now(); if(cur && cur.ptype==='pen' && cur.kind==='erase') cur.arm=true; else setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen' && cur.kind==='erase')) setArmed(false); },250); } };
 let lastHover=null;
 // vom Android-Teil: Radieren mit gedrückter Stifttaste (aufgesetzt)
 let natSt=null;
@@ -1512,7 +1514,7 @@ function endPointer(e,cancel){
     if(!o.u){ for(let i=0;i<o.p.length;i++) o.p[i]=+o.p[i].toFixed(i%3===2?2:1); }
     if(c.raw && c.sm && !c.snap && !o.u){ const L=o.p.length; if(dist(o.p[L-3],o.p[L-2],c.raw[0],c.raw[1])>0.5) o.p.push(+c.raw[0].toFixed(1),+c.raw[1].toFixed(1),o.p[L-1]); }
     if(S.scratch && !o.u && !o.hl && scratchOut(o)){ drawLive(); return; }
-    pushUndo(); objs().push(o); commit(); autoScroll(o);
+    pushUndo(); objs().push(o); commit(); autoScroll(o); mathCheck(o);
   } else if(c.kind==='shape' && c.obj){ pushUndo(); objs().push(c.obj);
     if(S.shape==='axes'){ const r=c.shape; objs().push({t:'x',x:r.x1-10,y:r.oy+8,s:18,c:S.color,v:'x'},{t:'x',x:r.ox+10,y:r.y0-4,s:18,c:S.color,v:'y'}); }
     commit();
@@ -1595,6 +1597,124 @@ function scratchOut(o){ const P=[]; for(let i=0;i<o.p.length;i+=3){ const x=o.p[
   const m=4, list=objs(), hits=list.filter(q=>{ if(q.t!=='s'||q.lk) return false; let tot=0,ins=0; for(let i=0;i<q.p.length;i+=3){ const x=q.p[i]; if(Number.isNaN(x)||x===null) continue; tot++; if(x>=mnx-m&&x<=mxx+m&&q.p[i+1]>=mny-m&&q.p[i+1]<=mxy+m) ins++; } return tot&&ins/tot>=0.6; });
   if(!hits.length) return false;
   pushUndo(); page().objects=list.filter(q=>!hits.includes(q)); commit(); toast('Durchgekritzelt → gelöscht (Rückgängig geht)'); return true; }
+/* ---------------- Rechnungen in Handschrift lösen ---------------- */
+const HW={};
+(function(){
+  const cr=(pts,n=8)=>{ if(pts.length<3) return pts; const out=[]; const P=[pts[0],...pts,pts[pts.length-1]];
+    for(let i=1;i<P.length-2;i++){ const [p0,p1,p2,p3]=[P[i-1],P[i],P[i+1],P[i+2]]; for(let t=0;t<n;t++){ const u=t/n,u2=u*u,u3=u2*u;
+      out.push([0.5*((2*p1[0])+(-p0[0]+p2[0])*u+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*u2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*u3), 0.5*((2*p1[1])+(-p0[1]+p2[1])*u+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*u2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*u3)]); } }
+    out.push(pts[pts.length-1]); return out; };
+  const ell=(cx,cy,rx,ry,a0=-Math.PI/2,a1=a0+Math.PI*2,n=28)=>{ const o=[]; for(let i=0;i<=n;i++){ const a=a0+(a1-a0)*i/n; o.push([cx+rx*Math.cos(a),cy+ry*Math.sin(a)]); } return o; };
+  const W=0.62, sx=s=>s.map(st=>st.map(([x,y])=>[x*W,y]));
+  // Vorlagen (Breite 1 = Ziffernbreite, Höhe 1), werden auf Ziffernform gestaucht
+  HW.T={
+    '0':[sx([ell(.5,.5,.48,.5)]), sx([ell(.5,.5,.45,.5,-Math.PI/2,Math.PI*1.5+0.3)])],
+    '1':[sx([[[.5,0],[.5,1]]]), sx([[[.15,.3],[.55,0],[.55,1]]]), sx([[[.15,.3],[.55,0],[.55,1]],[[.2,1],[.9,1]]])],
+    '2':[sx([cr([[.08,.28],[.45,0],[.88,.22],[.72,.55],[.08,1]]).concat([[.95,1]])]), sx([cr([[.1,.2],[.5,0],[.85,.3],[.1,.98],[.35,.9],[.95,1]])])],
+    '3':[sx([cr([[.1,.12],[.5,0],[.85,.22],[.45,.47],[.9,.72],[.5,1],[.08,.88]])]), sx([cr([[.1,.05],[.85,.05],[.4,.45],[.9,.7],[.5,1],[.08,.88]])])],
+    '4':[sx([[[.65,0],[.05,.68],[.95,.68]],[[.72,.3],[.72,1]]]), sx([[[.2,0],[.12,.6],[.92,.6]],[[.72,0],[.72,1]]]), sx([[[.2,0],[.12,.6],[.92,.6],[.72,.6],[.72,0],[.72,1]]])],
+    '5':[sx([[[.85,0],[.2,0]],[[.2,0],[.15,.45]].concat(cr([[.15,.45],[.6,.38],[.92,.7],[.55,1],[.08,.88]]))]), sx([cr([[.85,0],[.2,0],[.15,.45],[.6,.38],[.92,.7],[.55,1],[.08,.88]],4)]), sx([[[.2,0],[.15,.45]].concat(cr([[.15,.45],[.6,.38],[.92,.7],[.55,1],[.08,.88]])),[[.2,0],[.88,0]]])],
+    '6':[sx([cr([[.8,0],[.35,.25],[.1,.65],[.4,1],[.85,.8],[.7,.52],[.35,.5],[.12,.7]])])],
+    '7':[sx([[[.05,0],[.95,0],[.35,1]]]), sx([[[.05,0],[.95,0],[.35,1]],[[.3,.5],[.85,.5]]]), sx([[[.05,.2],[.05,0],[.95,0],[.35,1]]])],
+    '8':[sx([cr([[.82,.15],[.5,0],[.18,.18],[.5,.46],[.86,.72],[.5,1],[.14,.74],[.5,.46],[.82,.18]])]), sx([ell(.5,.24,.32,.24,Math.PI/2,Math.PI*2.5),ell(.5,.73,.4,.27)])],
+    '9':[sx([cr([[.86,.22],[.5,0],[.14,.22],[.4,.5],[.86,.3]]).concat([[.86,.25],[.8,1]])]), sx([ell(.5,.27,.38,.27,0,Math.PI*2),[[.88,.27],[.85,1]]])],
+    '+':[[[[.5,.05],[.5,.95]],[[.05,.5],[.95,.5]]]],
+    '×':[[[[.1,.1],[.9,.9]],[[.9,.1],[.1,.9]]]],
+    '/':[[[[.85,0],[.15,1]]]],
+    '(':[[cr([[.7,0],[.3,.5],[.7,1]])].map(s=>s.map(([x,y])=>[x*.4,y]))],
+    ')':[[cr([[.3,0],[.7,.5],[.3,1]])].map(s=>s.map(([x,y])=>[x*.4,y]))]
+  };
+})();
+function hwLoad(){ try{ return JSON.parse(localStorage.getItem('sh-hw')||'{}'); }catch(e){ return {}; } }
+function hwSave(d){ try{ localStorage.setItem('sh-hw',JSON.stringify(d)); }catch(e){} }
+// $P-Erkenner (Punktwolke)
+function hwCloud(strokes){ let pts=[]; strokes.forEach((s,i)=>s.forEach(q=>pts.push([q[0],q[1],i]))); const N=32;
+  let L=0; for(let i=1;i<pts.length;i++) if(pts[i][2]===pts[i-1][2]) L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+  const I=L/(N-1)||1e-6; let D=0; const out=[pts[0].slice()];
+  for(let i=1;i<pts.length&&out.length<N;i++){ if(pts[i][2]!==pts[i-1][2]) continue; let d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+    if(D+d>=I){ const t=(I-D)/d, q=[pts[i-1][0]+t*(pts[i][0]-pts[i-1][0]),pts[i-1][1]+t*(pts[i][1]-pts[i-1][1]),pts[i][2]]; out.push(q); pts.splice(i,0,q); D=0; } else D+=d; }
+  while(out.length<N) out.push(pts[pts.length-1].slice());
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9; out.forEach(q=>{ mnx=Math.min(mnx,q[0]); mny=Math.min(mny,q[1]); mxx=Math.max(mxx,q[0]); mxy=Math.max(mxy,q[1]); });
+  const s=Math.max(mxx-mnx,mxy-mny)||1; let cx=0,cy=0; out.forEach(q=>{ q[0]=(q[0]-mnx)/s; q[1]=(q[1]-mny)/s; cx+=q[0]; cy+=q[1]; }); cx/=N; cy/=N;
+  return out.map(q=>[q[0]-cx,q[1]-cy]); }
+function hwDist(a,b){ const N=a.length, step=Math.floor(Math.sqrt(N)); let best=1e9;
+  const cd=(A,B,st)=>{ const m=new Array(N).fill(false); let s=0; for(let k=0;k<N;k++){ const i=(st+k)%N; let mn=1e9,ix=-1; for(let j=0;j<N;j++) if(!m[j]){ const d=Math.hypot(A[i][0]-B[j][0],A[i][1]-B[j][1]); if(d<mn){ mn=d; ix=j; } } m[ix]=true; s+=(1-k/N)*mn; } return s; };
+  for(let i=0;i<N;i+=step) best=Math.min(best,cd(a,b,i),cd(b,a,i)); return best; }
+let HWT=null;
+function hwTemplates(){ if(HWT) return HWT; HWT=[]; for(const [ch,vs] of Object.entries(HW.T)) vs.forEach(v=>HWT.push({ch,c:hwCloud(v),own:false}));
+  const own=hwLoad(); for(const [ch,vs] of Object.entries(own)) (vs||[]).forEach(v=>HWT.push({ch,c:hwCloud(v),own:true,s:v})); return HWT; }
+function hwClassify(strokes){ const c=hwCloud(strokes); let best=null,bd=1e9; for(const t of hwTemplates()){ const d=hwDist(c,t.c)*(t.own?0.85:1); if(d<bd){ bd=d; best=t; } } return best?best.ch:'?'; }
+function strokeLists(o){ const L=[]; let cur=[]; for(let i=0;i<o.p.length;i+=3){ const x=o.p[i]; if(x===null||Number.isNaN(x)){ if(cur.length) L.push(cur); cur=[]; continue; } cur.push([x,o.p[i+1]]); } if(cur.length) L.push(cur); return L; }
+let mathT=0;
+function mathCheck(o){ clearTimeout(mathT); if(!S.mathSolve||o.hl||o.u||!o.p) return; const pg=page(); mathT=setTimeout(()=>{ try{ if(page()===pg) mathSolve(o); }catch(e){ console.error(e); } },450); }
+function mathSolve(eq2){
+  const list=objs(), i2=list.indexOf(eq2); if(i2<1) return;
+  const isBar=o=>{ if(o.t!=='s'||o.hl||o.u) return null; const b=bbox(o), w=b[2]-b[0], h=b[3]-b[1]; return (w>8 && h<w*0.35)?b:null; };
+  const b2=isBar(eq2); if(!b2) return;
+  let eq1=null,b1=null; for(let k=i2-1;k>=Math.max(0,i2-3);k--){ const b=isBar(list[k]); if(!b) continue; const w=Math.max(b[2]-b[0],b2[2]-b2[0]), gy=Math.abs((b[1]+b[3])/2-(b2[1]+b2[3])/2), ov=Math.min(b[2],b2[2])-Math.max(b[0],b2[0]);
+    if(gy>w*0.12 && gy<w*0.9 && ov>w*0.4){ eq1=list[k]; b1=b; break; } }
+  if(!eq1) return;
+  const ex=[Math.min(b1[0],b2[0]),Math.min(b1[1],b2[1]),Math.max(b1[2],b2[2]),Math.max(b1[3],b2[3])], ecy=(ex[1]+ex[3])/2, ew=ex[2]-ex[0];
+  // Kandidaten links vom Gleichheitszeichen
+  let cand=list.filter(o=>o!==eq1&&o!==eq2&&o.t==='s'&&!o.hl&&!o.lk).map(o=>({o,b:bbox(o)})).filter(c=>c.b[2]<=ex[0]+ew*0.2 && c.b[0]<ex[0] && Math.abs((c.b[1]+c.b[3])/2-ecy)<ew*2.2);
+  if(!cand.length) return;
+  const hs=cand.map(c=>c.b[3]-c.b[1]).filter(h=>h>ew*0.5).sort((a,b)=>a-b); let h=hs.length?hs[Math.floor(hs.length/2)]:ew*1.4;
+  cand=cand.filter(c=>Math.abs((c.b[1]+c.b[3])/2-ecy)<h*0.9);
+  // von rechts nach links zusammenhängend sammeln
+  cand.sort((a,b)=>b.b[2]-a.b[2]); const take=[]; let edge=ex[0];
+  for(const c of cand){ if(c.b[2]<edge-h*1.6) break; take.push(c); edge=Math.min(edge,c.b[0]); }
+  if(!take.length) return;
+  take.sort((a,b)=>a.b[0]-b.b[0]);
+  // zu Zeichen gruppieren (überlappen sich waagerecht)
+  const G=[]; for(const c of take){ const g=G[G.length-1]; if(g){ const ov=Math.min(g.b[2],c.b[2])-Math.max(g.b[0],c.b[0]), mw=Math.min(g.b[2]-g.b[0],c.b[2]-c.b[0]);
+      if(ov>Math.max(1,mw*0.35)||(ov>-h*0.05&&(c.b[2]-c.b[0]<h*0.3||g.b[2]-g.b[0]<h*0.3)&&ov>-1)){ g.items.push(c); g.b=[Math.min(g.b[0],c.b[0]),Math.min(g.b[1],c.b[1]),Math.max(g.b[2],c.b[2]),Math.max(g.b[3],c.b[3])]; continue; } }
+    G.push({items:[c],b:c.b.slice()}); }
+  const lineTop=Math.min(...G.map(g=>g.b[1])), lineBot=Math.max(...G.map(g=>g.b[3])), mid=(lineTop+lineBot)/2;
+  let txt=''; const shown=[];
+  for(const g of G){ const w=g.b[2]-g.b[0], gh=g.b[3]-g.b[1], sz=Math.max(w,gh), cy=(g.b[1]+g.b[3])/2; let ch;
+    const strokes=g.items.flatMap(c=>strokeLists(c.o));
+    if(sz<h*0.28){ if(g.items.length>=2) ch=':'; else ch= cy>mid+h*0.2?',':'·'; }
+    else if(g.items.length===1 && gh<w*0.4 && w<h*1.5) ch='-';
+    else ch=hwClassify(strokes);
+    if(ch==='?') return;
+    shown.push(ch); txt+=ch; }
+  const src=txt.replace(/·|×/g,'*').replace(/:/g,'/').replace(/,/g,'.').replace(/−/g,'-');
+  if(!/\d/.test(src)||!/[-+*/]/.test(src)) return;
+  let v; try{ v=compile(src)(0); }catch(e){ toast('Rechnung nicht erkannt: '+shown.join(' ')+' ='); return; }
+  if(!Number.isFinite(v)) return;
+  let r=String(parseFloat(v.toPrecision(10))); if(/e/.test(r)) return; r=r.replace('.',',');
+  // Ergebnis in Handschrift schreiben
+  const own=hwLoad(); const col=eq2.c, sw=eq2.w, k=eq2.k; const out=[]; let x=ex[2]+h*0.45; const top=lineTop+(lineBot-lineTop-h)/2;
+  for(const ch of r){ let strokes;
+    if(ch===','){ strokes=[[[0,.88],[.05,1.05]]]; }
+    else if(ch==='-'){ strokes=[[[0,.5],[.5,.5]]]; }
+    else { const vs=own[ch]; strokes=vs&&vs.length?hwNormSample(vs[vs.length-1]):HW.T[ch][0]; }
+    let mx=-1e9, mn=1e9; strokes.forEach(s=>s.forEach(q=>{ mx=Math.max(mx,q[0]); mn=Math.min(mn,q[0]); })); mx-=mn;
+    const jit=()=>(Math.random()-.5)*h*0.015;
+    for(const s of strokes){ const p=[]; s.forEach(q=>p.push(+(x+(q[0]-mn)*h+jit()).toFixed(1),+(top+q[1]*h+jit()).toFixed(1),0.5)); const so={t:'s',c:col,w:sw,p}; if(k) so.k=k; out.push(so); }
+    x+=Math.max(mx,0.12)*h+h*0.25; }
+  pushUndo(); list.push(...out); commit(); toast(shown.join(' ')+' = '+r);
+}
+function hwNormSample(st){ let mnx=1e9,mny=1e9,mxy=-1e9; st.forEach(s=>s.forEach(q=>{ mnx=Math.min(mnx,q[0]); mny=Math.min(mny,q[1]); mxy=Math.max(mxy,q[1]); })); const hh=(mxy-mny)||1; return st.map(s=>s.map(q=>[(q[0]-mnx)/hh,(q[1]-mny)/hh])); }
+// Handschrift lernen
+function hwTrain(){ const CH=['0','1','2','3','4','5','6','7','8','9','+','×','/','(',')']; let i=0, cur=[], strokes=[]; const data=hwLoad();
+  modal(`<h3 style="margin:0 0 4px">Handschrift lernen</h3><p style="margin:0 0 10px;color:var(--muted);font-size:13px">Schreib jedes Zeichen so, wie du es sonst schreibst. Dann erkennt die App deine Rechnungen besser und schreibt Ergebnisse in deiner Schrift.</p>
+    <div style="display:flex;align-items:center;gap:14px"><div id="hwCh" style="font-size:54px;font-weight:600;width:70px;text-align:center"></div><canvas id="hwCv" style="position:static;width:220px;height:220px;border:1px solid var(--border);border-radius:12px;background:#fbfbf8;touch-action:none"></canvas></div>
+    <div id="hwProg" style="font-size:13px;color:var(--muted);margin-top:8px"></div>
+    <div class="btns"><button class="btn" id="hwReset">Alles vergessen</button><button class="btn" id="hwClr">Nochmal</button><button class="btn" id="hwSkip">Überspringen</button><button class="btn pri" id="hwOk">Weiter</button></div>`);
+  const cv=$('#hwCv'), dpr=devicePixelRatio||1; cv.width=220*dpr; cv.height=220*dpr; const g=cv.getContext('2d'); g.scale(dpr,dpr);
+  const draw=()=>{ g.clearRect(0,0,220,220); g.strokeStyle='#e3e3e3'; g.lineWidth=1; g.beginPath(); g.moveTo(0,40); g.lineTo(220,40); g.moveTo(0,180); g.lineTo(220,180); g.stroke(); g.strokeStyle='#1b1c21'; g.lineWidth=3; g.lineCap=g.lineJoin='round'; for(const s of strokes.concat(cur.length?[cur]:[])){ g.beginPath(); s.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])); g.stroke(); } };
+  const show=()=>{ $('#hwCh').textContent=CH[i]; $('#hwProg').textContent='Zeichen '+(i+1)+' von '+CH.length+((data[CH[i]]||[]).length?' · schon '+data[CH[i]].length+'× gelernt':''); strokes=[]; cur=[]; draw(); };
+  let down=false; const P=e=>{ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
+  cv.onpointerdown=e=>{ cv.setPointerCapture(e.pointerId); down=true; cur=[P(e)]; draw(); };
+  cv.onpointermove=e=>{ if(!down) return; cur.push(P(e)); draw(); };
+  cv.onpointerup=cv.onpointercancel=()=>{ if(!down) return; down=false; if(cur.length>1) strokes.push(cur); cur=[]; draw(); };
+  const next=save=>{ if(save&&strokes.length){ (data[CH[i]]=data[CH[i]]||[]).push(strokes.map(s=>s.map(q=>[+q[0].toFixed(1),+q[1].toFixed(1)]))); if(data[CH[i]].length>3) data[CH[i]].shift(); hwSave(data); HWT=null; }
+    i++; if(i>=CH.length){ closeModal(); toast('Fertig – deine Schrift ist gespeichert'); return; } show(); };
+  $('#hwOk').onclick=()=>{ if(!strokes.length) return toast('Erst das Zeichen schreiben'); next(true); };
+  $('#hwSkip').onclick=()=>next(false); $('#hwClr').onclick=()=>{ strokes=[]; draw(); };
+  $('#hwReset').onclick=async()=>{ for(const k in data) delete data[k]; hwSave(data); HWT=null; toast('Gelernte Schrift gelöscht'); show(); };
+  show(); }
 /* Automatisch weiterscrollen */
 function autoScroll(o){ if(!S.autoScroll||lay()==='sheets') return; const b=bbox(o); const sy=toScreen(0,b[3])[1]; if(sy<H-130) return;
   const v=V(), from=v.y, to=v.y-(sy-H*0.55), t0=performance.now();
@@ -2502,6 +2622,7 @@ function showLib(o){ const el=$('#lib'); if(o){ closePops(); if(note){ clearTime
   el.classList.toggle('open',!!o); }
 const toggleDrawer=showLib;
 new MutationObserver(()=>document.body.classList.toggle('setOpen',$('#p-settings').classList.contains('open'))).observe($('#p-settings'),{attributes:true,attributeFilter:['class']});
+$('#hwTrainBtn').onclick=()=>hwTrain();
 $('#scrim').onclick=()=>{ $('#p-settings').classList.toggle('open',false); $$('[data-open]').forEach(x=>x.classList.toggle('on',false)); };
 $('#menuBtn').onclick=()=>showLib(true);
 $('#title').onclick=async()=>{ const t=await ask('Notiz umbenennen',note.title,'Speichern'); if(t&&t.trim()){ note.title=t.trim(); $('#title').textContent=note.title; scheduleSave(); } };
@@ -2580,7 +2701,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'älter als 2.2 – bitte neu installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 12 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'älter als 2.2 – bitte neu installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 13 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
