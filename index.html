@@ -1326,7 +1326,7 @@ function shapeInfo(r){
 function shapeFromDrag(kind,a,b){
   const [ax,ay]=a, [bx,by]=b;
   if(kind==='line') return {kind:'line',a,b:snapLineAngle(a,b)};
-  if(kind==='arrow') return {kind:'arrow',a,b:snapLineAngle(a,b),head:12+S.sizes.shape*2};
+  if(kind==='arrow') return {kind:'arrow',a,b:snapLineAngle(a,b),head:12+S.sizes.pen*2};
   const x0=Math.min(ax,bx),x1=Math.max(ax,bx),y0=Math.min(ay,by),y1=Math.max(ay,by);
   if(kind==='rect') return {kind:'poly',rect:true,pts:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],w:x1-x0,h:y1-y0};
   if(kind==='ellipse'){ const rx=(x1-x0)/2, ry=(y1-y0)/2; const circ=Math.abs(rx-ry)<Math.max(rx,ry)*0.06; return {kind:'ellipse',cx:(x0+x1)/2,cy:(y0+y1)/2,rx:circ?(rx+ry)/2:rx,ry:circ?(rx+ry)/2:ry,a:0}; }
@@ -1390,6 +1390,7 @@ lv.addEventListener('pointerdown',e=>{
     if(cur && cur.ptype!=='touch') return;               // Handballen ignorieren
     touches.set(e.pointerId,[x,y]);
     if(cur && cur.ptype==='touch'){ cancelInput(); }      // zweiter Finger -> Gestik
+    else if(touches.size===1 && !READ && !toolHit(x,y) && handGrab(e,x,y)){ capture(e); return; }
     else if(touches.size===1 && S.fingerDraw && !toolHit(x,y)){ capture(e); startInput(e,x,y); return; }
     startGesture(); capture(e); return;
   }
@@ -1399,6 +1400,19 @@ lv.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse' && toolHit(x,y)){ cur={kind:'mtool',id:e.pointerId,ptype:'mouse',t:toolHit(x,y),last:[x,y]}; return; }
   startInput(e,x,y);
 });
+/* Bilder, Text, Diagramme, Koordinatensysteme mit dem Finger verschieben / antippen */
+const handObj=o=>!o.lk && (o.t!=='s' || o.ax);
+function handGrab(e,x,y){ const [wx,wy]=toWorld(x,y), base={id:e.pointerId,ptype:'touch',start:[x,y],hand:true};
+  const sb=selection.length&&!selLocked()?selBox():null;
+  if(sb){ if(rotHandleAt(x,y)){ pushUndo(); const wb=selWorldBox(), c=[(wb[0]+wb[2])/2,(wb[1]+wb[3])/2]; cur={...base,kind:'rot',c,a0:Math.atan2(wy-c[1],wx-c[0]),orig:selection.map(o=>JSON.stringify(o))}; hideSelbar(); return true; }
+    const hd=handleAt(x,y); if(hd){ pushUndo(); const wb=selWorldBox(); const anchor=[hd[0]?wb[0]:wb[2], hd[1]?wb[1]:wb[3]], corner=[hd[0]?wb[2]:wb[0], hd[1]?wb[3]:wb[1]]; cur={...base,kind:'scale',anchor,corner,orig:selection.map(o=>JSON.stringify(o))}; hideSelbar(); return true; }
+    if(x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3]){ pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; return true; } }
+  const list=objs(), tol=14/V().s; let hit=null;
+  for(let i=list.length-1;i>=0;i--){ const o=list[i]; if(!handObj(o)) continue; const b=bbox(o); if(wx<b[0]-tol||wx>b[2]+tol||wy<b[1]-tol||wy>b[3]+tol) continue;
+    if(o.t==='s'){ const p=o.p, rr=o.w/2+tol; let h=false; for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue; let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;} if(segDist(wx,wy,ax,ay,bx,by)<rr){h=true;break;} } if(!h) continue; }
+    hit=o; break; }
+  if(!hit){ if(selection.length) clearSel(); return false; }
+  selection=hit.g?list.filter(o=>o.g===hit.g):[hit]; pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; drawLive(); return true; }
 let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
 let btnReleasedAt=0;
@@ -1527,11 +1541,11 @@ lv.addEventListener('pointermove',e=>{
     const sn=Math.round(deg/15)*15; if(Math.abs(deg-sn)<3.5) deg=sn; a=deg*Math.PI/180;
     selection.forEach((o,i)=>{ const src=fixNulls(JSON.parse(cur.orig[i])); for(const key in o) delete o[key]; Object.assign(o,src); BB.delete(o); rotateObj(o,a,cur.c[0],cur.c[1]); });
     cur.moved=true; liveLabel={x,y:y-36,text:Math.round(deg)+'°'}; render(); drawLive(); return; }
-  if(cur.kind==='move'){ const [wx,wy]=toWorld(x,y); const dx=wx-cur.last[0], dy=wy-cur.last[1]; selection.forEach(o=>moveObj(o,dx,dy)); cur.last=[wx,wy]; cur.moved=true; render(); drawLive(); return; }
+  if(cur.kind==='move'){ if(cur.hand&&!cur.moved&&dist(x,y,cur.start[0],cur.start[1])<8) return; if(cur.hand&&!cur.moved) hideSelbar(); const [wx,wy]=toWorld(x,y); const dx=wx-cur.last[0], dy=wy-cur.last[1]; selection.forEach(o=>moveObj(o,dx,dy)); cur.last=[wx,wy]; cur.moved=true; render(); drawLive(); return; }
   if(cur.kind==='shape'){
     const b=toWorld(x,y); if(dist(...cur.a,...b)*V().s<4) return;
     const r=shapeFromDrag(S.shape,cur.a,b); cur.shape=r;
-    cur.obj={t:'s',c:S.color,w:S.sizes.shape,u:1,p:shapeToPoints(r)}; if(S.fill && ['rect','ellipse','triangle','rtriangle'].includes(S.shape)) cur.obj.f=S.fill; if(S.dash) cur.obj.d=S.dash;
+    cur.obj={t:'s',c:S.color,w:S.sizes.pen,u:1,p:shapeToPoints(r)}; if(S.fill && ['rect','ellipse','triangle','rtriangle'].includes(S.shape)) cur.obj.f=S.fill; if(S.dash) cur.obj.d=S.dash;
     liveLabel={x,y:y-36,text:shapeInfo(r)||'Koordinatensystem'}; drawLive(); return;
   }
 });
@@ -1551,7 +1565,7 @@ function endPointer(e,cancel){
     if(S.scratch && !o.u && !o.hl && scratchOut(o)){ drawLive(); return; }
     pushUndo(); objs().push(o); commit(); autoScroll(o);
   } else if(c.kind==='shape' && c.obj){ pushUndo(); objs().push(c.obj);
-    if(S.shape==='axes'){ const r=c.shape; objs().push({t:'x',x:r.x1-10,y:r.oy+8,s:18,c:S.color,v:'x'},{t:'x',x:r.ox+10,y:r.y0-4,s:18,c:S.color,v:'y'}); }
+    if(S.shape==='axes'){ const r=c.shape, g=uid(); c.obj.ax=1; c.obj.g=g; objs().push({t:'x',x:r.x1-10,y:r.oy+8,s:18,c:S.color,v:'x',g},{t:'x',x:r.ox+10,y:r.y0-4,s:18,c:S.color,v:'y',g}); }
     commit();
   } else if(c.kind==='erase'){ if(c.did) commit(); if(c.arm||c.viaBtn) disarmSoon(); }
   else if(c.kind==='lasso'){ finishLasso(c.pts); }
@@ -1575,7 +1589,7 @@ function eraseAt(x,y,st){
   const before=()=>{ if(!st.did){ pushUndo(); st.did=true; } };
   for(let i=list.length-1;i>=0;i--){ const o=list[i], b=bbox(o);
     if(wx<b[0]-r||wx>b[2]+r||wy<b[1]-r||wy>b[3]+r) continue;
-    if(o.t!=='s'||o.lk) continue; // Bilder, PDFs, Text, Diagramme nur über Auswahl löschen
+    if(o.t!=='s'||o.lk||o.ax) continue; // Koordinatensysteme, Bilder, PDFs, Text, Diagramme nur über Auswahl löschen
     const p=o.p, rr=r+o.w/2; let h=false;
     for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue;
       let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;}
@@ -1629,7 +1643,7 @@ function scratchOut(o){ const P=[]; for(let i=0;i<o.p.length;i+=3){ const x=o.p[
   const th=span*0.14; let dir=0, ext=P[0][ax], rev=0;
   for(const q of P){ const v=q[ax]; if(dir===0){ if(Math.abs(v-ext)>th){ dir=v>ext?1:-1; ext=v; } } else if(dir===1){ if(v>ext) ext=v; else if(ext-v>th){ rev++; dir=-1; ext=v; } } else { if(v<ext) ext=v; else if(v-ext>th){ rev++; dir=1; ext=v; } } }
   if(rev<4) return false;
-  const m=4, list=objs(), hits=list.filter(q=>{ if(q.t!=='s'||q.lk) return false; let tot=0,ins=0; for(let i=0;i<q.p.length;i+=3){ const x=q.p[i]; if(Number.isNaN(x)||x===null) continue; tot++; if(x>=mnx-m&&x<=mxx+m&&q.p[i+1]>=mny-m&&q.p[i+1]<=mxy+m) ins++; } return tot&&ins/tot>=0.6; });
+  const m=4, list=objs(), hits=list.filter(q=>{ if(q.t!=='s'||q.lk||q.ax) return false; let tot=0,ins=0; for(let i=0;i<q.p.length;i+=3){ const x=q.p[i]; if(Number.isNaN(x)||x===null) continue; tot++; if(x>=mnx-m&&x<=mxx+m&&q.p[i+1]>=mny-m&&q.p[i+1]<=mxy+m) ins++; } return tot&&ins/tot>=0.6; });
   if(!hits.length) return false;
   pushUndo(); page().objects=list.filter(q=>!hits.includes(q)); commit(); toast('Durchgekritzelt → gelöscht (Rückgängig geht)'); return true; }
 /* ---------------- Rechnungen in Handschrift lösen ---------------- */
@@ -1963,7 +1977,7 @@ $('#cPickOk').onclick=()=>pickColor(hsl2hex(...cpick));
 $('#swatches').addEventListener('click',e=>{ if(!e.target.closest('#customSw')) return; const p=$('#colorPop'); if(p.classList.contains('open')) return closePops();
   if(!PALETTE[S.color]) cpick=hex2hsl(S.color); renderColorPop(); openPop(p,e.target.closest('#customSw')); });
 $('#swatches').addEventListener('click',e=>{ const b=e.target.closest('[data-color]'); if(!b) return; S.color=b.dataset.color; saveSettings(); renderSwatches(); updateSize(); if(S.tool==='eraser'||S.tool==='select'&&!selection.length) setTool('pen'); });
-const SIZEKEY=()=> S.tool==='hl'?'hl':S.tool==='eraser'?ERKEY():S.tool==='shape'?'shape':'pen';
+const SIZEKEY=()=> S.tool==='hl'?'hl':S.tool==='eraser'?ERKEY():'pen';
 const SIZER={pen:[1,50,[3,6,10,16,25]],hl:[1,50,[8,14,20,30,40]],eraser:[1,50,[6,12,20,30,45]],peraser:[1,50,[4,8,14,22,35]],shape:[1,50,[3,6,10,16,25]]};
 const SZF={pen:0.4,shape:0.4,hl:1,eraser:1.8,peraser:1.6};
 const lvl=k=>clamp(Math.round(S.sizes[k]/SZF[k]),1,50);
@@ -2772,7 +2786,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 15 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 16 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
