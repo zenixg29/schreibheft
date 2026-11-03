@@ -1417,6 +1417,7 @@ lv.addEventListener('pointerdown',e=>{
     else if(touches.size===1 && S.fingerDraw && !toolHit(x,y)){ capture(e); startInput(e,x,y); return; }
     startGesture(); capture(e); return;
   }
+  if(cur && cur.hand && e.pointerType==='pen' && (cur.kind==='htap'||(cur.kind==='move'&&!cur.moved))){ if(cur.kind==='move') hist().u.pop(); cur=null; if(selection.length) showSelbar(); }
   if(cur) return;
   capture(e);
   if(e.pointerType==='mouse' && (e.button===1||e.button===2)){ cur={kind:'pan',id:e.pointerId,ptype:'mouse',last:[x,y]}; return; }
@@ -1436,7 +1437,7 @@ function handGrab(e,x,y){ const [wx,wy]=toWorld(x,y), base={id:e.pointerId,ptype
     if(o.t==='s'){ const p=o.p, rr=o.w/2+tol; let h=false; for(let k=0;k<p.length;k+=3){ const ax=p[k],ay=p[k+1]; if(Number.isNaN(ax)||ax===null) continue; let bx=p[k+3],by=p[k+4]; if(k+3>=p.length||Number.isNaN(bx)||bx===null){bx=ax;by=ay;} if(segDist(wx,wy,ax,ay,bx,by)<rr){h=true;break;} } if(!h) continue; }
     hit=o; break; }
   if(!hit){ if(selection.length) clearSel(); const lo=objAt(wx,wy); clearTimeout(lpT); if(lo&&lo.lk){ lpO=lo; lpAt=[x,y]; lpT=setTimeout(()=>{ if(touches.size===1&&lpO===lo){ gest=null; selection=[lo]; showSelbar(); drawLive(); if(navigator.vibrate) try{ navigator.vibrate(15); }catch(e){} toast('Gesperrt – „Entsperren“ oder eine andere Aktion wählen'); } lpO=null; },480); } return false; }
-  selection=hit.g?list.filter(o=>o.g===hit.g):[hit]; pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; drawLive(); return true; }
+  cur={...base,kind:'htap',o:hit,t0:performance.now()}; return true; }
 let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
 let btnReleasedAt=0;
@@ -1565,6 +1566,7 @@ lv.addEventListener('pointermove',e=>{
     const sn=Math.round(deg/15)*15; if(Math.abs(deg-sn)<3.5) deg=sn; a=deg*Math.PI/180;
     selection.forEach((o,i)=>{ const src=fixNulls(JSON.parse(cur.orig[i])); for(const key in o) delete o[key]; Object.assign(o,src); BB.delete(o); rotateObj(o,a,cur.c[0],cur.c[1]); });
     cur.moved=true; liveLabel={x,y:y-36,text:Math.round(deg)+'°'}; render(); drawLive(); return; }
+  if(cur.kind==='htap'){ if(dist(x,y,cur.start[0],cur.start[1])>10||touches.size>1){ cur=null; touches.set(e.pointerId,[x,y]); startGesture(); } return; }
   if(cur.kind==='move'){ if(cur.hand&&!cur.moved&&dist(x,y,cur.start[0],cur.start[1])<8) return; if(cur.hand&&!cur.moved) hideSelbar(); const [wx,wy]=toWorld(x,y); const dx=wx-cur.last[0], dy=wy-cur.last[1]; selection.forEach(o=>moveObj(o,dx,dy)); cur.last=[wx,wy]; cur.moved=true; render(); drawLive(); return; }
   if(cur.kind==='shape'){
     const b=toWorld(x,y); if(dist(...cur.a,...b)*V().s<4) return;
@@ -1594,6 +1596,7 @@ function endPointer(e,cancel){
   } else if(c.kind==='erase'){ if(c.did) commit(); if(c.arm||c.viaBtn) disarmSoon(); }
   else if(c.kind==='lasso'){ finishLasso(c.pts); }
   else if(c.kind==='move'||c.kind==='scale'||c.kind==='rot'){ if(!c.moved) hist().u.pop(); commit(); showSelbar(); }
+  else if(c.kind==='htap'){ if(performance.now()-c.t0<450 && objs().includes(c.o)){ selection=withGroups([c.o]); showSelbar(); } }
   else if(c.kind==='tap'){ const [x,y]=pt(e); if(dist(x,y,...c.start)<12) textAt(c.w); }
   drawLive();
 }
@@ -2839,7 +2842,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 19 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 20 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
