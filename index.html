@@ -202,6 +202,127 @@ input.cr{-webkit-appearance:none;appearance:none;width:100%;height:16px;border-r
 input.cr::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #555;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #555}
 @media (max-width:760px){ #title{max-width:22vw} .hide-s{display:none!important} }
+
+/* ---- Icons ---- */
+svg.ic{width:20px;height:20px;flex:none;vertical-align:-4px}
+svg.ic.fill{fill:currentColor}
+svg.ic.acc{color:var(--accent)}
+.btn svg.ic,.chip svg.ic{width:17px;height:17px;margin-right:6px;vertical-align:-3px}
+.chip svg.ic{width:15px;height:15px}
+.ib svg.ic{width:22px;height:22px;margin:0}
+#favBtn svg.ic{color:#e0a400}
+.mi{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:9px;text-align:left;font-size:15px;white-space:nowrap}
+.mi:hover{background:var(--hover)}
+.mi.on{background:var(--accent-soft);color:var(--accent)}
+.mi.dng{color:var(--danger)}
+.mi svg,.mi .glyph{width:20px;height:20px;flex:none;color:var(--muted)}
+.mi.on svg,.mi.dng svg{color:inherit}
+.mi .glyph{font-size:18px;text-align:center;line-height:20px;font-weight:600}
+.msep{height:1px;background:var(--border);margin:5px 4px}
+.mlist{display:flex;flex-direction:column;gap:1px}
+.fdot svg{color:inherit!important}
+#armBadge{position:fixed;z-index:58;top:72px;left:50%;transform:translateX(-50%);background:var(--danger);color:#fff;padding:7px 14px 7px 10px;border-radius:999px;font-weight:600;font-size:14px;display:none;align-items:center;gap:8px;box-shadow:var(--shadow);pointer-events:none}
+#armBadge svg{width:18px;height:18px}
+body.erArmed #armBadge{display:flex}
+body.erArmed [data-tool="eraser"]{background:rgba(211,59,59,.16);color:var(--danger)}
+/* ---- Einstellungen als großes Blatt ---- */
+#p-settings{top:50%;left:50%;right:auto;transform:translate(-50%,-50%);width:min(640px,calc(100% - 32px));max-width:none;max-height:calc(100% - 40px);z-index:46;padding:14px 20px 20px;background:var(--bg);box-shadow:var(--shadow)}
+body.setOpen #scrim{display:block;z-index:45}
+#p-settings .ph{background:var(--bg)}
+#p-settings h3{font-size:20px}
+.sgh{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 6px 6px}
+.sgc{background:var(--solid);border:1px solid var(--border);border-radius:14px;padding:0 14px}
+.sgc .toggle:last-child{border-bottom:0}
+.sgc .toggle>div:first-child{flex:1;min-width:0}
+.ic-ok{color:var(--danger)}
+/* ---- Bibliothek ---- */
+#lib{position:fixed;inset:0;z-index:40;background:var(--bg);display:none}
+#lib.open{display:flex}
+#libSide{width:270px;flex:none;background:var(--solid);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;overflow-y:auto;gap:1px}
+#lib.ns #libSide{display:none}
+.lsHead{padding:6px 10px 14px;font-size:20px}
+.lsI{display:flex;align-items:center;gap:12px;width:100%;padding:9px 10px;border-radius:10px;text-align:left;font-size:15px}
+.lsI svg{color:var(--muted)}
+.lsI span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lsI em,.lsF em{font-style:normal;color:var(--muted);font-size:13px}
+.lsI:hover,.lsFn:hover{background:var(--hover)}
+.lsI.on,.lsF.on .lsFn{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lsI.on svg{color:var(--accent)}
+.lsI.sm{padding:6px 10px;font-size:14px}
+.lsI.sm svg{width:16px;height:16px}
+.lsCat{display:flex;align-items:center;justify-content:space-between;padding:16px 10px 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.lsCat .ib{width:30px;height:30px}
+.lsCat .ib svg{width:18px;height:18px}
+.lsF{display:flex;align-items:center}
+.lsF .tw{width:24px;height:32px;flex:none;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.lsF .tw svg{width:15px;height:15px}
+.lsFn{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;text-align:left;font-size:15px}
+.lsFn>span:nth-child(2){flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lsFn .fdot svg{width:19px;height:19px}
+.lsEmpty{color:var(--muted);font-size:13px;padding:4px 12px 4px 36px}
+#libMain{flex:1;min-width:0;display:flex;flex-direction:column}
+#libHead{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--solid);flex-wrap:wrap}
+#libTitle{flex:1;min-width:160px}
+#libH{margin:0;font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#crumbs{display:flex;align-items:center;gap:2px;flex-wrap:wrap;font-size:14px;margin-top:2px}
+#crumbs .crumb{padding:2px 6px}
+.cm{color:var(--muted)}
+.sbox{display:flex;align-items:center;gap:6px;background:var(--input);border:1px solid var(--border);border-radius:10px;padding:0 10px;width:min(260px,40vw)}
+.sbox svg{color:var(--muted);width:18px;height:18px}
+#nSearch{border:0;background:none;padding:9px 0;flex:1;min-width:0;color:var(--text);font:inherit;outline:none}
+#nSort{width:auto;padding:8px 10px;border-radius:10px;font-size:14px}
+#notes{flex:1;overflow-y:auto;padding:8px 22px 40px}
+.lsec{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 2px 10px}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:22px 18px}
+.fgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.ftile{position:relative}
+.ftile .fbody{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;gap:2px}
+.ftile .fico{position:relative;width:100%;aspect-ratio:4/3;border-radius:6px 14px 14px 14px;background:var(--fc,#3b6fe0);color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:6px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.ftile .fico::before{content:"";position:absolute;left:0;top:-9px;width:42%;height:14px;border-radius:7px 7px 0 0;background:var(--fc,#3b6fe0);filter:brightness(.88)}
+.ftile .fico svg{width:44px;height:44px;stroke-width:1.6;opacity:.95}
+.ftile b,.ncard .nm b{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.ftile small,.ncard .nm small{color:var(--muted);font-size:12px}
+.ftile .fmore{position:absolute;right:0;bottom:-2px;width:34px;height:34px}
+.ftile b{padding-right:30px}
+.ftile.new .fico{background:none;border:2px dashed var(--border);color:var(--muted);box-shadow:none}
+.ftile.new .fico::before{display:none}
+.ncard{position:relative;display:flex;flex-direction:column;gap:6px}
+.ncard .nthumb{width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:#fbfbf8;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;padding:0}
+:root[data-theme="dark"] .ncard .nthumb{background:#1c1d21}
+.ncard .nthumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.ncard .nph svg{width:40px;height:40px;color:var(--muted);stroke-width:1.4}
+.ncard.on .nthumb{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.ncard.new .nthumb{background:none;border:2px dashed var(--border);box-shadow:none;color:var(--muted)}
+.ncard.new .nthumb svg{width:40px;height:40px}
+.ncard .ninfo{display:flex;align-items:flex-start;gap:2px}
+.ncard .nm{flex:1;min-width:0;text-align:left;padding:0}
+.ncard .ninfo .ib{width:34px;height:34px}
+.ncard .ib.dng{color:var(--danger)}
+.ncard .nstar{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);color:#888;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.ncard .nstar svg{width:18px;height:18px}
+.ncard:hover .nstar,.ncard .nstar.on{opacity:1}
+.ncard .nstar.on{color:#e0a400}
+@media (hover:none){ .ncard .nstar{opacity:.75} }
+.ntags{display:block;margin-top:2px}
+.tg{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:2px 3px 0 0}
+.lempty{color:var(--muted);padding:30px 4px;text-align:center}
+.tbar{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;margin:14px 0 4px;color:var(--muted);font-size:14px}
+#notes.list .lgrid:not(.fgrid){grid-template-columns:1fr;gap:4px}
+#notes.list .ncard{flex-direction:row;align-items:center;gap:14px;padding:6px 8px;border-radius:12px}
+#notes.list .ncard:hover{background:var(--hover)}
+#notes.list .ncard .nthumb{width:46px;height:60px;aspect-ratio:auto;border-radius:6px;flex:none}
+#notes.list .ncard .nph svg,#notes.list .ncard.new .nthumb svg{width:22px;height:22px}
+#notes.list .ncard .ninfo{flex:1;align-items:center}
+#notes.list .ncard .nstar{position:static;opacity:1;background:none;box-shadow:none;order:3}
+@media (max-width:760px){
+  #libSide{position:absolute;z-index:3;top:0;bottom:0;left:0;display:none;box-shadow:var(--shadow)}
+  #lib.ns #libSide{display:flex}
+  .lgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:18px 14px}
+}
+@media (min-width:761px){ #libSideBtn{display:none} }
+@media (max-width:600px){ .sbox{width:100%;order:5} #notes{padding:6px 14px 30px} }
+#top .tri{right:2px;bottom:2px}
+#newPop{z-index:48}
 </style>
 </head>
 <body>
@@ -209,18 +330,12 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <canvas id="live"></canvas>
 
 <div id="top" class="bar">
-  <button class="ib" id="menuBtn" title="Meine Hefte"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button class="ib" id="menuBtn" title="Bibliothek"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></button>
   <button id="title" title="Heft umbenennen">Heft</button>
   <div class="grow"></div>
-  <button class="ib" data-panel="ruler" id="rulerBtn" title="Lineal"><svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></svg></button>
-  <button class="ib" id="compBtn" title="Zirkel"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="1.6"/><path d="M11.2 5.4L6 20M12.8 5.4L18 20M8 14.5h8"/></svg></button>
-  <button class="ib" id="geoBtn" title="Geodreieck"><svg viewBox="0 0 24 24"><path d="M2 18h20L12 8z"/><path d="M8.5 18a3.5 3.5 0 0 1 7 0"/></svg></button>
-  <button class="ib" data-open="plot" title="Funktionsplotter"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M6.5 16c2.5-9 5.5-9 7.5-3s3.5 3 5-6"/></svg></button>
-  <button class="ib" data-open="calc" title="Rechner"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg></button>
-  <button class="ib" data-open="formulas" title="Formeln &amp; Konstanten"><span class="glyph">Σ</span></button>
-  <button class="ib" data-open="science" title="Einheiten &amp; Periodensystem"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/></svg></button>
-  <button class="ib" id="insertBtn" title="Bild oder PDF einfügen"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></button>
+  <button class="ib" id="insertBtn" title="Einfügen: Bild, PDF, Foto, Tabelle"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></button>
   <input type="file" id="insertFile" accept="image/*,application/pdf,.pdf" style="display:none">
+  <button class="ib popbtn" id="toolsBtn" title="Mathe-Werkzeuge"><svg viewBox="0 0 24 24"><path d="M3 20.5h17.5L3 3z"/><path d="M7 16.5h5.5L7 11z"/></svg><span class="tri"></span></button>
   <button class="ib" data-open="paper" title="Papier &amp; Seite"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8.5h16M4 14h16M9.5 3v18M15 3v18"/></svg></button>
   <div class="sep"></div>
   <div id="pageNav">
@@ -232,10 +347,30 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="sep"></div>
   <button class="ib" id="undoBtn" title="Rückgängig"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   <button class="ib" id="redoBtn" title="Wiederholen"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-  <button class="ib" id="splitBtn" title="Zwei Seiten nebeneinander"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="8.5" height="15" rx="1.5"/><rect x="13" y="4.5" width="8.5" height="15" rx="1.5"/></svg></button>
-  <button class="ib" id="readBtn" title="Lesemodus"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-  <button class="ib" id="themeBtn" title="Hell / Dunkel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
-  <button class="ib" data-open="settings" title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+  <div class="sep"></div>
+  <button class="ib popbtn" id="topMoreBtn" title="Mehr"><i data-ic="more"></i></button>
+  <button class="ib" data-open="settings" title="Einstellungen"><i data-ic="gear"></i></button>
+</div>
+<div class="pop" id="mathPop" style="width:250px">
+  <button class="mi" data-panel="ruler" id="rulerBtn"><svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/></svg>Lineal</button>
+  <button class="mi" id="geoBtn"><svg viewBox="0 0 24 24"><path d="M2 18h20L12 8z"/><path d="M8.5 18a3.5 3.5 0 0 1 7 0"/></svg>Geodreieck</button>
+  <button class="mi" id="compBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="1.6"/><path d="M11.2 5.4L6 20M12.8 5.4L18 20M8 14.5h8"/></svg>Zirkel</button>
+  <div class="msep"></div>
+  <button class="mi" data-open="plot"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M6.5 16c2.5-9 5.5-9 7.5-3s3.5 3 5-6"/></svg>Funktionsplotter</button>
+  <button class="mi" data-open="calc"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/></svg>Rechner</button>
+  <button class="mi" data-open="formulas"><span class="glyph">Σ</span>Formeln &amp; Konstanten</button>
+  <button class="mi" data-open="science"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/></svg>Einheiten &amp; Periodensystem</button>
+</div>
+<div class="pop" id="topMorePop" style="width:260px">
+  <button class="mi" id="tmPages"><i data-ic="grid"></i>Seitenübersicht</button>
+  <button class="mi" id="splitBtn"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="8.5" height="15" rx="1.5"/><rect x="13" y="4.5" width="8.5" height="15" rx="1.5"/></svg>Zwei Seiten nebeneinander</button>
+  <button class="mi" id="readBtn"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Lesemodus</button>
+  <button class="mi" id="themeBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Hell / Dunkel</button>
+  <div class="msep"></div>
+  <button class="mi" id="tmPdf"><i data-ic="file"></i>Als PDF speichern</button>
+  <button class="mi" id="tmShare"><i data-ic="share"></i>Als PDF teilen</button>
+  <div class="msep"></div>
+  <button class="mi" id="tmSettings"><i data-ic="gear"></i>Einstellungen</button>
 </div>
 
 <div id="side" class="bar">
@@ -251,18 +386,18 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div class="sep"></div>
   <div id="quickSizes"></div>
   <button class="ib" id="sizeBtn" title="Strichstärke genau einstellen"><span class="dot"></span><span class="tri"></span></button>
-  <button class="ib" id="favBtn" title="Lieblingsstifte" style="font-size:18px">⭐</button>
+  <button class="ib" id="favBtn" title="Lieblingsstifte"><i data-ic="star"></i></button>
 </div>
 
 <div class="pop" id="pagePop" style="width:250px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">Seiten</div><div id="pageList" style="max-height:50vh;overflow:auto"></div>
-  <div class="btns" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="pgSort">▦ Übersicht &amp; sortieren</button><button class="btn" id="pgBm">🔖 Merken</button><button class="btn" id="pgDup">⧉ Kopieren</button><button class="btn pri" id="pgNew">＋ Neue Seite</button></div></div>
+  <div class="btns" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="pgSort"><i data-ic="grid"></i>Übersicht</button><button class="btn" id="pgBm"><i data-ic="bookmark"></i>Merken</button><button class="btn" id="pgDup"><i data-ic="copy"></i>Kopieren</button><button class="btn pri" id="pgNew"><i data-ic="plus"></i>Neue Seite</button></div></div>
 <div id="sorter"><div class="shd"><b style="font-size:18px">Seiten</b><span style="color:var(--muted);font-size:13px;flex:1">Zum Umsortieren eine Seite gedrückt halten und ziehen</span>
-  <button class="chip" id="soBm">🔖 Nur Lesezeichen</button><button class="btn pri" id="soClose">Fertig</button></div><div class="sgrid" id="sgrid"></div></div>
+  <button class="chip" id="soBm"><i data-ic="bookmark"></i>Nur Lesezeichen</button><button class="btn pri" id="soClose">Fertig</button></div><div class="sgrid" id="sgrid"></div></div>
 <div class="pop" id="shapePop"><div class="row" id="shapeRow"></div>
   <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Füllung</div><div class="chips" id="fillChips"><button class="chip" data-fill="0">Keine</button><button class="chip" data-fill="1">Hell</button><button class="chip" data-fill="2">Voll</button></div>
   <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">Linie</div><div class="chips" id="dashChips"><button class="chip" data-dash="0">───</button><button class="chip" data-dash="1">─ ─ ─</button><button class="chip" data-dash="2">· · · ·</button></div></div>
-<div class="pop" id="favPop" style="width:260px"><div style="font-size:13px;color:var(--muted);margin-bottom:8px">⭐ Lieblingsstifte</div><div id="favList" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
-  <div class="btns" style="margin-top:10px"><button class="btn" id="favEdit">Bearbeiten</button><button class="btn pri" id="favAdd">＋ Aktuellen speichern</button></div></div>
+<div class="pop" id="favPop" style="width:260px"><div style="font-size:13px;color:var(--muted);margin-bottom:8px">Lieblingsstifte</div><div id="favList" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+  <div class="btns" style="margin-top:10px"><button class="btn" id="favEdit">Bearbeiten</button><button class="btn pri" id="favAdd"><i data-ic="plus"></i>Aktuellen speichern</button></div></div>
 <div class="pop" id="sizePop" style="width:230px">
   <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span id="sizeName">Stift</span><span id="sizeVal">3</span></div>
   <input type="range" id="sizeRange" min="1" max="20" step="0.5" style="width:100%;margin:10px 0 4px">
@@ -281,10 +416,10 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><span class="sw" id="cPrev" style="width:34px;height:34px"></span><span id="cHex" style="font-family:ui-monospace,monospace;color:var(--muted);flex:1"></span><button class="btn pri" id="cPickOk">Nehmen</button></div>
 </div>
 <div class="pop" id="morePop" style="width:220px"><div class="fsel" id="moreList" style="margin:0"></div></div>
-<div id="pastebar" class="bar" style="position:fixed;z-index:15;display:none;border-radius:12px;padding:4px"><button id="pasteBtn" style="padding:8px 14px;font-weight:500">📋 Einfügen</button></div>
-<div class="pop" id="insPop" style="width:250px"><div class="fsel" style="margin:0">
-  <button class="btn" data-ins="file">🖼️ Bild oder PDF aus Dateien</button><button class="btn" data-ins="cam">📷 Foto aufnehmen</button>
-  <button class="btn" data-ins="scan">📄 Dokument scannen</button><button class="btn" data-ins="table">▦ Tabelle</button></div></div>
+<div id="pastebar" class="bar" style="position:fixed;z-index:15;display:none;border-radius:12px;padding:4px"><button id="pasteBtn" style="padding:8px 14px;font-weight:500"><i data-ic="clipboard"></i> Einfügen</button></div>
+<div class="pop" id="insPop" style="width:260px">
+  <button class="mi" data-ins="file"><i data-ic="image"></i>Bild oder PDF aus Dateien</button><button class="mi" data-ins="cam"><i data-ic="camera"></i>Foto aufnehmen</button>
+  <button class="mi" data-ins="scan"><i data-ic="scan"></i>Dokument scannen</button><button class="mi" data-ins="table"><i data-ic="table"></i>Tabelle</button></div>
 <div id="selbar" class="bar">
   <button id="selEdit">Bearbeiten</button>
   <button id="selColor">Farbe übernehmen</button>
@@ -324,10 +459,10 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <!-- Formeln -->
 <div class="panel bar" id="p-science" style="width:min(720px,calc(100% - 86px))">
   <div class="ph"><h3>Einheiten &amp; Periodensystem</h3><button class="x" data-close>×</button></div>
-  <div class="chips" id="sciTabs"><button class="chip on" data-st="units">⇄ Einheiten umrechnen</button><button class="chip" data-st="pse">⚛ Periodensystem</button></div>
+  <div class="chips" id="sciTabs"><button class="chip on" data-st="units"><i data-ic="swap"></i>Einheiten umrechnen</button><button class="chip" data-st="pse"><i data-ic="atom"></i>Periodensystem</button></div>
   <div id="sciUnits" style="margin-top:10px">
     <div class="chips" id="uCats"></div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input type="text" id="uVal" value="1" inputmode="decimal" style="width:120px;font-size:18px"><select id="uFrom" class="sel"></select><span>→</span><select id="uTo" class="sel"></select><button class="chip" id="uSwap" title="Tauschen">⇅</button></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input type="text" id="uVal" value="1" inputmode="decimal" style="width:120px;font-size:18px"><select id="uFrom" class="sel"></select><span>→</span><select id="uTo" class="sel"></select><button class="chip" id="uSwap" title="Tauschen"><i data-ic="swapv"></i></button></div>
     <div id="uRes" style="font-size:24px;font-weight:600;margin:12px 0 4px"></div>
     <div class="btns" style="justify-content:flex-start;margin-top:4px"><button class="btn" id="uIns">Als Text einfügen</button></div>
     <div id="uAll" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7"></div>
@@ -354,10 +489,10 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
   <div id="gsRow"><label class="f" id="gsLbl">Kästchengröße</label>
     <div style="display:flex;gap:10px;align-items:center"><input type="range" id="gsRange" min="3" max="15" step="0.5" style="flex:1"><button class="chip" id="gsReset">Standard</button></div></div>
   <div class="btns">
-    <button class="btn" id="exportPng">Seite als Bild speichern</button>
-    <button class="btn" id="sharePng">📤 Seite als Bild teilen</button>
-    <button class="btn" id="exportPdf">📄 Notiz als PDF speichern</button>
-    <button class="btn" id="sharePdf">📤 Notiz als PDF teilen</button>
+    <button class="btn" id="exportPng"><i data-ic="download"></i>Seite als Bild speichern</button>
+    <button class="btn" id="sharePng"><i data-ic="share"></i>Seite als Bild teilen</button>
+    <button class="btn" id="exportPdf"><i data-ic="file"></i>Notiz als PDF speichern</button>
+    <button class="btn" id="sharePdf"><i data-ic="share"></i>Notiz als PDF teilen</button>
     <button class="btn dng" id="delPage">Seite löschen</button>
   </div>
 </div>
@@ -365,45 +500,74 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
 <!-- Einstellungen -->
 <div class="panel bar" id="p-settings">
   <div class="ph"><h3>Einstellungen</h3><button class="x" data-close>×</button></div>
-  <div class="toggle"><div>Design<small>Hell, dunkel oder wie das Tablet</small></div>
-    <div class="chips" id="themeChips"></div></div>
-  <div class="toggle"><div>Stiftdruck<small>Fester drücken = dickere Linie</small></div><button class="sw2" data-set="pressure"></button></div>
-  <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
-  <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:130px"></div>
-  <div class="toggle"><div>In der Luft radieren<small>Stifttaste gedrückt halten und über die Seite fahren, ohne aufzusetzen. Aus: Stift muss aufliegen.</small></div><button class="sw2" data-set="airErase"></button></div>
+  <div class="sgh">Darstellung</div><div class="sgc">
+  <div class="toggle"><div>Design<small>Hell, dunkel oder wie das Tablet</small></div><div class="chips" id="themeChips"></div></div>
   <div class="toggle"><div>Werkzeugleiste<small>Wo die Stifte und Farben sind</small></div><div class="chips" id="barChips"><button class="chip" data-bp="left">Links</button><button class="chip" data-bp="right">Rechts</button><button class="chip" data-bp="bottom">Unten</button></div></div>
-  <div class="toggle"><div>Stifttaste 2× drücken = Lasso<small>In der Luft zweimal schnell die S-Pen-Taste drücken: Lasso an / aus</small></div><button class="sw2" data-set="penDbl"></button></div>
-  <div class="toggle"><div>Tägliche Sicherung<small>Speichert einmal am Tag alles in Download/Schreibheft</small></div><button class="sw2" data-set="autoBackup"></button></div>
-  <div class="toggle"><div>Glättung der Schrift<small id="smLbl">leicht</small></div><input type="range" id="smRange" min="0" max="10" step="1" style="width:130px"></div>
+  </div>
+  <div class="sgh">Stift &amp; Schrift</div><div class="sgc">
+  <div class="toggle"><div>Stiftdruck<small>Fester drücken = dickere Linie</small></div><button class="sw2" data-set="pressure"></button></div>
+  <div class="toggle"><div>Glättung der Schrift<small id="smLbl">leicht</small></div><input type="range" id="smRange" min="0" max="10" step="1" style="width:150px"></div>
+  <div class="toggle"><div>Halten zum Begradigen<small>Beim Zeichnen kurz stillhalten → Linie, Kreis, Rechteck …</small></div><button class="sw2" data-set="snap"></button></div>
+  <div class="toggle"><div>Haltezeit<small id="holdLbl">0,5 s</small></div><input type="range" id="holdRange" min="250" max="1200" step="50" style="width:150px"></div>
   <div class="toggle"><div>Durchkritzeln zum Löschen<small>Schnell hin und her über etwas kritzeln → es wird gelöscht</small></div><button class="sw2" data-set="scratch"></button></div>
-  <div class="toggle"><div>Automatisch weiterscrollen<small>Schreibst du unten am Rand, rutscht die Seite nach oben</small></div><button class="sw2" data-set="autoScroll"></button></div>
+  </div>
+  <div class="sgh">S Pen</div><div class="sgc">
+  <div class="toggle"><div>Radieren mit der Stifttaste<small>Taste drücken (auch in der Luft), dann Stift aufsetzen und über das Falsche fahren. Radiert wird nur, wenn der Stift aufliegt.</small></div><span class="ic-ok"><i data-ic="eraser"></i></span></div>
+  <div class="toggle"><div>Stifttaste 2× drücken = Lasso<small>In der Luft zweimal schnell die S-Pen-Taste drücken: Lasso an / aus</small></div><button class="sw2" data-set="penDbl"></button></div>
+  </div>
+  <div class="sgh">Bedienung</div><div class="sgc">
   <div class="toggle"><div>Mit dem Finger schreiben<small>Aus: Finger verschiebt &amp; zoomt (empfohlen mit S Pen)</small></div><button class="sw2" data-set="fingerDraw"></button></div>
-  <div class="btns" id="installRow" style="display:none"><button class="btn pri" id="installBtn">App installieren</button></div>
-  <div style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5">
-    <b>Tipps</b><br>
-    • S-Pen-Seitentaste gedrückt halten = Radierer<br>
-    • Zwei Finger: verschieben, zoomen; auf Lineal/Geodreieck: drehen<br>
-    • Am Lineal entlang zeichnen = perfekt gerade Linie<br>
-    • Alles wird automatisch auf dem Tablet gespeichert
+  <div class="toggle"><div>Automatisch weiterscrollen<small>Schreibst du unten am Rand, rutscht die Seite nach oben</small></div><button class="sw2" data-set="autoScroll"></button></div>
+  </div>
+  <div class="sgh">Sicherung</div><div class="sgc">
+  <div class="toggle"><div>Tägliche Sicherung<small>Speichert einmal am Tag alles in Download/Schreibheft</small></div><button class="sw2" data-set="autoBackup"></button></div>
+  <div class="toggle"><div>Alles sichern<small>Alle Notizen, Ordner und Bilder in eine Datei</small></div><button class="btn" id="backupBtn"><i data-ic="download"></i>Speichern</button></div>
+  <div class="toggle"><div>Sicherung laden<small>Eine gespeicherte Sicherungsdatei wieder einlesen</small></div><button class="btn" id="restoreBtn"><i data-ic="upload"></i>Laden</button></div>
+  <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
+  </div>
+  <div class="sgh">Über</div><div class="sgc">
+  <div class="toggle"><div>Schreibheft<small id="aboutVer"></small></div><div class="btns" id="installRow" style="display:none;margin:0"><button class="btn pri" id="installBtn">App installieren</button></div></div>
   </div>
 </div>
 
 <div id="scrim"></div>
-<div id="drawer">
-  <div class="hd"><b style="font-size:18px">Meine Notizen</b><button class="btn pri" id="newNote">+ Neue Notiz</button></div>
-  <div id="nTools"><div class="r"><input id="nSearch" type="search" placeholder="🔍 Suchen (Titel, Text, Tags)"><select id="nSort"><option value="updated">Zuletzt geändert</option><option value="opened">Zuletzt geöffnet</option><option value="name">Name A–Z</option><option value="created">Erstellt</option></select></div><div id="tagRow"></div></div>
-  <div id="crumbs" style="padding:0 12px 6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:14px"></div>
-  <div class="notes" id="notes"></div>
-  <div class="ft">
-    <button class="btn" id="trashBtn">🗑 Papierkorb</button>
-    <button class="btn" id="backupBtn">Sicherung speichern (alles)</button>
-    <button class="btn" id="restoreBtn">Sicherung laden</button>
-    <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
-  </div>
+<div id="lib">
+  <aside id="libSide">
+    <div class="lsHead"><b>Schreibheft</b></div>
+    <button class="lsI" data-view="home"><i data-ic="home"></i><span>Bibliothek</span></button>
+    <button class="lsI" data-view="all"><i data-ic="notes"></i><span>Alle Notizen</span><em id="cntAll"></em></button>
+    <button class="lsI" data-view="recent"><i data-ic="clock"></i><span>Zuletzt verwendet</span></button>
+    <button class="lsI" data-view="fav"><i data-ic="star"></i><span>Favoriten</span><em id="cntFav"></em></button>
+    <div class="lsCat"><span>Ordner</span><button class="ib" id="lsAddF" title="Neuer Ordner"><i data-ic="plus"></i></button></div>
+    <div id="lsTree"></div>
+    <div class="lsCat" id="lsTagCat"><span>Tags</span></div>
+    <div id="lsTags"></div>
+    <div class="grow"></div>
+    <button class="lsI" data-view="trash"><i data-ic="trash"></i><span>Papierkorb</span><em id="cntTrash"></em></button>
+    <button class="lsI" id="libSettings"><i data-ic="gear"></i><span>Einstellungen</span></button>
+  </aside>
+  <main id="libMain">
+    <header id="libHead">
+      <button class="ib" id="libSideBtn" title="Seitenleiste"><i data-ic="sidebar"></i></button>
+      <div id="libTitle"><h2 id="libH"></h2><div id="crumbs"></div></div>
+      <div class="sbox"><i data-ic="search"></i><input id="nSearch" type="search" placeholder="Suchen"></div>
+      <select id="nSort" title="Sortieren"><option value="updated">Zuletzt geändert</option><option value="opened">Zuletzt geöffnet</option><option value="name">Name A–Z</option><option value="created">Erstellt</option></select>
+      <button class="ib" id="viewBtn" title="Raster / Liste"></button>
+      <button class="btn pri popbtn" id="newBtn"><i data-ic="plus"></i>Neu</button>
+      <button class="ib" id="libClose" title="Zurück zur Notiz"><i data-ic="close"></i></button>
+    </header>
+    <div id="notes"></div>
+  </main>
+</div>
+<div class="pop" id="newPop" style="width:240px">
+  <button class="mi" id="newNote"><i data-ic="note"></i>Neue Notiz</button>
+  <button class="mi" id="newFolder"><i data-ic="folder"></i>Neuer Ordner</button>
+  <button class="mi" id="newPdf"><i data-ic="file"></i>PDF oder Bild importieren</button>
 </div>
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast"></div>
+<div id="armBadge"><i data-ic="eraser"></i>Radierer bereit – Stift aufsetzen</div>
 
 <script>
 'use strict';
@@ -412,6 +576,72 @@ input.cr::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#
    ========================================================= */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+
+/* ---------------- Icons ---------------- */
+const ICONS={
+  star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
+  bookmark:'<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/>',
+  copy:'<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  grid:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+  list:'<path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/>',
+  more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  gear:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  clipboard:'<rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10.5h6M9 14.5h6"/>',
+  image:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/>',
+  camera:'<path d="M3 8.5a2 2 0 0 1 2-2h2.5L9 4h6l1.5 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/>',
+  scan:'<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M7 12h10"/>',
+  table:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4.5v15"/>',
+  swap:'<path d="M4 8h15l-3.5-3.5M20 16H5l3.5 3.5"/>',
+  swapv:'<path d="M8 4v15l-3.5-3.5M16 20V5l3.5 3.5"/>',
+  atom:'<circle cx="12" cy="12" r="1.4"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9.5" ry="3.8" transform="rotate(120 12 12)"/>',
+  share:'<path d="M12 14.5V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 11.5v7A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-7"/>',
+  file:'<path d="M14 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',
+  note:'<path d="M14 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3.5V8h4.5M9 15.5l1-3 4.5-4.5 2 2-4.5 4.5z"/>',
+  notes:'<rect x="7" y="3.5" width="13" height="15.5" rx="1.5"/><path d="M4.5 7v12a2 2 0 0 0 2 2h10M10 8.5h7M10 12h7M10 15.5h4"/>',
+  download:'<path d="M12 3.5V15M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
+  upload:'<path d="M12 15.5V4M7.5 8.5L12 4l4.5 4.5M5 19.5h14"/>',
+  search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/>',
+  trash:'<path d="M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13M10 11v5.5M14 11v5.5"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5v-3a4 4 0 0 1 8 0v3"/>',
+  unlock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5v-3a4 4 0 0 1 7.7-1.5"/>',
+  front:'<path d="M12 19.5V6M6.5 11.5L12 6l5.5 5.5M5 3.5h14"/>',
+  back:'<path d="M12 4.5V18M6.5 12.5L12 18l5.5-5.5M5 20.5h14"/>',
+  crop:'<path d="M6 2.5V16a2 2 0 0 0 2 2h13.5M2.5 6H16a2 2 0 0 1 2 2v13.5"/>',
+  rotate:'<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
+  book:'<path d="M12 6.5C10 5 7 4.5 3.5 5v13.5c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5V20"/>',
+  folder:'<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4.2l2 2.2H19a1.5 1.5 0 0 1 1.5 1.5v8.3A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/>',
+  move:'<path d="M3.5 7A1.5 1.5 0 0 1 5 5.5h4.2l2 2.2H19a1.5 1.5 0 0 1 1.5 1.5v8.3A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M9 13.5h6M13 11.5l2 2-2 2"/>',
+  home:'<path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  tag:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.4"/>',
+  pen:'<path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M14.5 6l3 3"/>',
+  eraser:'<path d="M8 20h12"/><path d="M4.5 15.5l9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19H8z"/><path d="M9 11l4.5 4.5"/>',
+  chevr:'<path d="M9.5 6l6 6-6 6"/>', chevd:'<path d="M6 9.5l6 6 6-6"/>',
+  sidebar:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15"/>',
+  restore:'<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4l2.5 2"/>',
+  ruler:'<rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/>',
+  calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/>',
+  flask:'<path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/>',
+  dna:'<path d="M7 3c0 6 10 6 10 12 0 3-2 4.5-2 6M17 3c0 6-10 6-10 12 0 3 2 4.5 2 6M8.5 7h7M8.5 17h7"/>',
+  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.4 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.4-3.5-8.5s1.1-6.1 3.5-8.5z"/>',
+  landmark:'<path d="M3.5 20h17M5 17h14M6.5 10v7M10.2 10v7M13.8 10v7M17.5 10v7M3.5 10L12 4l8.5 6z"/>',
+  speech:'<path d="M4 5.5h16v10H9.5L4 19.5z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  flag:'<path d="M5 21V4M5 4.5h12.5L15 8.5l2.5 4H5"/>',
+  palette:'<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.1-1.6-1.1-2.8 0-1 .8-1.6 1.8-1.6H17a3.5 3.5 0 0 0 3.5-3.5C20.5 7 16.7 3.5 12 3.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.3" r="1"/><circle cx="14.5" cy="7.3" r="1"/>',
+  music:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  monitor:'<rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/>',
+  ball:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8l3.3 2.4-1.3 3.9h-4l-1.3-3.9zM12 3.5V8M15.3 10.4l4.5-1.4M14 14.3l2.6 3.9M10 14.3l-2.6 3.9M8.7 10.4L4.2 9"/>',
+  euro:'<path d="M17.5 6.5a7 7 0 1 0 0 11M4.5 10.5h9M4.5 13.5h9"/>',
+  plug:'<path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0zM12 16.5V21"/>',
+  leaf:'<path d="M5 19.5C5 11 10 5 20 4.5c0 10-6 15-14 15"/><path d="M5 19.5l7-7"/>',
+  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  heart:'<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.2 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+  sigma:'<path d="M18 5H6l6 7-6 7h12"/>'
+};
+const ic=(n,cls)=>`<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24">${ICONS[n]||ICONS.folder}</svg>`;
+$$('i[data-ic]').forEach(e=>{ e.outerHTML=ic(e.dataset.ic,e.className); });
 const UNIT = 40;                 // 1 cm = 40 Welt-Einheiten
 const PALETTE = {
   ink:['#1b1c21','#ecedf2'], blue:['#1f5fd6','#74a9ff'], red:['#d42d2d','#ff7d7d'], green:['#18853a','#62d987'],
@@ -424,7 +654,7 @@ const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
-const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',airErase:true,pressure:true,snap:true,holdMs:500,
+const DEF = {theme:'system',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',pressure:true,snap:true,holdMs:500,
   fingerDraw:false,shape:'line',barPos:'left',split:false,penDbl:true,autoBackup:!!window.AndroidApp,lastAutoBk:0,penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
@@ -451,7 +681,7 @@ const newPage = (bg='grid',layout='free',gs) => { const pg={bg, layout, objects:
 const page = () => note.pages[pageIdx];
 const objs = () => page().objects;
 let saveT = null;
-function scheduleSave(){ clearTimeout(saveT); const n=note; saveT=setTimeout(()=>{ n.updated=Date.now(); if(!n.pinHash){ try{ n.thumb=pageThumb(n.pages[0],88).toDataURL('image/jpeg',0.7); }catch(e){} } DB.put(n); },600); }
+function scheduleSave(){ clearTimeout(saveT); const n=note; saveT=setTimeout(()=>{ n.updated=Date.now(); makeThumb(n); DB.put(n); },600); }
 
 /* ---------------- Canvas ---------------- */
 const cv=$('#ink'), lv=$('#live'), ctx=cv.getContext('2d'), lctx=lv.getContext('2d');
@@ -1137,25 +1367,30 @@ let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
 let btnReleasedAt=0;
 let lastBtnPress=0, prevTool='pen';
-window.__penButton=b=>{ penBtnDown=!!b;
-  if(b && S.penDbl && !cur){ const now=Date.now(); if(now-lastBtnPress<450 && !(airSt&&airSt.did)){ lastBtnPress=0; if(S.tool==='select'){ setTool(prevTool||'pen'); toast('Zurück zum '+(prevTool==='hl'?'Textmarker':'Stift')); } else { prevTool=S.tool; setTool('select'); toast('Lasso'); } penBtnDown=false; return; } lastBtnPress=now; }
-  if(b){ if(cur && cur.ptype==='pen') penToErase(); if(lastHover){ hover=lastHover; drawLive(); } }
-  else { btnReleasedAt=Date.now(); setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen')) endAir(); },350); } };
+/* Radierer scharf schalten: Taste in der Luft drücken, dann Stift aufsetzen */
+let armed=false, armT=0, hoverBtn=false;
+function setArmed(on,ms){ clearTimeout(armT); armed=!!on; document.body.classList.toggle('erArmed',armed);
+  if(armed) armT=setTimeout(()=>setArmed(false),ms||8000); else if(!cur){ hover=null; drawLive(); } }
+function disarmSoon(){ if(armed) setArmed(true,1500); }
+window.__penButton=b=>{ b=!!b; if(b===penBtnDown) return; penBtnDown=b;
+  if(b && S.penDbl && !cur){ const now=Date.now(); if(now-lastBtnPress<450){ lastBtnPress=0; setArmed(false); if(S.tool==='select'){ setTool(prevTool||'pen'); toast('Zurück zum '+(prevTool==='hl'?'Textmarker':'Stift')); } else { prevTool=S.tool; setTool('select'); toast('Lasso'); } return; } lastBtnPress=now; }
+  if(b){ if(cur && cur.ptype==='pen') penToErase(); else if(!cur){ setArmed(true); if(lastHover){ hover=lastHover; drawLive(); } } }
+  else btnReleasedAt=Date.now(); };
 let lastHover=null;
 // vom Android-Teil: Radieren mit gedrückter Stifttaste (aufgesetzt)
 let natSt=null;
 window.__nativeErase=(ph,pts)=>{
-  if(ph==='down'){ clearTimeout(holdT); cur=null; liveLabel=null; natSt={did:airSt?airSt.did:false}; airSt=null; }
+  if(ph==='down'){ clearTimeout(holdT); cur=null; liveLabel=null; natSt={did:false}; clearTimeout(armT); }
   if(!natSt||!pts||pts.length<2) return;
   for(let i=0;i<pts.length;i+=2) eraseAt(pts[i],pts[i+1],natSt);
   hover=[pts[pts.length-2],pts[pts.length-1]];
-  if(ph==='up'){ if(natSt.did) commit(); natSt=null; hover=null; }
+  if(ph==='up'){ if(natSt.did) commit(); natSt=null; hover=null; disarmSoon(); }
   drawLive(); };
 function startInput(e,x,y){
   const pen=e.pointerType==='pen';
-  const recentBtn = penBtnDown || (Date.now()-btnReleasedAt<350) || !!airSt;
-  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || recentBtn));
-  let carryDid=false; if(airSt){ if(eraserBtn){ carryDid=airSt.did; airSt=null; hover=null; } else endAir(); }
+  const viaArm = pen && armed;
+  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || penBtnDown || armed));
+  if(viaArm) clearTimeout(armT); const carryDid=false;
   const tool = eraserBtn ? 'eraser' : S.tool;
   const [wx,wy]=toWorld(x,y);
   const base={id:e.pointerId,ptype:e.pointerType,start:[x,y]};
@@ -1169,7 +1404,7 @@ function startInput(e,x,y){
     armHold(x,y);
   } else if(tool==='laser'){ cur={...base,kind:'laser'}; laserAdd(x,y,true);
   } else if(tool==='eraser'){
-    cur={...base,kind:'erase',did:carryDid}; eraseAt(x,y);
+    cur={...base,kind:'erase',did:carryDid,arm:viaArm||(pen&&eraserBtn)}; eraseAt(x,y);
   } else if(tool==='select'){
     const sb=selLocked()?null:selBox(), hd=sb&&handleAt(x,y);
     if(sb && rotHandleAt(x,y)){ pushUndo(); const wb=selWorldBox(), c=[(wb[0]+wb[2])/2,(wb[1]+wb[3])/2]; cur={...base,kind:'rot',c,a0:Math.atan2(wy-c[1],wx-c[0]),orig:selection.map(o=>JSON.stringify(o))}; hideSelbar(); }
@@ -1212,10 +1447,8 @@ lv.addEventListener('pointermove',e=>{
   if(e.pointerType==='touch' && touches.has(e.pointerId) && !(cur && cur.ptype==='touch')){ touches.set(e.pointerId,[x,y]); moveGesture(); return; }
   if(!cur || cur.id!==e.pointerId){
     if(!cur && e.pointerType==='pen'){ lastHover=[x,y];
-      const btn=penBtnDown || (e.buttons&(2|32));
-      if(btn && S.airErase){ airErase(x,y); return; }
-      if(!btn && airSt) endAir();
-      if(btn || S.tool==='eraser'){ hover=[x,y]; drawLive(); return; } }
+      const hb=!!(e.buttons&2); if(hb && !penBtnDown){ hoverBtn=true; window.__penButton(true); } else if(!hb && penBtnDown && hoverBtn){ hoverBtn=false; window.__penButton(false); }
+      if(penBtnDown || armed || (e.buttons&32) || S.tool==='eraser'){ hover=[x,y]; drawLive(); return; } }
     if(!cur && (S.tool==='eraser') && e.pointerType!=='touch'){ hover=[x,y]; drawLive(); }
     return;
   }
@@ -1278,12 +1511,12 @@ function endPointer(e,cancel){
     const o=c.obj;
     if(!o.u){ for(let i=0;i<o.p.length;i++) o.p[i]=+o.p[i].toFixed(i%3===2?2:1); }
     if(c.raw && c.sm && !c.snap && !o.u){ const L=o.p.length; if(dist(o.p[L-3],o.p[L-2],c.raw[0],c.raw[1])>0.5) o.p.push(+c.raw[0].toFixed(1),+c.raw[1].toFixed(1),o.p[L-1]); }
-    if(S.scratch && !o.u && !o.hl && scratchOut(o)) return;
+    if(S.scratch && !o.u && !o.hl && scratchOut(o)){ drawLive(); return; }
     pushUndo(); objs().push(o); commit(); autoScroll(o);
   } else if(c.kind==='shape' && c.obj){ pushUndo(); objs().push(c.obj);
     if(S.shape==='axes'){ const r=c.shape; objs().push({t:'x',x:r.x1-10,y:r.oy+8,s:18,c:S.color,v:'x'},{t:'x',x:r.ox+10,y:r.y0-4,s:18,c:S.color,v:'y'}); }
     commit();
-  } else if(c.kind==='erase'){ if(c.did) commit(); }
+  } else if(c.kind==='erase'){ if(c.did) commit(); if(c.arm||c.viaBtn) disarmSoon(); }
   else if(c.kind==='lasso'){ finishLasso(c.pts); }
   else if(c.kind==='move'||c.kind==='scale'||c.kind==='rot'){ if(!c.moved) hist().u.pop(); commit(); showSelbar(); }
   else if(c.kind==='tap'){ const [x,y]=pt(e); if(dist(x,y,...c.start)<12) textAt(c.w); }
@@ -1291,7 +1524,7 @@ function endPointer(e,cancel){
 }
 lv.addEventListener('pointerup',e=>endPointer(e,false));
 lv.addEventListener('pointercancel',e=>endPointer(e,true));
-lv.addEventListener('pointerleave',e=>{ lastHover=null; if(airSt) endAir(); if(hover){hover=null;drawLive();} });
+lv.addEventListener('pointerleave',e=>{ lastHover=null; if(hover && !cur){hover=null;drawLive();} });
 lv.addEventListener('wheel',e=>{ e.preventDefault(); splitPick(e.clientX); const v=V();
   if(e.ctrlKey){ const ns=clamp(v.s*Math.exp(-e.deltaY*0.01),0.2,8), k=ns/v.s; v.x=e.clientX-(e.clientX-v.x)*k; v.y=e.clientY-(e.clientY-v.y)*k; v.s=ns; }
   else { v.x-=e.deltaX; v.y-=e.deltaY; }
@@ -1339,9 +1572,6 @@ function pointErase(o,cx,cy,r){
   return out.map(run=>{ const pp=[]; run.forEach(q=>pp.push(+q[0].toFixed(1),+q[1].toFixed(1),+(+q[2]).toFixed(2))); const n=Object.assign({},o,{p:pp}); return n; });
 }
 /* Radieren in der Luft mit gedrückter Stifttaste */
-let airSt=null;
-function airErase(x,y){ if(!airSt) airSt={did:false}; eraseAt(x,y,airSt); hover=[x,y]; drawLive(); }
-function endAir(){ if(airSt && airSt.did) commit(); airSt=null; hover=null; drawLive(); }
 
 /* Laserpointer */
 let lasers=[], laserRaf=0;
@@ -1383,7 +1613,7 @@ function renderFavs(){ const L=S.favPens||[];
 $('#favBtn').onclick=()=>{ const p=$('#favPop'); if(p.classList.contains('open')) return closePops(); favEditing=false; renderFavs(); openPop(p,$('#favBtn')); };
 $('#favEdit').onclick=()=>{ favEditing=!favEditing; renderFavs(); };
 $('#favAdd').onclick=()=>{ const t=S.tool==='hl'?'hl':'pen'; S.favPens=S.favPens||[]; if(S.favPens.length>=12) return toast('Maximal 12 Lieblingsstifte');
-  S.favPens.push({t,c:S.color,w:S.sizes[t],k:t==='pen'?(S.penType||'ball'):undefined}); saveSettings(); renderFavs(); toast('⭐ Gespeichert'); };
+  S.favPens.push({t,c:S.color,w:S.sizes[t],k:t==='pen'?(S.penType||'ball'):undefined}); saveSettings(); renderFavs(); toast('Lieblingsstift gespeichert'); };
 $('#favList').onclick=e=>{ const b=e.target.closest('[data-fav]'); if(!b) return; const i=+b.dataset.fav, f=S.favPens[i];
   if(favEditing){ S.favPens.splice(i,1); saveSettings(); renderFavs(); return; }
   S.color=f.c; S.sizes[f.t]=f.w; if(f.t==='pen') S.penType=f.k||'ball'; saveSettings(); renderSwatches(); setTool(f.t); closePops(); toast((f.t==='hl'?'Textmarker':PTN[f.k||'ball'])+' gewählt'); };
@@ -1414,7 +1644,7 @@ function showSelbar(){ const sb=selBox(); if(!sb) return hideSelbar(); const bar
   $('#selEdit').style.display = (!lk && selection.length===1 && (selection[0].t==='x'||selection[0].t==='p'||selection[0].t==='tb')) ? '' : 'none';
   for(const id of ['#selColor','#selDup','#selDel','#selCut','#selMore']) $(id).style.display=lk?'none':'';
   $('#selColor').style.display = (!lk && selection.some(o=>o.t==='s'||o.t==='x')) ? '' : 'none';
-  $('#selLock').textContent = lk ? '🔓 Entsperren' : '🔒 Sperren';
+  $('#selLock').textContent = lk ? 'Entsperren' : 'Sperren';
   $('#selFill').style.display = (!lk && selection.some(o=>o.t==='s'&&!o.hl)) ? '' : 'none';
   const w=bar.offsetWidth; bar.style.left=clamp((sb[0]+sb[2])/2-w/2,74,W-w-8)+'px'; bar.style.top=(sb[1]-100>70? sb[1]-100 : Math.min(sb[3]+12,H-56))+'px'; }
 function hideSelbar(){ $('#selbar').classList.remove('open'); }
@@ -1438,10 +1668,10 @@ function doPaste(at){ if(!CLIP||!CLIP.length) return; const list=CLIP.map(j=>fix
   pushUndo(); objs().push(...list); commit(); hidePaste(); setTool('select'); selection=list; drawLive(); showSelbar(); toast('Eingefügt'); }
 $('#pasteBtn').onclick=()=>doPaste(pasteAt);
 $('#selMore').onclick=e=>{ const one=selection.length===1?selection[0]:null;
-  const items=[['front','⬆️ Ganz nach vorne'],['back','⬇️ Ganz nach hinten'],['clip','📋 In die Ablage kopieren']];
-  if(one&&one.t==='i'&&!one.pdf) items.push(['crop','✂️ Zuschneiden']);
-  if(selection.some(o=>o.r||o.t==='s')) items.push(['r0','↺ Drehung zurücksetzen']);
-  $('#moreList').innerHTML=items.map(([k,n])=>`<button class="btn" data-mo="${k}">${n}</button>`).join('');
+  const items=[['front',ic('front')+'Ganz nach vorne'],['back',ic('back')+'Ganz nach hinten'],['clip',ic('clipboard')+'In die Ablage kopieren']];
+  if(one&&one.t==='i'&&!one.pdf) items.push(['crop',ic('crop')+'Zuschneiden']);
+  if(selection.some(o=>o.r||o.t==='s')) items.push(['r0',ic('rotate')+'Drehung zurücksetzen']);
+  $('#moreList').innerHTML=items.map(([k,n])=>`<button class="mi" data-mo="${k}">${n}</button>`).join('');
   const p=$('#morePop'), r=e.currentTarget.getBoundingClientRect(); closePops(); p.classList.add('open'); p.style.left=clamp(r.left-90,8,W-230)+'px'; p.style.top=clamp(r.bottom+8,8,H-p.offsetHeight-8)+'px'; };
 $('#moreList').onclick=e=>{ const b=e.target.closest('[data-mo]'); if(!b) return; closePops(); const k=b.dataset.mo;
   if(k==='front'||k==='back'){ pushUndo(); const rest=objs().filter(o=>!selection.includes(o)), sel=objs().filter(o=>selection.includes(o)); page().objects=k==='front'?[...rest,...sel]:[...sel,...rest]; commit(); showSelbar(); toast(k==='front'?'Nach vorne gelegt':'Nach hinten gelegt'); }
@@ -1506,13 +1736,14 @@ function ask(title,val,okText='OK'){ return new Promise(res=>{ modal(`<h3 style=
   const i=$('#askIn'); setTimeout(()=>{i.focus();i.select();},50); $('#askNo').onclick=()=>{closeModal();res(null)}; $('#askOk').onclick=()=>{closeModal();res(i.value)}; i.onkeydown=e=>{ if(e.key==='Enter'){closeModal();res(i.value)} }; }); }
 function confirmBox(text,okText='Löschen'){ return new Promise(res=>{ modal(`<p style="margin:4px 0 0;font-size:16px">${text}</p><div class="btns"><button class="btn" id="cNo">Abbrechen</button><button class="btn pri" id="cOk" style="background:var(--danger);border-color:var(--danger)">${okText}</button></div>`);
   $('#cNo').onclick=()=>{closeModal();res(false)}; $('#cOk').onclick=()=>{closeModal();res(true)}; }); }
+function makeThumb(n){ if(n.pinHash) return; try{ n.thumb=pageThumb(n.pages[0],220).toDataURL('image/jpeg',0.75); n.tv=2; }catch(e){} }
 let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200); }
 function openPop(pop,btn){ closePops(); const r=btn.getBoundingClientRect(); pop.classList.add('open'); const inSide=!!btn.closest('#side'), bp=S.barPos||'left';
   if(inSide&&bp==='right'){ pop.style.left=(r.left-pop.offsetWidth-8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; }
   else if(inSide&&bp==='bottom'){ pop.style.left=clamp(r.left+r.width/2-pop.offsetWidth/2,8,W-pop.offsetWidth-8)+'px'; pop.style.top=Math.max(8,r.top-pop.offsetHeight-8)+'px'; }
   else { pop.style.left=(r.right+8)+'px'; pop.style.top=clamp(r.top-4,8,H-pop.offsetHeight-8)+'px'; } }
 function closePops(){ $$('.pop.open').forEach(p=>p.classList.remove('open')); }
-document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#favBtn') && !e.target.closest('#insertBtn') && !e.target.closest('#selMore') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl')) closePops(); },true);
+document.addEventListener('pointerdown',e=>{ if(!e.target.closest('.pop') && !e.target.closest('#shapeBtn') && !e.target.closest('#sizeBtn') && !e.target.closest('#favBtn') && !e.target.closest('#insertBtn') && !e.target.closest('#selMore') && !e.target.closest('#customSw') && !e.target.closest('[data-tool]') && !e.target.closest('#pageLbl') && !e.target.closest('.popbtn')) closePops(); },true);
 
 /* ---------------- Werkzeugleiste ---------------- */
 const SHAPES={
@@ -1590,7 +1821,7 @@ $('#splitBtn').onclick=()=>{ S.split=!S.split; saveSettings(); $('#splitBtn').cl
   if(S.split){ if(note.pages.length<2){ const np=newPage(page().bg,lay(),page().gs); if(page().land) np.land=1; note.pages.splice(pageIdx+1,0,np); scheduleSave(); } splitBase=Math.min(pageIdx,note.pages.length-2); [splitBase,splitBase+1].forEach(i=>{ const pg=note.pages[i]; if(pg&&lay(pg)!=='free'){ fitView(pg); } }); toast('Zwei Seiten nebeneinander – tippe auf eine Seite, um auf ihr zu schreiben'); }
   else { [splitBase,splitBase+1].forEach(i=>{ const pg=note.pages[i]; if(pg&&lay(pg)!=='free') fitView(pg); }); }
   gotoPage(pageIdx); };
-$('#readBtn').onclick=()=>{ READ=!READ; document.body.classList.toggle('read',READ); $('#readBtn').classList.toggle('on',READ); clearSel(); toast(READ?'📖 Lesemodus: nur anschauen und blättern':'Lesemodus aus'); drawLive(); };
+$('#readBtn').onclick=()=>{ READ=!READ; document.body.classList.toggle('read',READ); $('#readBtn').classList.toggle('on',READ); clearSel(); toast(READ?'Lesemodus: nur anschauen und blättern':'Lesemodus aus'); drawLive(); };
 $('#geoBtn').onclick=()=>toggleTool('geo',$('#geoBtn'));
 
 /* Panels */
@@ -1881,7 +2112,7 @@ async function openCamera(scan){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ return camFallback(scan); }
   try{ camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}},audio:false}); }
   catch(e){ console.warn(e); if(window.AndroidApp && !(window.AndroidApp.version)) toast('Für die Kamera bitte die neue Schreibheft-APK (2.2) installieren'); else toast('Kamera nicht erlaubt – ich öffne die Bildauswahl'); return camFallback(scan); }
-  modal(`<h3 style="margin:0 0 8px">${scan?'📄 Dokument scannen':'📷 Foto aufnehmen'}</h3><video id="camV" autoplay playsinline muted style="width:100%;max-height:60vh;border-radius:10px;background:#000"></video>
+  modal(`<h3 style="margin:0 0 8px">${scan?'Dokument scannen':'Foto aufnehmen'}</h3><video id="camV" autoplay playsinline muted style="width:100%;max-height:60vh;border-radius:10px;background:#000"></video>
     <div class="btns"><button class="btn" id="camNo">Abbrechen</button><button class="btn pri" id="camShot" style="font-size:17px">● Auslösen</button></div>`);
   const v=$('#camV'); v.srcObject=camStream;
   $('#camNo').onclick=()=>{ stopCam(); closeModal(); };
@@ -1934,7 +2165,9 @@ function warpScan(src,Q,mode){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); let ow=
         od[i*4]=od[i*4+1]=od[i*4+2]=v*255; } }
     else for(let i=0;i<N;i++) od[i*4]=od[i*4+1]=od[i*4+2]=gr[i]; }
   og.putImageData(id,0,0); return out; }
-$('#insertFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+let importNew=false;
+$('#insertFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f){ importNew=false; return; }
+  if(importNew){ importNew=false; const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name); const n=createNote(f.name.replace(/\.[^.]+$/,'')||'Import',{layout:isPdf?'sheets':'roll',bg:isPdf?'blank':'block',folder:libView==='home'?curFolder:null}); openNote(n); showLib(false); }
   try{ if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)) await importPdf(f); else await insertImage(f); }
   catch(err){ console.error(err); toast('Datei konnte nicht geladen werden'); } };
 function fileToDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
@@ -2002,7 +2235,7 @@ async function pdfOnPage(doc,pdfId){
 function pageLabel(){ $('#pageLbl').textContent = S.split&&note.pages[splitBase+1] ? (splitBase+1)+'–'+(splitBase+2)+' / '+note.pages.length : (pageIdx+1)+' / '+note.pages.length; }
 function gotoPage(i){ pageIdx=clamp(i,0,note.pages.length-1); if(S.split){ if(pageIdx>splitBase+1) splitBase=pageIdx; else if(pageIdx<splitBase) splitBase=Math.max(0,pageIdx-1); if(splitBase>note.pages.length-1) splitBase=Math.max(0,note.pages.length-2); } clearSel(); pageLabel(); note.lastPage=pageIdx; clampView(); render(); drawLive(); updateUndo(); if($('#p-paper').classList.contains('open')) renderPapers(); }
 function renderPageList(){
-  $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">${pg.bm?'🔖 ':''}Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
+  $('#pageList').innerHTML=note.pages.map((pg,i)=>`<div style="display:flex;align-items:center;gap:4px;border-radius:9px;${i===pageIdx?'background:var(--accent-soft)':''}"><button class="item" data-pg="${i}" style="flex:1;text-align:left;padding:9px 10px">${pg.bm?ic('bookmark','fill acc'):''}Seite ${i+1}<small style="color:var(--muted);margin-left:6px">${pg.objects.length} Elemente</small></button><button class="ib" data-pgdel="${i}" title="Seite löschen" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join(''); }
 $('#pageLbl').onclick=e=>{ const p=$('#pagePop'); if(p.classList.contains('open')) return closePops(); renderPageList(); closePops(); p.classList.add('open'); const r=e.currentTarget.getBoundingClientRect(); p.style.left=clamp(r.left-90,8,W-260)+'px'; p.style.top=(r.bottom+8)+'px'; };
 $('#pageList').onclick=async e=>{ const d=e.target.closest('[data-pgdel]'); if(d){ const i=+d.dataset.pgdel; closePops();
     if(note.pages.length===1){ if(!await confirmBox('Das ist die einzige Seite. Inhalt leeren?','Leeren')) return; pushUndo(); page().objects=[]; commit(); return; }
@@ -2010,7 +2243,7 @@ $('#pageList').onclick=async e=>{ const d=e.target.closest('[data-pgdel]'); if(d
   const b=e.target.closest('[data-pg]'); if(b){ gotoPage(+b.dataset.pg); closePops(); } };
 $('#pgNew').onclick=()=>{ closePops(); $('#addPg').click(); };
 $('#pgDup').onclick=()=>{ closePops(); dupPage(pageIdx); };
-$('#pgBm').onclick=()=>{ closePops(); const pg=page(); if(pg.bm) delete pg.bm; else pg.bm=1; scheduleSave(); toast(pg.bm?'🔖 Seite gemerkt':'Lesezeichen entfernt'); };
+$('#pgBm').onclick=()=>{ closePops(); const pg=page(); if(pg.bm) delete pg.bm; else pg.bm=1; scheduleSave(); toast(pg.bm?'Seite gemerkt':'Lesezeichen entfernt'); };
 $('#pgSort').onclick=()=>{ closePops(); openSorter(); };
 function dupPage(i){ const cp=JSON.parse(JSON.stringify(note.pages[i])); cp.objects.forEach(fixNulls); delete cp.bm; note.pages.splice(i+1,0,cp); gotoPage(i+1); scheduleSave(); toast('Seite kopiert → Seite '+(i+2)); }
 /* Seiten-Vorschau */
@@ -2029,7 +2262,7 @@ function renderSorter(){ const DP=Math.min(2,devicePixelRatio||1); $('#soBm').cl
   const g=$('#sgrid'); g.innerHTML=''; note.pages.forEach((pg,i)=>{ if(soBmOnly&&!pg.bm) return;
     const d=document.createElement('div'); d.className='scard'+(i===pageIdx?' cur':''); d.dataset.i=i;
     const c=pageThumb(pg,Math.round(160*DP)); d.appendChild(c);
-    d.insertAdjacentHTML('beforeend',`${pg.bm?'<span class="bmk">🔖</span>':''}<div class="sbar"><b>Seite ${i+1}</b><button data-a="bm" title="Lesezeichen">${pg.bm?'🔖':'🏷️'}</button><button data-a="dup" title="Kopieren">⧉</button><button data-a="del" title="Löschen" style="color:var(--danger)">🗑</button></div>`);
+    d.insertAdjacentHTML('beforeend',`${pg.bm?'<span class="bmk">'+ic('bookmark','fill')+'</span>':''}<div class="sbar"><b>Seite ${i+1}</b><button data-a="bm" title="Lesezeichen">${ic('bookmark',pg.bm?'fill acc':'')}</button><button data-a="dup" title="Kopieren">${ic('copy')}</button><button data-a="del" title="Löschen" style="color:var(--danger)">${ic('trash')}</button></div>`);
     g.appendChild(d); });
   if(!g.children.length) g.innerHTML='<div style="color:var(--muted)">Keine Seiten mit Lesezeichen.</div>'; }
 $('#soClose').onclick=()=>$('#sorter').classList.remove('open');
@@ -2071,52 +2304,75 @@ const liveNotes=()=>notes.filter(n=>!n.trash);
 function notesIn(id){ return liveNotes().filter(n=>id? n.folder===id : (!n.folder||!fById(n.folder))); }
 function countIn(id){ let c=notesIn(id).length; subFolders(id).forEach(f=>c+=countIn(f.id)); return c; }
 const FCOLORS=['#3b6fe0','#e04848','#2e9d57','#f08a24','#8e4fd6','#e0559a','#1fa3b4','#c9a400','#6b7280','#8a5a3c'];
-const FICONS=['📁','📐','➗','⚛️','🧪','🧬','🌍','🏛️','📖','✏️','🇬🇧','🇫🇷','🇪🇸','🎨','🎵','💻','⚽','💶','⚙️','🔌','🌱','🧠','⭐','📝'];
+const FICONS=['folder','ruler','calc','sigma','atom','flask','dna','globe','landmark','book','pen','speech','flag','palette','music','monitor','ball','euro','gear','plug','leaf','bulb','star','heart','note'];
+const EMO={'📁':'folder','📐':'ruler','➗':'calc','⚛️':'atom','🧪':'flask','🧬':'dna','🌍':'globe','🏛️':'landmark','📖':'book','✏️':'pen','🇬🇧':'speech','🇫🇷':'flag','🇪🇸':'flag','🎨':'palette','🎵':'music','💻':'monitor','⚽':'ball','💶':'euro','⚙️':'gear','🔌':'plug','🌱':'leaf','🧠':'bulb','⭐':'star','📝':'note'};
+const fIc=f=>{ const k=f&&f.icon; return ICONS[k]?k:(EMO[k]||'folder'); };
 function createNote(title,opt={}){ const L=opt.layout||'free';
   const pg=newPage(opt.bg||'grid',L); if(L!=='free') fitView(pg);
   const n={id:uid(),title,created:Date.now(),updated:Date.now(),folder:opt.folder||null,pages:[pg]}; notes.unshift(n); DB.put(n); return n; }
-const EDIT_I='<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>';
+const EDIT_I=ic('more');
+let libView='home', tagFilter=null;
+const LN={free:'Unendlich',roll:'A4 endlos',sheets:'A4 Seiten'};
+const dstr=t=>new Date(t).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+function sortFn(){ const SO=S.sort||'updated'; return {updated:(a,b)=>b.updated-a.updated, opened:(a,b)=>(b.opened||0)-(a.opened||0), name:(a,b)=>a.title.localeCompare(b.title,'de',{numeric:true}), created:(a,b)=>(b.created||0)-(a.created||0)}[SO]; }
+function noteCard(n,showFolder){ const tr=!!n.trash;
+  const th=n.pinHash?`<span class="nph">${ic('lock')}</span>`:(n.thumb?`<img src="${n.thumb}" alt="">`:`<span class="nph">${ic('note')}</span>`);
+  const sub=tr?'noch '+Math.max(0,30-Math.floor((Date.now()-n.trash)/864e5))+' Tage im Papierkorb':(showFolder&&n.folder&&fById(n.folder)?esc(folderName(n.folder))+' · ':'')+dstr(n.updated)+' · '+n.pages.length+' S.';
+  return `<div class="ncard${n===note&&!tr?' on':''}" data-id="${n.id}"><button class="nthumb" data-openn>${th}</button>
+    ${tr?'':`<button class="nstar${n.fav?' on':''}" data-fav title="Favorit">${ic('star',n.fav?'fill':'')}</button>`}
+    <div class="ninfo"><button class="nm" data-openn><b>${esc(n.title)}</b><small>${sub}</small>${(n.tags||[]).length&&!tr?'<span class="ntags">'+n.tags.map(t=>`<span class="tg">#${esc(t)}</span>`).join('')+'</span>':''}</button>
+    ${tr?`<button class="ib" data-rs title="Wiederherstellen">${ic('restore')}</button><button class="ib dng" data-kill title="Endgültig löschen">${ic('trash')}</button>`:`<button class="ib" data-more title="Mehr">${ic('more')}</button>`}</div></div>`; }
+function folderTile(f){ const c=countIn(f.id), sf=subFolders(f.id).length;
+  return `<div class="ftile" data-fid="${f.id}"><button class="fbody" data-open-f><span class="fico" style="--fc:${f.color||FCOLORS[0]}">${ic(fIc(f))}</span><b>${esc(f.name)}</b><small>${c} Notiz${c===1?'':'en'}${sf?' · '+sf+' Ordner':''}</small></button><button class="ib fmore" data-edit-f title="Ordner bearbeiten">${ic('more')}</button></div>`; }
+function renderLibSide(){
+  const q=($('#nSearch').value||'').trim();
+  $$('#libSide [data-view]').forEach(b=>{ const v=b.dataset.view; b.classList.toggle('on',!q && libView===v && (v!=='home'||!curFolder)); });
+  const L=liveNotes(); $('#cntAll').textContent=L.length||''; $('#cntFav').textContent=L.filter(n=>n.fav).length||''; $('#cntTrash').textContent=notes.filter(n=>n.trash).length||'';
+  S.fOpen=S.fOpen||{}; const rows=[];
+  const walk=(pid,d)=>subFolders(pid).forEach(f=>{ const kids=subFolders(f.id).length, open=!!S.fOpen[f.id];
+    rows.push(`<div class="lsF${!q&&libView==='home'&&curFolder===f.id?' on':''}" data-fid="${f.id}" style="padding-left:${4+d*16}px"><button class="tw" data-tw>${kids?ic(open?'chevd':'chevr'):''}</button><button class="lsFn" data-go-f><span class="fdot" style="color:${f.color||FCOLORS[0]}">${ic(fIc(f))}</span><span>${esc(f.name)}</span><em>${countIn(f.id)||''}</em></button></div>`);
+    if(kids&&open) walk(f.id,d+1); });
+  walk(null,0);
+  $('#lsTree').innerHTML=rows.join('')||'<div class="lsEmpty">Noch keine Ordner</div>';
+  const tags=[...new Set(L.flatMap(n=>n.tags||[]))].sort((a,b)=>a.localeCompare(b,'de'));
+  if(tagFilter && !tags.includes(tagFilter)){ tagFilter=null; if(libView==='tag') libView='home'; }
+  $('#lsTagCat').style.display=tags.length?'':'none';
+  $('#lsTags').innerHTML=tags.map(t=>`<button class="lsI sm${!q&&libView==='tag'&&tagFilter===t?' on':''}" data-tag="${esc(t)}">${ic('tag')}<span>${esc(t)}</span></button>`).join('');
+}
+let thumbQ=false;
+function queueThumbs(list){ if(thumbQ) return; const todo=list.filter(n=>!n.pinHash&&n.tv!==2); if(!todo.length) return; thumbQ=true;
+  const step=()=>{ const n=todo.shift(); if(!n){ thumbQ=false; if($('#lib').classList.contains('open')) renderNotes(); return; } try{ fixAll(n); }catch(e){} makeThumb(n); n.tv=2; DB.put(n); setTimeout(step,15); }; setTimeout(step,60); }
 function renderNotes(){
   if(curFolder && !fById(curFolder)) curFolder=null;
-  const path=folderPath(curFolder);
-  $('#crumbs').innerHTML=`<button class="crumb" data-go="">🏠 Alle</button>`+path.map(f=>`<span style="color:var(--muted)">›</span><button class="crumb" data-go="${f.id}">${esc(f.icon||'📁')} ${esc(f.name)}</button>`).join('');
-  const LN={free:'Unendlich',roll:'A4 endlos',sheets:'A4 Seiten'};
-  const q=($('#nSearch').value||'').trim().toLowerCase();
-  const allTags=[...new Set(liveNotes().flatMap(n=>n.tags||[]))].sort((a,b)=>a.localeCompare(b,'de'));
-  if(tagFilter && !allTags.includes(tagFilter)) tagFilter=null;
-  $('#tagRow').innerHTML=allTags.map(t=>`<button class="chip${t===tagFilter?' on':''}" data-tag="${esc(t)}" style="font-size:12px;padding:3px 9px">#${esc(t)}</button>`).join('');
-  const searching=!!(q||tagFilter);
-  const SO=S.sort||'updated', cmp={updated:(a,b)=>b.updated-a.updated, opened:(a,b)=>(b.opened||0)-(a.opened||0), name:(a,b)=>a.title.localeCompare(b.title,'de',{numeric:true}), created:(a,b)=>(b.created||0)-(a.created||0)}[SO];
-  let ns=searching? liveNotes().filter(n=>(!tagFilter||(n.tags||[]).includes(tagFilter)) && (!q||noteMatches(n,q))) : notesIn(curFolder);
-  ns=ns.sort((a,b)=>((b.fav?1:0)-(a.fav?1:0))||cmp(a,b));
-  const fs=searching?[]:subFolders(curFolder);
-  if(searching) $('#crumbs').innerHTML=`<span style="color:var(--muted)">${ns.length} Treffer</span>`;
-  $('#notes').innerHTML=
-    fs.map(f=>`<div class="frow" data-fid="${f.id}"><span class="fic" style="background:${f.color||FCOLORS[0]}">${esc(f.icon||'📁')}</span><button class="fnm" data-open-f><b>${esc(f.name)}</b><small>${countIn(f.id)} Notiz${countIn(f.id)===1?'':'en'}${subFolders(f.id).length?' · '+subFolders(f.id).length+' Unterordner':''}</small></button><button class="ib" data-edit-f title="Ordner bearbeiten">${EDIT_I}</button></div>`).join('')
-    + (searching?'':`<button class="btn" id="addFolder" style="margin:6px 4px 10px;width:calc(100% - 8px)">＋ ${curFolder?'Unterordner':'Ordner'} anlegen</button>`)
-    + (ns.length? ns.map(n=>`<div class="note${n===note?' on':''}" data-id="${n.id}">${n.pinHash?'<span class="th">🔒</span>':(n.thumb?`<img class="th" src="${n.thumb}" alt="">`:'<span class="th">📄</span>')}<button class="nm"><b>${esc(n.title)}</b><small>${searching&&n.folder&&fById(n.folder)?esc(folderName(n.folder))+' · ':''}${LN[n.pages[0].layout||'free']} · ${n.pages.length} S. · ${new Date(n.updated).toLocaleDateString('de-DE')}</small>${(n.tags||[]).length?'<div>'+n.tags.map(t=>`<span class="tg">#${esc(t)}</span>`).join('')+'</div>':''}</button>
-    <button class="star${n.fav?' on':''}" data-fav title="Favorit">⭐</button>
-    <button class="ib" data-more title="Mehr">${EDIT_I}</button></div>`).join('')
-    : `<div style="padding:12px;color:var(--muted)">${searching?'Nichts gefunden.':fs.length?'Keine Notizen direkt hier.':'Noch keine Notizen hier. Tippe oben auf „＋ Neue Notiz“.'}</div>`);
-  const tc=notes.filter(n=>n.trash).length; $('#trashBtn').textContent='🗑 Papierkorb'+(tc?' ('+tc+')':'');
+  renderLibSide();
+  const q=($('#nSearch').value||'').trim().toLowerCase(), cmp=sortFn();
+  let title='', crumbs='', fs=[], ns=[], empty='', head='', newTiles=false, showF=false;
+  if(q){ title='Suche'; ns=liveNotes().filter(n=>noteMatches(n,q)).sort(cmp); crumbs=`<span class="cm">${ns.length} Treffer</span>`; empty='Nichts gefunden.'; showF=true; }
+  else if(libView==='home'){ const path=folderPath(curFolder); title=curFolder?fById(curFolder).name:'Bibliothek';
+    if(curFolder) crumbs=`<button class="crumb" data-go="">Bibliothek</button>`+path.slice(0,-1).map(f=>`<span class="cm">›</span><button class="crumb" data-go="${f.id}">${esc(f.name)}</button>`).join('');
+    fs=subFolders(curFolder); ns=notesIn(curFolder).sort(cmp); newTiles=true; }
+  else if(libView==='all'){ title='Alle Notizen'; ns=liveNotes().sort(cmp); empty='Noch keine Notizen.'; showF=true; }
+  else if(libView==='recent'){ title='Zuletzt verwendet'; ns=liveNotes().filter(n=>n.opened).sort((a,b)=>b.opened-a.opened).slice(0,40); empty='Noch nichts geöffnet.'; showF=true; }
+  else if(libView==='fav'){ title='Favoriten'; ns=liveNotes().filter(n=>n.fav).sort(cmp); empty='Noch keine Favoriten. Tippe bei einer Notiz auf den Stern.'; showF=true; }
+  else if(libView==='tag'){ title='#'+tagFilter; ns=liveNotes().filter(n=>(n.tags||[]).includes(tagFilter)).sort(cmp); showF=true; }
+  else if(libView==='trash'){ title='Papierkorb'; ns=notes.filter(n=>n.trash).sort((a,b)=>b.trash-a.trash); empty='Der Papierkorb ist leer.';
+    head=`<div class="tbar"><span>Gelöschte Notizen bleiben 30 Tage hier, dann sind sie weg.</span>${ns.length?'<button class="btn dng" id="trEmpty">'+ic('trash')+'Papierkorb leeren</button>':''}</div>`; }
+  $('#libH').textContent=title; $('#crumbs').innerHTML=crumbs; $('#crumbs').style.display=crumbs?'':'none';
+  $('#viewBtn').innerHTML=ic(S.libList?'grid':'list'); $('#notes').classList.toggle('list',!!S.libList);
+  let h=head;
+  if(fs.length||(newTiles&&!q)) h+=`<div class="lsec">Ordner</div><div class="lgrid fgrid">${fs.map(folderTile).join('')}${newTiles?`<div class="ftile new"><button class="fbody" data-new-folder><span class="fico">${ic('plus')}</span><b>Neuer Ordner</b><small>&nbsp;</small></button></div>`:''}</div>`;
+  if(newTiles||ns.length) h+=`<div class="lsec">Notizen</div>`;
+  h+=`<div class="lgrid">${newTiles?`<div class="ncard new"><button class="nthumb" data-new-note>${ic('plus')}</button><div class="ninfo"><button class="nm" data-new-note><b>Neue Notiz</b><small>&nbsp;</small></button></div></div>`:''}${ns.map(n=>noteCard(n,showF)).join('')}</div>`;
+  if(!ns.length&&empty) h+=`<div class="lempty">${empty}</div>`;
+  $('#notes').innerHTML=h;
+  queueThumbs(ns);
 }
-let tagFilter=null;
 function noteMatches(n,q){ if(n.title.toLowerCase().includes(q)) return true; if((n.tags||[]).some(t=>t.toLowerCase().includes(q))) return true;
   if(n.pinHash) return false; return n.pages.some(p=>p.objects.some(o=>(o.t==='x'&&o.v.toLowerCase().includes(q))||(o.t==='p'&&(o.fns||[]).join(' ').toLowerCase().includes(q))||(o.t==='tb'&&o.cells.flat().join(' ').toLowerCase().includes(q)))); }
 $('#nSearch').addEventListener('input',()=>renderNotes());
 $('#nSort').onchange=e=>{ S.sort=e.target.value; saveSettings(); renderNotes(); };
-$('#tagRow').onclick=e=>{ const b=e.target.closest('[data-tag]'); if(!b) return; tagFilter = tagFilter===b.dataset.tag?null:b.dataset.tag; renderNotes(); };
 function trashNote(n){ n.trash=Date.now(); DB.put(n); if(n===note){ const nx=liveNotes().sort((a,b)=>b.updated-a.updated)[0]; openNote(nx||createNote('Neue Notiz')); } }
-function openTrash(){ const tr=notes.filter(n=>n.trash).sort((a,b)=>b.trash-a.trash);
-  modal(`<h3 style="margin:0 0 4px">🗑 Papierkorb</h3><p style="margin:0 0 10px;color:var(--muted);font-size:13px">Gelöschte Notizen bleiben 30 Tage hier, dann sind sie weg.</p>
-    <div style="max-height:55vh;overflow:auto">${tr.length?tr.map(n=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.title)}</b><small style="color:var(--muted)">noch ${Math.max(0,30-Math.floor((Date.now()-n.trash)/864e5))} Tage</small></div><button class="btn" data-rs="${n.id}">Wiederherstellen</button><button class="btn dng" data-kill="${n.id}">Weg</button></div>`).join(''):'<p style="color:var(--muted)">Der Papierkorb ist leer.</p>'}</div>
-    <div class="btns">${tr.length?'<button class="btn dng" id="trEmpty">Papierkorb leeren</button>':''}<button class="btn pri" id="trClose">Schließen</button></div>`);
-  $('#trClose').onclick=closeModal;
-  $('#modalBox').onclick=async e=>{ const r=e.target.closest('[data-rs]'), k=e.target.closest('[data-kill]');
-    if(r){ const n=notes.find(x=>x.id===r.dataset.rs); delete n.trash; if(n.folder&&!fById(n.folder)) n.folder=null; DB.put(n); toast('„'+n.title+'“ ist wieder da'); renderNotes(); openTrash(); }
-    else if(k){ const n=notes.find(x=>x.id===k.dataset.kill); if(!await confirmBox('„'+esc(n.title)+'“ endgültig löschen? Das geht nicht rückgängig.','Endgültig löschen')) return openTrash(); notes=notes.filter(x=>x!==n); DB.del(n.id); renderNotes(); openTrash(); }
-    else if(e.target.id==='trEmpty'){ if(!await confirmBox('Alle '+tr.length+' Notizen im Papierkorb endgültig löschen?','Leeren')) return openTrash(); tr.forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!n.trash); renderNotes(); toast('Papierkorb geleert'); } }; }
-$('#trashBtn').onclick=openTrash;
+function openTrash(){ libView='trash'; showLib(true); }
 /* PIN */
 const UNLOCKED=new Set();
 async function pinHash(pin,id){ const d=new TextEncoder().encode('schreibheft|'+id+'|'+pin);
@@ -2126,33 +2382,37 @@ function pinPrompt(title,sub){ return new Promise(res=>{ modal(`<h3 style="margi
   const i=$('#pinIn'); setTimeout(()=>i.focus(),50); const ok=()=>{ const v=i.value.trim(); if(v.length<4){ toast('Mindestens 4 Ziffern'); return i.focus(); } closeModal(); res(v); };
   $('#pinOk').onclick=ok; i.onkeydown=e=>{ if(e.key==='Enter') ok(); }; $('#pinNo').onclick=()=>{ closeModal(); res(null); }; }); }
 async function unlockNote(n){ if(!n.pinHash||UNLOCKED.has(n.id)) return true;
-  for(let t=0;t<5;t++){ const p=await pinPrompt('🔒 „'+esc(n.title)+'“',t?'Falsche PIN, nochmal versuchen':'Diese Notiz ist mit einer PIN geschützt.'); if(p===null) return false;
+  for(let t=0;t<5;t++){ const p=await pinPrompt('„'+esc(n.title)+'“ ist gesperrt',t?'Falsche PIN, nochmal versuchen':'Diese Notiz ist mit einer PIN geschützt.'); if(p===null) return false;
     if(await pinHash(p,n.id)===n.pinHash){ UNLOCKED.add(n.id); return true; } }
   toast('Zu viele Versuche'); return false; }
 async function noteMenu(n){
-  const act=await new Promise(res=>{ modal(`<h3 style="margin:0 0 10px">${esc(n.title)}</h3><div class="fsel">
-    <button class="btn" data-a="ren">✏️ Umbenennen</button><button class="btn" data-a="mv">📁 In Ordner verschieben</button><button class="btn" data-a="tags">🏷️ Tags bearbeiten</button>
-    <button class="btn" data-a="pin">${n.pinHash?'🔓 PIN entfernen':'🔒 Mit PIN sperren'}</button><button class="btn" data-a="dup">⧉ Notiz kopieren</button><button class="btn" data-a="pdf">📄 Als PDF speichern</button><button class="btn" data-a="spdf">📤 Als PDF teilen</button><button class="btn dng" data-a="del">🗑 In den Papierkorb</button></div>
+  const act=await new Promise(res=>{ modal(`<h3 style="margin:0 0 10px">${esc(n.title)}</h3><div class="mlist">
+    <button class="mi" data-a="ren">${ic('pen')}Umbenennen</button><button class="mi" data-a="mv">${ic('move')}In Ordner verschieben</button><button class="mi" data-a="tags">${ic('tag')}Tags bearbeiten</button>
+    <button class="mi" data-a="fav">${ic('star',n.fav?'fill':'')}${n.fav?'Aus Favoriten entfernen':'Zu Favoriten'}</button>
+    <button class="mi" data-a="pin">${ic(n.pinHash?'unlock':'lock')}${n.pinHash?'PIN entfernen':'Mit PIN sperren'}</button><button class="mi" data-a="dup">${ic('copy')}Notiz kopieren</button>
+    <div class="msep"></div><button class="mi" data-a="pdf">${ic('file')}Als PDF speichern</button><button class="mi" data-a="spdf">${ic('share')}Als PDF teilen</button>
+    <div class="msep"></div><button class="mi dng" data-a="del">${ic('trash')}In den Papierkorb</button></div>
     <div class="btns"><button class="btn" id="nmNo">Schließen</button></div>`);
-    $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b){ closeModal(); res(b.dataset.a); } }; $('#nmNo').onclick=()=>{ closeModal(); res(null); }; });
+    $('#modalBox .mlist').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b){ closeModal(); res(b.dataset.a); } }; $('#nmNo').onclick=()=>{ closeModal(); res(null); }; });
   if(act==='ren'){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; } }
-  else if(act==='mv'){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); toast(r.id?'Verschoben nach '+folderName(r.id):'Aus dem Ordner genommen'); } }
+  else if(act==='mv'){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); toast(r.id?'Verschoben nach '+folderName(r.id):'Liegt jetzt direkt in der Bibliothek'); } }
   else if(act==='tags'){ const t=await ask('Tags (mit Komma trennen, z. B. Mathe, Klausur)',(n.tags||[]).join(', '),'Speichern'); if(t!==null&&t!==undefined){ n.tags=[...new Set(String(t).split(/[,;]/).map(x=>x.trim().replace(/^#/,'')).filter(Boolean))]; if(!n.tags.length) delete n.tags; DB.put(n); } }
+  else if(act==='fav'){ if(n.fav) delete n.fav; else n.fav=1; DB.put(n); }
   else if(act==='pin'){
     if(n.pinHash){ if(!await unlockNote(n)) return; delete n.pinHash; DB.put(n); toast('PIN entfernt'); }
     else { const p=await pinPrompt('PIN festlegen','Merk sie dir gut – ohne PIN kommt niemand mehr an die Notiz, auch du nicht.'); if(!p) return; const p2=await pinPrompt('PIN wiederholen'); if(p2!==p) return toast('Die PINs sind nicht gleich');
-      n.pinHash=await pinHash(p,n.id); delete n.thumb; UNLOCKED.add(n.id); DB.put(n); toast('🔒 Notiz ist jetzt mit PIN gesperrt'); } }
+      n.pinHash=await pinHash(p,n.id); delete n.thumb; UNLOCKED.add(n.id); DB.put(n); toast('Notiz ist jetzt mit PIN gesperrt'); } }
   else if(act==='dup'){ const cp=JSON.parse(JSON.stringify(n)); cp.id=uid(); cp.title=n.title+' (Kopie)'; cp.created=cp.updated=Date.now(); delete cp.fav; fixAll(cp); notes.unshift(cp); DB.put(cp); toast('Kopie erstellt'); }
   else if(act==='del'){ trashNote(n); toast('In den Papierkorb gelegt'); }
   else if(act==='pdf'||act==='spdf'){ fixAll(n); exportPdf(n,act==='spdf'); }
   renderNotes(); }
-$('#crumbs').onclick=e=>{ const b=e.target.closest('[data-go]'); if(!b) return; curFolder=b.dataset.go||null; renderNotes(); };
-function folderDialog(f){ return new Promise(res=>{
-  let color=f?f.color||FCOLORS[0]:FCOLORS[Math.floor(Math.random()*FCOLORS.length)], icon=f?f.icon||'📁':'📁';
-  modal(`<h3 style="margin:0 0 10px">${f?'Ordner bearbeiten':(curFolder?'Neuer Unterordner in „'+esc(folderName(curFolder))+'“':'Neuer Ordner')}</h3>
+$('#crumbs').onclick=e=>{ const b=e.target.closest('[data-go]'); if(!b) return; curFolder=b.dataset.go||null; libView='home'; renderNotes(); };
+function folderDialog(f,parent){ return new Promise(res=>{
+  let color=f?f.color||FCOLORS[0]:FCOLORS[Math.floor(Math.random()*FCOLORS.length)], icon=f?fIc(f):'folder';
+  modal(`<h3 style="margin:0 0 10px">${f?'Ordner bearbeiten':(parent?'Neuer Ordner in „'+esc(folderName(parent))+'“':'Neuer Ordner')}</h3>
     <input type="text" id="fdName" value="${f?esc(f.name):''}" placeholder="z. B. Mathe">
     <label class="f">Farbe</label><div class="colrow" id="fdCol">${FCOLORS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===color?'on':''}"></button>`).join('')}</div>
-    <label class="f">Symbol</label><div class="icgrid" id="fdIc">${FICONS.map(i=>`<button data-i="${i}" class="${i===icon?'on':''}">${i}</button>`).join('')}</div>
+    <label class="f">Symbol</label><div class="icgrid" id="fdIc">${FICONS.map(i=>`<button data-i="${i}" class="${i===icon?'on':''}">${ic(i)}</button>`).join('')}</div>
     <div class="btns">${f?'<button class="btn dng" id="fdDel">Ordner löschen</button>':''}<button class="btn" id="fdNo">Abbrechen</button><button class="btn pri" id="fdOk">${f?'Speichern':'Erstellen'}</button></div>`);
   const i=$('#fdName'); i.focus();
   $('#fdCol').onclick=e=>{ const b=e.target.closest('[data-c]'); if(!b) return; color=b.dataset.c; $$('#fdCol button').forEach(x=>x.classList.toggle('on',x===b)); };
@@ -2161,58 +2421,89 @@ function folderDialog(f){ return new Promise(res=>{
   $('#fdOk').onclick=()=>{ const name=i.value.trim(); if(!name){ i.focus(); return toast('Bitte einen Namen eingeben'); } closeModal(); res({name,color,icon}); };
   if(f) $('#fdDel').onclick=()=>{ closeModal(); res({del:true}); };
 }); }
+async function addFolder(parent){ const r=await folderDialog(null,parent); if(r){ const f={id:uid(),name:r.name,color:r.color,icon:r.icon,parent:parent||null}; meta.folders.push(f); if(parent){ S.fOpen=S.fOpen||{}; S.fOpen[parent]=1; saveSettings(); } saveMeta(); toast('Ordner „'+r.name+'“ angelegt'); } renderNotes(); }
+async function editFolder(f){ const r=await folderDialog(f); if(!r) return;
+  if(r.del){
+    const allF=[f.id]; for(let i=0;i<allF.length;i++) meta.folders.forEach(x=>{ if(x.parent===allF[i]) allF.push(x.id); });
+    const nN=liveNotes().filter(n=>allF.includes(n.folder)).length, nF=allF.length-1;
+    const choice=await new Promise(res=>{ modal(`<h3 style="margin:0 0 8px">Ordner „${esc(f.name)}“ löschen?</h3>
+      <p style="margin:0;color:var(--muted)">Darin: ${nN} Notiz${nN===1?'':'en'}${nF?' und '+nF+' Unterordner':''}.</p>
+      <div class="fsel" style="margin-top:14px">
+        <button class="btn" id="fdKeep">Inhalt behalten – rutscht eine Ebene nach oben</button>
+        <button class="btn" id="fdAll" style="background:var(--danger);border-color:var(--danger);color:#fff">Alles löschen (Ordner, Unterordner und Notizen)</button>
+        <button class="btn" id="fdCancel">Abbrechen</button></div>`);
+      $('#fdKeep').onclick=()=>{closeModal();res('keep')}; $('#fdAll').onclick=()=>{closeModal();res('all')}; $('#fdCancel').onclick=()=>{closeModal();res(null)}; });
+    if(!choice) return;
+    if(choice==='keep'){ notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
+      meta.folders=meta.folders.filter(x=>x!==f); toast('Ordner gelöscht, Inhalt ist eine Ebene höher'); }
+    else { const gone=liveNotes().filter(n=>allF.includes(n.folder)); const t=Date.now(); gone.forEach(n=>{ n.trash=t; n.folder=null; DB.put(n); });
+      meta.folders=meta.folders.filter(x=>!allF.includes(x.id)); if(note.trash) openNote(liveNotes()[0]||createNote('Neue Notiz')); toast('Ordner gelöscht – Notizen sind im Papierkorb'); }
+    if(curFolder&&!fById(curFolder)) curFolder=f.parent&&fById(f.parent)?f.parent:null;
+    saveMeta(); renderNotes(); return; }
+  Object.assign(f,r); saveMeta(); renderNotes(); }
+function goFolder(id){ libView='home'; curFolder=id||null; $('#nSearch').value=''; S.fOpen=S.fOpen||{}; folderPath(id).slice(0,-1).forEach(f=>S.fOpen[f.id]=1); renderNotes(); if(innerWidth<760) $('#lib').classList.remove('ns'); }
 $('#notes').addEventListener('click',async e=>{
-  if(e.target.closest('#addFolder')){ const r=await folderDialog(null); if(r){ const f={id:uid(),name:r.name,color:r.color,icon:r.icon,parent:curFolder||null}; meta.folders.push(f); saveMeta(); } renderNotes(); return; }
-  const fr=e.target.closest('.frow');
-  if(fr){ const f=fById(fr.dataset.fid);
-    if(e.target.closest('[data-edit-f]')){ const r=await folderDialog(f); if(!r) return;
-      if(r.del){
-        const allF=[f.id]; for(let i=0;i<allF.length;i++) meta.folders.forEach(x=>{ if(x.parent===allF[i]) allF.push(x.id); });
-        const nN=liveNotes().filter(n=>allF.includes(n.folder)).length, nF=allF.length-1;
-        const choice=await new Promise(res=>{ modal(`<h3 style="margin:0 0 8px">Ordner „${esc(f.name)}“ löschen?</h3>
-          <p style="margin:0;color:var(--muted)">Darin: ${nN} Notiz${nN===1?'':'en'}${nF?' und '+nF+' Unterordner':''}.</p>
-          <div class="fsel" style="margin-top:14px">
-            <button class="btn" id="fdKeep">Inhalt behalten – rutscht eine Ebene nach oben</button>
-            <button class="btn" id="fdAll" style="background:var(--danger);border-color:var(--danger);color:#fff">Alles löschen (Ordner, Unterordner und Notizen)</button>
-            <button class="btn" id="fdCancel">Abbrechen</button></div>`);
-          $('#fdKeep').onclick=()=>{closeModal();res('keep')}; $('#fdAll').onclick=()=>{closeModal();res('all')}; $('#fdCancel').onclick=()=>{closeModal();res(null)}; });
-        if(!choice) return;
-        if(choice==='keep'){ notes.forEach(n=>{ if(n.folder===f.id){ n.folder=f.parent||null; DB.put(n); } }); meta.folders.forEach(x=>{ if(x.parent===f.id) x.parent=f.parent||null; });
-          meta.folders=meta.folders.filter(x=>x!==f); toast('Ordner gelöscht, Inhalt ist eine Ebene höher'); }
-        else { const gone=liveNotes().filter(n=>allF.includes(n.folder)); const t=Date.now(); gone.forEach(n=>{ n.trash=t; n.folder=null; DB.put(n); });
-          meta.folders=meta.folders.filter(x=>!allF.includes(x.id)); if(note.trash) openNote(liveNotes()[0]||createNote('Neue Notiz')); toast('Ordner gelöscht – Notizen sind im Papierkorb'); }
-        saveMeta(); renderNotes(); return; }
-      Object.assign(f,r); saveMeta(); renderNotes(); return; }
-    curFolder=f.id; renderNotes(); return; }
-});
-function folderOptions(){ const out=[]; const walk=(pid,d)=>subFolders(pid).forEach(f=>{ out.push([f.id,'   '.repeat(d)+(f.icon||'📁')+' '+f.name]); walk(f.id,d+1); }); walk(null,0); return out; }
-function chooseFolder(title,current){ return new Promise(res=>{ modal(`<h3 style="margin:0">${title}</h3><div class="fsel">${[[null,'🏠 Kein Ordner'],...folderOptions()].map(([id,n])=>`<button class="btn${(current||null)===id?' pri':''}" data-id="${id??''}">${esc(n)}</button>`).join('')}</div><div class="btns"><button class="btn" id="fsNo">Abbrechen</button></div>`);
-  $('#modalBox .fsel').onclick=e=>{ const b=e.target.closest('[data-id]'); if(!b) return; closeModal(); res({id:b.dataset.id||null}); }; $('#fsNo').onclick=()=>{closeModal();res(null)}; }); }
-$('#notes').addEventListener('click',async e=>{ const row=e.target.closest('.note'); if(!row) return; const n=notes.find(x=>x.id===row.dataset.id);
+  if(e.target.closest('[data-new-note]')) return newNoteDialog();
+  if(e.target.closest('[data-new-folder]')) return addFolder(libView==='home'?curFolder:null);
+  if(e.target.id==='trEmpty'||e.target.closest('#trEmpty')){ const tr=notes.filter(n=>n.trash); if(!await confirmBox('Alle '+tr.length+' Notizen im Papierkorb endgültig löschen?','Leeren')) return; tr.forEach(n=>DB.del(n.id)); notes=notes.filter(n=>!n.trash); renderNotes(); toast('Papierkorb geleert'); return; }
+  const fr=e.target.closest('.ftile[data-fid]');
+  if(fr){ const f=fById(fr.dataset.fid); if(e.target.closest('[data-edit-f]')) return editFolder(f); return goFolder(f.id); }
+  const row=e.target.closest('.ncard[data-id]'); if(!row) return; const n=notes.find(x=>x.id===row.dataset.id); if(!n) return;
   if(e.target.closest('[data-fav]')){ if(n.fav) delete n.fav; else n.fav=1; DB.put(n); renderNotes(); return; }
   if(e.target.closest('[data-more]')){ noteMenu(n); return; }
-  if(e.target.closest('[data-mv]')){ const r=await chooseFolder('„'+esc(n.title)+'“ verschieben nach …',n.folder); if(r){ n.folder=r.id; n.updated=Date.now(); DB.put(n); renderNotes(); toast(r.id?'Verschoben nach '+folderName(r.id):'Aus dem Ordner genommen'); } return; }
-  if(e.target.closest('[data-ren]')){ const t=await ask('Notiz umbenennen',n.title,'Speichern'); if(t&&t.trim()){ n.title=t.trim(); n.updated=Date.now(); DB.put(n); if(n===note) $('#title').textContent=n.title; renderNotes(); } return; }
-  if(e.target.closest('[data-del]')){ if(!await confirmBox('„'+esc(n.title)+'“ mit allen Seiten löschen?')) return; notes=notes.filter(x=>x!==n); DB.del(n.id); if(n===note) openNote(notes[0]||createNote('Neue Notiz')); renderNotes(); return; }
-  if(!await unlockNote(n)) return; openNote(n); toggleDrawer(false); });
-$('#newNote').onclick=()=>{
-  let L='roll', bg='block', fo=curFolder||null;
+  if(e.target.closest('[data-rs]')){ delete n.trash; if(n.folder&&!fById(n.folder)) n.folder=null; DB.put(n); toast('„'+n.title+'“ ist wieder da'); renderNotes(); return; }
+  if(e.target.closest('[data-kill]')){ if(!await confirmBox('„'+esc(n.title)+'“ endgültig löschen? Das geht nicht rückgängig.','Endgültig löschen')) return; notes=notes.filter(x=>x!==n); DB.del(n.id); renderNotes(); return; }
+  if(n.trash){ toast('Erst wiederherstellen, dann öffnen'); return; }
+  if(!e.target.closest('[data-openn]')) return;
+  if(!await unlockNote(n)) return; openNote(n); showLib(false); });
+$('#libSide').addEventListener('click',e=>{
+  const v=e.target.closest('[data-view]'); if(v){ libView=v.dataset.view; if(libView==='home') curFolder=null; $('#nSearch').value=''; renderNotes(); if(innerWidth<760) $('#lib').classList.remove('ns'); return; }
+  const tg=e.target.closest('[data-tag]'); if(tg){ libView='tag'; tagFilter=tg.dataset.tag; $('#nSearch').value=''; renderNotes(); if(innerWidth<760) $('#lib').classList.remove('ns'); return; }
+  const fr=e.target.closest('.lsF'); if(fr){ const id=fr.dataset.fid; if(e.target.closest('[data-tw]')){ S.fOpen=S.fOpen||{}; if(S.fOpen[id]) delete S.fOpen[id]; else S.fOpen[id]=1; saveSettings(); renderLibSide(); return; } return goFolder(id); }
+  if(e.target.closest('#lsAddF')) return addFolder(null);
+  if(e.target.closest('#libSettings')) return openPanel('settings');
+});
+$('#libSideBtn').onclick=()=>$('#lib').classList.toggle('ns');
+$('#viewBtn').onclick=()=>{ S.libList=!S.libList; saveSettings(); renderNotes(); };
+$('#libClose').onclick=()=>showLib(false);
+function dropPop(pop,btn){ if(pop.classList.contains('open')) return closePops(); closePops(); pop.classList.add('open'); const r=btn.getBoundingClientRect(); pop.style.left=clamp(r.right-pop.offsetWidth,8,W-pop.offsetWidth-8)+'px'; pop.style.top=Math.min(r.bottom+8,H-pop.offsetHeight-8)+'px'; }
+$('#newBtn').onclick=e=>dropPop($('#newPop'),e.currentTarget);
+$('#newNote').onclick=()=>{ closePops(); newNoteDialog(); };
+$('#newFolder').onclick=()=>{ closePops(); addFolder(libView==='home'?curFolder:null); };
+$('#newPdf').onclick=()=>{ closePops(); importNew=true; $('#insertFile').click(); };
+$('#toolsBtn').onclick=e=>dropPop($('#mathPop'),e.currentTarget);
+$('#topMoreBtn').onclick=e=>dropPop($('#topMorePop'),e.currentTarget);
+$('#mathPop').addEventListener('click',e=>{ if(e.target.closest('.mi')) closePops(); });
+$('#topMorePop').addEventListener('click',e=>{ if(e.target.closest('.mi')) closePops(); });
+$('#tmPages').onclick=()=>$('#pgSort').click();
+$('#tmPdf').onclick=()=>$('#exportPdf').click();
+$('#tmShare').onclick=()=>$('#sharePdf').click();
+$('#tmSettings').onclick=()=>openPanel('settings');
+function folderOptions(){ const out=[]; const walk=(pid,d)=>subFolders(pid).forEach(f=>{ out.push([f.id,f.name,d,f]); walk(f.id,d+1); }); walk(null,0); return out; }
+function chooseFolder(title,current){ return new Promise(res=>{ modal(`<h3 style="margin:0 0 8px">${title}</h3><div class="mlist" style="max-height:55vh;overflow:auto">${[[null,'Bibliothek (kein Ordner)',0,null],...folderOptions()].map(([id,n,d,f])=>`<button class="mi${(current||null)===id?' on':''}" data-id="${id??''}" style="padding-left:${12+d*20}px">${f?`<span class="fdot" style="color:${f.color||FCOLORS[0]}">${ic(fIc(f))}</span>`:ic('home')}${esc(n)}</button>`).join('')}</div><div class="btns"><button class="btn" id="fsNo">Abbrechen</button></div>`);
+  $('#modalBox .mlist').onclick=e=>{ const b=e.target.closest('[data-id]'); if(!b) return; closeModal(); res({id:b.dataset.id||null}); }; $('#fsNo').onclick=()=>{closeModal();res(null)}; }); }
+function newNoteDialog(){
+  let L='roll', bg='block', fo=libView==='home'?curFolder||null:null;
   const BGS=[['block','Block-Karo'],['grid','Kariert'],['lines','Liniert'],['dots','Punkte'],['blank','Blanko'],['mm','Millimeter']];
   modal(`<h3 style="margin:0 0 10px">Neue Notiz</h3>
     <input type="text" id="nnName" value="Notiz ${notes.length+1}">
     <label class="f">Format</label><div class="chips" id="nnLay">${LAYOUTS.map(([k,n])=>`<button class="chip${k===L?' on':''}" data-v="${k}">${n}</button>`).join('')}</div>
     <div id="nnHint" style="font-size:12px;color:var(--muted);margin-top:6px">${LAYOUT_HINT[L]}</div>
     <label class="f">Papier</label><div class="chips" id="nnBg">${BGS.map(([k,n])=>`<button class="chip${k===bg?' on':''}" data-v="${k}">${n}</button>`).join('')}</div>
-    <label class="f">Ordner</label><div class="chips" id="nnF">${[[null,'🏠 Kein Ordner'],...folderOptions().map(([id,n])=>[id,n.trim()])].map(([id,n])=>`<button class="chip${(fo||null)===id?' on':''}" data-v="${id??''}">${esc(n)}</button>`).join('')}</div>
+    <label class="f">Ordner</label><div class="chips" id="nnF">${[[null,'Kein Ordner'],...folderOptions()].map(([id,n])=>`<button class="chip${(fo||null)===id?' on':''}" data-v="${id??''}">${esc(n)}</button>`).join('')}</div>
     <div class="btns"><button class="btn" id="nnNo">Abbrechen</button><button class="btn pri" id="nnOk">Erstellen</button></div>`);
   const pick=(id,fn)=>$(id).onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b) return; $$(id+' .chip').forEach(x=>x.classList.toggle('on',x===b)); fn(b.dataset.v); };
   pick('#nnLay',v=>{ L=v; $('#nnHint').textContent=LAYOUT_HINT[v]; }); pick('#nnBg',v=>bg=v); pick('#nnF',v=>fo=v||null);
   const ni=$('#nnName'); ni.focus(); ni.select();
   $('#nnNo').onclick=closeModal;
-  $('#nnOk').onclick=()=>{ const t=$('#nnName').value.trim()||'Neue Notiz'; closeModal(); openNote(createNote(t,{layout:L,bg,folder:fo})); toggleDrawer(false); };
-};
-function toggleDrawer(o){ $('#drawer').classList.toggle('open',o); $('#scrim').classList.toggle('open',o); if(o) renderNotes(); }
-$('#menuBtn').onclick=()=>toggleDrawer(true); $('#scrim').onclick=()=>toggleDrawer(false);
+  $('#nnOk').onclick=()=>{ const t=$('#nnName').value.trim()||'Neue Notiz'; closeModal(); openNote(createNote(t,{layout:L,bg,folder:fo})); showLib(false); };
+}
+function showLib(o){ const el=$('#lib'); if(o){ closePops(); if(note){ clearTimeout(saveT); note.updated=note.updated||Date.now(); makeThumb(note); DB.put(note); } $('#nSearch').value=''; if(innerWidth<760) el.classList.remove('ns'); renderNotes(); }
+  el.classList.toggle('open',!!o); }
+const toggleDrawer=showLib;
+new MutationObserver(()=>document.body.classList.toggle('setOpen',$('#p-settings').classList.contains('open'))).observe($('#p-settings'),{attributes:true,attributeFilter:['class']});
+$('#scrim').onclick=()=>{ $('#p-settings').classList.toggle('open',false); $$('[data-open]').forEach(x=>x.classList.toggle('on',false)); };
+$('#menuBtn').onclick=()=>showLib(true);
 $('#title').onclick=async()=>{ const t=await ask('Notiz umbenennen',note.title,'Speichern'); if(t&&t.trim()){ note.title=t.trim(); $('#title').textContent=note.title; scheduleSave(); } };
 $('#backupBtn').onclick=async()=>{ download(await makeBackupBlob(),'schreibheft-sicherung-'+new Date().toISOString().slice(0,10)+'.json'); };
 $('#restoreBtn').onclick=()=>$('#restoreFile').click();
@@ -2289,7 +2580,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'älter als 2.2 – bitte neu installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 12 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
@@ -2318,7 +2609,7 @@ async function init(){
   notes=all.filter(x=>x.id!=='__meta' && x.pages);
   if(!notes.length){
     const n=createNote('Mein erstes Heft');
-    n.pages[0].objects.push({t:'x',x:110,y:110,s:30,c:'blue',v:'Willkommen in deinem Schreibheft! ✍️'},
+    n.pages[0].objects.push({t:'x',x:110,y:110,s:30,c:'blue',v:'Willkommen in deinem Schreibheft!'},
       {t:'x',x:110,y:160,s:19,c:'ink',v:'• S Pen = schreiben (fester drücken = dicker)\n• Finger = Seite verschieben, mit 2 Fingern zoomen\n• Beim Zeichnen kurz stillhalten = Linie/Kreis/Rechteck wird gerade\n• Oben: Lineal, Geodreieck, Funktionsplotter, Rechner, Formeln, Papier\n• S-Pen-Taste gedrückt halten = Radierer'});
     n.pages[0].view={s:1,x:0,y:0};
   }
@@ -2335,11 +2626,11 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && note){ 
 window.__flushSave=()=>{ if(note){ clearTimeout(saveT); note.updated=Date.now(); DB.put(note); } };
 window.__back=()=>{
   if($('#modal').classList.contains('open')){ closeModal(); return true; }
-  if($('#drawer').classList.contains('open')){ toggleDrawer(false); return true; }
   const p=$('.panel.open'); if(p){ p.classList.remove('open'); $$('[data-open]').forEach(x=>x.classList.remove('on')); return true; }
   if($('.pop.open')){ closePops(); return true; }
+  if($('#lib').classList.contains('open')){ if($('#nSearch').value){ $('#nSearch').value=''; renderNotes(); return true; } if(libView!=='home'){ libView='home'; renderNotes(); return true; } if(curFolder){ const f=fById(curFolder); curFolder=f&&f.parent&&fById(f.parent)?f.parent:null; renderNotes(); return true; } return false; }
   if(selection.length){ clearSel(); return true; }
-  return false; };
+  showLib(true); return true; };
 init();
 if(!window.AndroidApp && 'serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
