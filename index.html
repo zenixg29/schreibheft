@@ -1369,6 +1369,7 @@ let penBtnDown=false;
 function penToErase(){ if(!cur || cur.kind!=='stroke') return; clearTimeout(holdT); liveLabel=null; cur={id:cur.id,ptype:cur.ptype,start:cur.start,kind:'erase',did:false,viaBtn:true}; drawLive(); }
 let btnReleasedAt=0;
 let lastBtnPress=0, prevTool='pen';
+let _ner=null; function nativeEr(){ if(_ner===null){ try{ _ner=!!(window.AndroidApp&&AndroidApp.version&&parseFloat(AndroidApp.version())>=2.3); }catch(e){ _ner=false; } } return _ner; }
 /* Radierer scharf schalten: Taste in der Luft drücken, dann Stift aufsetzen */
 let armed=false, armT=0, hoverBtn=false;
 function setArmed(on,ms){ clearTimeout(armT); armed=!!on; document.body.classList.toggle('erArmed',armed);
@@ -1377,7 +1378,7 @@ function disarmSoon(){ if(armed && !penBtnDown) setArmed(false); }
 window.__penButton=b=>{ b=!!b; if(b===penBtnDown) return; penBtnDown=b;
   if(b && S.penDbl && !cur){ const now=Date.now(); if(now-lastBtnPress<450){ lastBtnPress=0; setArmed(false); if(S.tool==='select'){ setTool(prevTool||'pen'); toast('Zurück zum '+(prevTool==='hl'?'Textmarker':'Stift')); } else { prevTool=S.tool; setTool('select'); toast('Lasso'); } return; } lastBtnPress=now; }
   if(b){ if(cur && cur.ptype==='pen') penToErase(); else if(!cur){ setArmed(true,60000); if(lastHover){ hover=lastHover; drawLive(); } } }
-  else { btnReleasedAt=Date.now(); if(cur && cur.ptype==='pen' && cur.kind==='erase') cur.arm=true; else setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen' && cur.kind==='erase')) setArmed(false); },250); } };
+  else { btnReleasedAt=Date.now(); if(cur && cur.ptype==='pen' && cur.kind==='erase') cur.arm=true; else setTimeout(()=>{ if(!penBtnDown && !(cur && cur.ptype==='pen' && cur.kind==='erase')) setArmed(false); },60); } };
 let lastHover=null;
 // vom Android-Teil: Radieren mit gedrückter Stifttaste (aufgesetzt)
 let natSt=null;
@@ -1391,7 +1392,7 @@ window.__nativeErase=(ph,pts)=>{
 function startInput(e,x,y){
   const pen=e.pointerType==='pen';
   const viaArm = pen && armed;
-  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || penBtnDown || armed));
+  const eraserBtn = e.button===5 || (e.buttons&32) || (pen && ((e.buttons&2) || (!nativeEr() && (penBtnDown || armed))));
   if(viaArm) clearTimeout(armT); const carryDid=false;
   const tool = eraserBtn ? 'eraser' : S.tool;
   const [wx,wy]=toWorld(x,y);
@@ -1646,17 +1647,17 @@ function hwTemplates(){ if(HWT) return HWT; HWT=[]; for(const [ch,vs] of Object.
 function hwClassify(strokes){ const c=hwCloud(strokes); let best=null,bd=1e9; for(const t of hwTemplates()){ const d=hwDist(c,t.c)*(t.own?0.85:1); if(d<bd){ bd=d; best=t; } } return best?best.ch:'?'; }
 function strokeLists(o){ const L=[]; let cur=[]; for(let i=0;i<o.p.length;i+=3){ const x=o.p[i]; if(x===null||Number.isNaN(x)){ if(cur.length) L.push(cur); cur=[]; continue; } cur.push([x,o.p[i+1]]); } if(cur.length) L.push(cur); return L; }
 let mathT=0;
-function mathCheck(o){ clearTimeout(mathT); if(!S.mathSolve||o.hl||o.u||!o.p) return; const pg=page(); mathT=setTimeout(()=>{ try{ if(page()===pg) mathSolve(o); }catch(e){ console.error(e); } },450); }
+function mathCheck(o){ clearTimeout(mathT); if(!S.mathSolve||o.hl||!o.p) return; const pg=page(); mathT=setTimeout(()=>{ try{ if(page()===pg) mathSolve(o); }catch(e){ console.error(e); } },450); }
 function mathSolve(eq2){
   const list=objs(), i2=list.indexOf(eq2); if(i2<1) return;
-  const isBar=o=>{ if(o.t!=='s'||o.hl||o.u) return null; const b=bbox(o), w=b[2]-b[0], h=b[3]-b[1]; return (w>8 && h<w*0.35)?b:null; };
-  const b2=isBar(eq2); if(!b2) return;
-  let eq1=null,b1=null; for(let k=i2-1;k>=Math.max(0,i2-3);k--){ const b=isBar(list[k]); if(!b) continue; const w=Math.max(b[2]-b[0],b2[2]-b2[0]), gy=Math.abs((b[1]+b[3])/2-(b2[1]+b2[3])/2), ov=Math.min(b[2],b2[2])-Math.max(b[0],b2[0]);
+  const isBar=o=>{ if(o.t!=='s'||o.hl) return null; const b=bbox(o), w=b[2]-b[0], h=b[3]-b[1]; return (w>6 && h<w*0.5)?b:null; };
+  const isZ=o=>{ if(o.t!=='s'||o.hl) return null; const b=bbox(o), w=b[2]-b[0], h=b[3]-b[1]; if(w<6||h<w*0.2||h>w*1.1) return null; const L=strokeLists(o); if(L.length!==1||L[0].length<6) return null; let n=0; L[0].forEach(q=>{ const r=(q[1]-b[1])/h; if(r<0.3||r>0.7) n++; }); const P=L[0], a=P[0], z=P[P.length-1]; return (n/P.length>0.75 && Math.abs(a[1]-z[1])>h*0.5)?b:null; };
+  let b2=isBar(eq2), eq1=null, b1=null; if(!b2){ const bz=isZ(eq2); if(!bz) return; b1=b2=bz; } else for(let k=i2-1;k>=Math.max(0,i2-3);k--){ const b=isBar(list[k]); if(!b) continue; const w=Math.max(b[2]-b[0],b2[2]-b2[0]), gy=Math.abs((b[1]+b[3])/2-(b2[1]+b2[3])/2), ov=Math.min(b[2],b2[2])-Math.max(b[0],b2[0]);
     if(gy>w*0.12 && gy<w*0.9 && ov>w*0.4){ eq1=list[k]; b1=b; break; } }
-  if(!eq1) return;
+  if(!b1){ const bz=isZ(eq2); if(!bz) return; b1=b2=bz; }
   const ex=[Math.min(b1[0],b2[0]),Math.min(b1[1],b2[1]),Math.max(b1[2],b2[2]),Math.max(b1[3],b2[3])], ecy=(ex[1]+ex[3])/2, ew=ex[2]-ex[0];
   // Kandidaten links vom Gleichheitszeichen
-  let cand=list.filter(o=>o!==eq1&&o!==eq2&&o.t==='s'&&!o.hl&&!o.lk).map(o=>({o,b:bbox(o)})).filter(c=>c.b[2]<=ex[0]+ew*0.2 && c.b[0]<ex[0] && Math.abs((c.b[1]+c.b[3])/2-ecy)<ew*2.2);
+  let cand=list.filter(o=>o!==eq2&&(!eq1||o!==eq1)&&o.t==='s'&&!o.hl&&!o.lk).map(o=>({o,b:bbox(o)})).filter(c=>c.b[2]<=ex[0]+ew*0.2 && c.b[0]<ex[0] && Math.abs((c.b[1]+c.b[3])/2-ecy)<ew*2.2);
   if(!cand.length) return;
   const hs=cand.map(c=>c.b[3]-c.b[1]).filter(h=>h>ew*0.5).sort((a,b)=>a-b); let h=hs.length?hs[Math.floor(hs.length/2)]:ew*1.4;
   cand=cand.filter(c=>Math.abs((c.b[1]+c.b[3])/2-ecy)<h*0.9);
@@ -1679,8 +1680,8 @@ function mathSolve(eq2){
     if(ch==='?') return;
     shown.push(ch); txt+=ch; }
   const src=txt.replace(/·|×/g,'*').replace(/:/g,'/').replace(/,/g,'.').replace(/−/g,'-');
-  if(!/\d/.test(src)||!/[-+*/]/.test(src)) return;
-  let v; try{ v=compile(src)(0); }catch(e){ toast('Rechnung nicht erkannt: '+shown.join(' ')+' ='); return; }
+  if(!/\d/.test(src)) return; if(!/[-+*/]/.test(src)){ toast('Gelesen: '+shown.join(' ')+' = – kein Rechenzeichen erkannt. Tipp: Einstellungen → Handschrift lernen'); return; }
+  let v; try{ v=compile(src)(0); }catch(e){ toast('Gelesen: '+shown.join(' ')+' = – das ergibt keine Rechnung. Tipp: Einstellungen → Handschrift lernen'); return; }
   if(!Number.isFinite(v)) return;
   let r=String(parseFloat(v.toPrecision(10))); if(/e/.test(r)) return; r=r.replace('.',',');
   // Ergebnis in Handschrift schreiben
@@ -2701,7 +2702,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(av!=='2.3') av+=' – bitte die neue APK 2.3 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 13 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 14 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
