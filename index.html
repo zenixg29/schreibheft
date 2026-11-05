@@ -225,6 +225,12 @@ svg.ic.acc{color:var(--accent)}
 .msep{height:1px;background:var(--border);margin:5px 4px}
 .mlist{display:flex;flex-direction:column;gap:1px}
 .fdot svg{color:inherit!important}
+#inText{position:fixed;z-index:30;display:none;background:transparent;border:1.5px dashed var(--accent);border-radius:4px;padding:0 2px;margin:0;outline:none;resize:none;overflow:hidden;white-space:pre;line-height:1.25;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-width:40px;box-sizing:content-box;caret-color:var(--accent)}
+#inBar{position:fixed;z-index:31;display:none;align-items:center;gap:6px;background:var(--solid);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px 8px;flex-wrap:wrap;max-width:min(440px,calc(100vw - 24px))}
+#inBar.open{display:flex}
+#inBar .chip{min-width:38px}
+#inBar #inSyms{display:none;width:100%;max-height:150px;overflow:auto;margin-top:4px}
+#inBar.sym #inSyms{display:grid}
 #armBadge{position:fixed;z-index:58;top:72px;left:50%;transform:translateX(-50%);background:var(--danger);color:#fff;padding:7px 14px 7px 10px;border-radius:999px;font-weight:600;font-size:14px;display:none;align-items:center;gap:8px;box-shadow:var(--shadow);pointer-events:none}
 #armBadge svg{width:18px;height:18px}
 body.erArmed #armBadge{display:none}
@@ -615,6 +621,9 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(2px)}
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast"></div>
+<textarea id="inText" spellcheck="false" autocomplete="off" rows="1"></textarea>
+<div id="inBar"><div class="chips" id="inSize"></div><button class="ib" id="inSymBtn" title="Sonderzeichen">Ω</button><button class="ib" id="inDel" title="Löschen"><i data-ic="trash"></i></button><button class="btn pri" id="inOk">Fertig</button>
+  <div id="inSyms" class="grid-sym"></div></div>
 <div id="armBadge"><i data-ic="eraser"></i>Radierer – solange die Taste gedrückt ist</div>
 
 <script>
@@ -869,7 +878,7 @@ function penF(K,p,i,n){ const pr=p[3*i+2];
   if(K==='ca') return 0.16+1.55*s;
   return wf(pr)*(0.62+0.62*s); }
 const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-function drawText(c,o){
+function drawText(c,o){ if(INL&&INL.o===o) return;
   c.fillStyle=colorOf(o.c); c.font=`${o.s}px ${FONT}`; c.textBaseline='top'; c.textAlign='left';
   o.v.split('\n').forEach((ln,i)=>c.fillText(ln,o.x,o.y+i*o.s*1.25));
 }
@@ -1022,7 +1031,7 @@ function renderPage(c,pg,v,w,h,list){
   if(rects) c.restore();
 }
 function render(){
-  if(!note) return;
+  if(!note) return; if(INL) try{ inlineFit(); }catch(e){}
   ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
   if(S.split){ for(const i of [splitBase,splitBase+1]){ const pg=note.pages[i]; if(!pg) continue; const [L,R]=regionOf(i); clampView(pg,i);
       ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.beginPath(); ctx.rect(L-4,0,R-L+8,H); ctx.clip(); const v=pg.view; ctx.setTransform(DPR*v.s,0,0,DPR*v.s,DPR*v.x,DPR*v.y);
@@ -1494,7 +1503,7 @@ function startInput(e,x,y){
     else if(sb && x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3]){ pushUndo(); cur={...base,kind:'move',last:[wx,wy]}; hideSelbar(); }
     else { clearSel(); cur={...base,kind:'lasso',pts:[[wx,wy]]}; }
   } else if(tool==='text'){
-    cur={...base,kind:'tap',w:[wx,wy]};
+    const wasInl=!!INL; if(INL) inlineDone(); cur={...base,kind:'tap',w:[wx,wy],wasInl};
   } else if(tool==='shape'){
     cur={...base,kind:'shape',a:[wx,wy],obj:null};
   }
@@ -1602,7 +1611,7 @@ function endPointer(e,cancel){
   else if(c.kind==='lasso'){ finishLasso(c.pts); }
   else if(c.kind==='move'||c.kind==='scale'||c.kind==='rot'){ if(!c.moved) hist().u.pop(); commit(); showSelbar(); }
   else if(c.kind==='htap'){ if(performance.now()-c.t0<450 && objs().includes(c.o)){ selection=withGroups([c.o]); showSelbar(); } }
-  else if(c.kind==='tap'){ const [x,y]=pt(e); if(dist(x,y,...c.start)<12) textAt(c.w); }
+  else if(c.kind==='tap'){ const [x,y]=pt(e); if(c.wasInl) {} else if(dist(x,y,...c.start)<12){ const o=objAt(c.w[0],c.w[1]); if(o&&o.t==='x'&&!o.lk) inlineText(null,o); else inlineText(c.w); } }
   drawLive();
 }
 lv.addEventListener('pointerup',e=>endPointer(e,false));
@@ -1893,7 +1902,7 @@ $('#selColor').onclick=()=>{ pushUndo(); selection.forEach(o=>{ o.c = (o.hl && S
 $('#selFill').onclick=()=>{ pushUndo(); const st=selection.filter(o=>o.t==='s'&&!o.hl); const nx=((st[0].f||0)+1)%3; st.forEach(o=>{ if(nx) o.f=nx; else delete o.f; }); commit(); toast(['Keine Füllung','Hell gefüllt','Voll gefüllt'][nx]); };
 $('#selLock').onclick=()=>{ pushUndo(); const lk=selLocked(); selection.forEach(o=>{ if(lk) delete o.lk; else o.lk=1; delete o.bg; });
   commit(); if(lk){ toast('Entsperrt – jetzt ziehen zum Verschieben'); showSelbar(); drawLive(); } else { toast('Gesperrt – wird nicht mehr aus Versehen verschoben'); clearSel(); } };
-$('#selEdit').onclick=()=>{ const o=selection[0]; if(!o) return; if(o.t==='x') textAt([o.x,o.y],o); else if(o.t==='p') openPlot(o); else if(o.t==='tb') tableDialog(o); };
+$('#selEdit').onclick=()=>{ const o=selection[0]; if(!o) return; if(o.t==='x'){ clearSel(); inlineText(null,o); } else if(o.t==='p') openPlot(o); else if(o.t==='tb') tableDialog(o); };
 /* Zwischenablage */
 let CLIP=null; try{ CLIP=JSON.parse(localStorage.getItem('sh-clip')||'null'); }catch(e){}
 function toClip(){ CLIP=selection.map(o=>JSON.stringify(o)); try{ localStorage.setItem('sh-clip',JSON.stringify(CLIP)); }catch(e){} }
@@ -1942,6 +1951,29 @@ async function cropImage(o){ const e=getImg(o.a); if(!e.ok) return toast('Bild l
 
 /* ---------------- Text ---------------- */
 const SYMS='π √ ∛ ² ³ ⁿ ⁻¹ ₀ ₁ ₂ ½ ± · × ÷ ≈ ≠ ≤ ≥ ∞ ∑ ∫ ∂ Δ ∆ α β γ δ ε θ λ μ ρ σ φ ω Ω ° → ⇒ ⇔ ∈ ℝ ℕ ∠ ⊥ ∥ ∝ ħ ⃗'.split(' ');
+var INL=null; const INSZ=[[18,'S'],[24,'M'],[32,'L'],[46,'XL']];
+function inlineFit(){ if(!INL) return; const ta=$('#inText'), v=V(), o=INL; const fs=o.s*v.s;
+  mctx.font=`${o.s}px ${FONT}`; const ls=ta.value.split('\n'); const w=Math.max(30,...ls.map(l=>mctx.measureText(l+'  ').width))*v.s;
+  const [sx,sy]=toScreen(o.x,o.y); Object.assign(ta.style,{left:(sx-3)+'px',top:(sy-1-fs*0.14)+'px',fontSize:fs+'px',width:w+'px',height:(ls.length*fs*1.25)+'px',color:colorOf(o.c)});
+  const bar=$('#inBar'), bh=bar.offsetHeight||48, bw=bar.offsetWidth||300; let by=sy-bh-12; if(by<64) by=sy+ls.length*fs*1.25+12;
+  bar.style.left=clamp(sx-4,8,innerWidth-bw-8)+'px'; bar.style.top=clamp(by,8,innerHeight-bh-8)+'px'; }
+function inlineText(w,edit){ if(INL) inlineDone(); const ta=$('#inText');
+  INL={x:edit?edit.x:w[0], y:edit?edit.y:w[1]-(S.textSize||24)*0.62, s:edit?edit.s:(S.textSize||24), c:edit?edit.c:(S.color==='yellow'?'ink':S.color), o:edit||null, pg:page()};
+  ta.value=edit?edit.v:''; ta.style.display='block'; $('#inBar').classList.add('open'); $('#inBar').classList.remove('sym');
+  $('#inSize').innerHTML=INSZ.map(([v,n])=>`<button class="chip${v===INL.s?' on':''}" data-v="${v}">${n}</button>`).join('');
+  $('#inDel').style.display=edit?'':'none'; hideSelbar(); render(); inlineFit(); showKb(ta); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(_){} }
+function inlineDone(cancel){ if(!INL) return; const o=INL, ta=$('#inText'), v=ta.value.replace(/\s+$/,''); INL=null; ta.style.display='none'; ta.blur(); $('#inBar').classList.remove('open');
+  if(!cancel && o.pg===page()){ if(o.o){ if(!v){ pushUndo(); page().objects=objs().filter(x=>x!==o.o); } else if(v!==o.o.v||o.s!==o.o.s){ pushUndo(); o.o.v=v; o.o.s=o.s; BB.delete(o.o); } }
+    else if(v){ pushUndo(); objs().push({t:'x',x:o.x,y:o.y,s:o.s,c:o.c,v}); } commit(); }
+  render(); drawLive(); }
+$('#inText').addEventListener('input',inlineFit);
+$('#inText').addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); inlineDone(); } });
+$('#inSize').onclick=e=>{ const b=e.target.closest('[data-v]'); if(!b||!INL) return; INL.s=+b.dataset.v; S.textSize=INL.s; saveSettings(); $$('#inSize .chip').forEach(x=>x.classList.toggle('on',x===b)); inlineFit(); $('#inText').focus(); };
+$('#inSymBtn').onclick=()=>{ const bar=$('#inBar'); if(!$('#inSyms').children.length) $('#inSyms').innerHTML=SYMS.map(s=>`<button>${s}</button>`).join(''); bar.classList.toggle('sym'); inlineFit(); $('#inText').focus(); };
+$('#inSyms').onclick=e=>{ if(e.target.tagName!=='BUTTON') return; insertAtCaret($('#inText'),e.target.textContent); };
+$('#inOk').onclick=()=>inlineDone();
+$('#inDel').onclick=()=>{ $('#inText').value=''; inlineDone(); };
+$('#inBar').addEventListener('pointerdown',e=>{ if(e.target.tagName==='BUTTON'||e.target.closest('button')) e.preventDefault(); });
 function showKb(el){ const go=()=>{ try{ el.focus(); if(window.AndroidApp&&AndroidApp.keyboard) AndroidApp.keyboard(); }catch(e){} }; go(); setTimeout(go,120); setTimeout(go,350); }
 function textAtCenter(){ const r=lv.getBoundingClientRect(); const [wx,wy]=toWorld(r.left+r.width/2-80,r.top+r.height/3); textAt([wx,wy]); }
 function textAt(w,edit){
@@ -1994,12 +2026,12 @@ const SHAPES={
   axes:['Koordinatensystem','<path d="M12 21V3M3 12h18M9.5 5.5L12 3l2.5 2.5M18.5 9.5L21 12l-2.5 2.5"/>']
 };
 const svgI=p=>`<svg viewBox="0 0 24 24">${p}</svg>`;
-function setTool(t){ S.tool=t; if(t==='pen'||t==='hl'){ applySlot(t); try{ renderSwatches(); }catch(e){} } saveSettings(); $$('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t)); if(t!=='select') clearSel(); hover=null; updateSize(); drawLive(); }
+function setTool(t){ if(INL&&t!=='text') inlineDone(); S.tool=t; if(t==='pen'||t==='hl'){ applySlot(t); try{ renderSwatches(); }catch(e){} } saveSettings(); $$('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t)); if(t!=='select') clearSel(); hover=null; updateSize(); drawLive(); }
 $$('[data-tool]').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
   if(t==='shape' && S.tool==='shape'){ openPop($('#shapePop'),b); return; }
   if(['pen','hl','eraser'].includes(t) && S.tool===t){ const p=$('#sizePop'); if(p.classList.contains('open')) return closePops(); updateSize(); openPop(p,b); updateSize(); return; }
-  setTool(t); if(t==='shape') openPop($('#shapePop'),b); if(t==='text') textAtCenter();
+  setTool(t); if(t==='shape') openPop($('#shapePop'),b); if(t==='text') toast('Tippe aufs Blatt, wo der Text hin soll');
 }));
 function renderFillDash(){ $$('#fillChips [data-fill]').forEach(b=>b.classList.toggle('on',+b.dataset.fill===(S.fill||0))); $$('#dashChips [data-dash]').forEach(b=>b.classList.toggle('on',+b.dataset.dash===(S.dash||0))); }
 $('#fillChips').onclick=e=>{ const b=e.target.closest('[data-fill]'); if(!b) return; S.fill=+b.dataset.fill; saveSettings(); renderFillDash(); };
@@ -2856,7 +2888,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.7||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 22 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.7||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 23 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
