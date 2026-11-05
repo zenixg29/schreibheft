@@ -227,7 +227,7 @@ svg.ic.acc{color:var(--accent)}
 .fdot svg{color:inherit!important}
 #armBadge{position:fixed;z-index:58;top:72px;left:50%;transform:translateX(-50%);background:var(--danger);color:#fff;padding:7px 14px 7px 10px;border-radius:999px;font-weight:600;font-size:14px;display:none;align-items:center;gap:8px;box-shadow:var(--shadow);pointer-events:none}
 #armBadge svg{width:18px;height:18px}
-body.erArmed #armBadge{display:flex}
+body.erArmed #armBadge{display:none}
 body.erArmed [data-tool="eraser"]{background:rgba(211,59,59,.16);color:var(--danger)}
 /* ---- Einstellungen als großes Blatt ---- */
 #p-settings{top:50%;left:50%;right:auto;transform:translate(-50%,-50%);width:min(640px,calc(100% - 32px));max-width:none;max-height:calc(100% - 40px);z-index:46;padding:14px 20px 20px;background:var(--bg);box-shadow:var(--shadow)}
@@ -1853,11 +1853,11 @@ $('#favList').onclick=e=>{ const b=e.target.closest('[data-fav]'); if(!b) return
 
 /* Auswahl */
 function inPoly(x,y,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,yi]=poly[i],[xj,yj]=poly[j]; if(((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi) ins=!ins; } return ins; }
-function withGroups(sel){ const gs=new Set(sel.filter(o=>o.g).map(o=>o.g)); if(!gs.size) return sel; return objs().filter(o=>sel.includes(o)||(o.g&&gs.has(o.g))); }
-function linkAxes(p){ if(p.axm) return; p.axm=1; const L=p.objects, T=L.filter(o=>o.t==='x'&&!o.g&&(o.v==='x'||o.v==='y'));
-  if(!T.length) return; for(const o of L){ if(o.t!=='s'||!o.u||o.g) continue; const b=bbox(o); if(b[2]-b[0]<40||b[3]-b[1]<40) continue;
-    const tx=T.find(t=>!t.g&&t.v==='x'&&Math.abs(t.x-(b[2]-10))<30&&t.y>b[1]&&t.y<b[3]), ty=T.find(t=>!t.g&&t.v==='y'&&Math.abs(t.y-(b[1]-4))<30&&t.x>b[0]&&t.x<b[2]);
-    if(tx&&ty){ const g=uid(); o.g=g; o.ax=1; tx.g=g; ty.g=g; } } }
+function withGroups(sel){ try{ if(sel.some(o=>o.ax)) linkAxes(page()); }catch(e){} const gs=new Set(sel.filter(o=>o.g).map(o=>o.g)); if(!gs.size) return sel; return objs().filter(o=>sel.includes(o)||(o.g&&gs.has(o.g))); }
+function linkAxes(p){ const L=p.objects, T=L.filter(o=>o.t==='x'&&!o.g&&(o.v==='x'||o.v==='y'));
+  if(!T.length) return; for(const o of L){ if(o.t!=='s'||!o.u||(o.g&&L.some(t=>t!==o&&t.g===o.g))) continue; const b=bbox(o); if(b[2]-b[0]<40||b[3]-b[1]<40) continue;
+    const tx=T.find(t=>!t.g&&t.v==='x'&&Math.abs(t.x-(b[2]-10))<70&&t.y>b[1]-30&&t.y<b[3]+30), ty=T.find(t=>!t.g&&t.v==='y'&&Math.abs(t.y-(b[1]-4))<70&&t.x>b[0]-30&&t.x<b[2]+30);
+    if(tx||ty){ const g=o.g||uid(); o.g=g; o.ax=1; if(tx) tx.g=g; if(ty) ty.g=g; } } }
 function finishLasso(poly){
   let mx=1e9,my=1e9,Mx=-1e9,My=-1e9; for(const q of poly){ mx=Math.min(mx,q[0]); my=Math.min(my,q[1]); Mx=Math.max(Mx,q[0]); My=Math.max(My,q[1]); }
   if(poly.length<3 || Math.max(Mx-mx,My-my)*V().s<14){ // Antippen: oberstes Objekt auswählen (auch gesperrte)
@@ -1942,6 +1942,8 @@ async function cropImage(o){ const e=getImg(o.a); if(!e.ok) return toast('Bild l
 
 /* ---------------- Text ---------------- */
 const SYMS='π √ ∛ ² ³ ⁿ ⁻¹ ₀ ₁ ₂ ½ ± · × ÷ ≈ ≠ ≤ ≥ ∞ ∑ ∫ ∂ Δ ∆ α β γ δ ε θ λ μ ρ σ φ ω Ω ° → ⇒ ⇔ ∈ ℝ ℕ ∠ ⊥ ∥ ∝ ħ ⃗'.split(' ');
+function showKb(el){ const go=()=>{ try{ el.focus(); if(window.AndroidApp&&AndroidApp.keyboard) AndroidApp.keyboard(); }catch(e){} }; go(); setTimeout(go,120); setTimeout(go,350); }
+function textAtCenter(){ const r=lv.getBoundingClientRect(); const [wx,wy]=toWorld(r.left+r.width/2-80,r.top+r.height/3); textAt([wx,wy]); }
 function textAt(w,edit){
   const sizes=[[18,'S'],[24,'M'],[32,'L'],[46,'XL']];
   let size=edit?edit.s:24;
@@ -1950,7 +1952,7 @@ function textAt(w,edit){
     <div class="grid-sym" id="tSyms">${SYMS.map(s=>`<button>${s}</button>`).join('')}</div>
     <label class="f">Größe</label><div class="chips" id="tSize">${sizes.map(([v,n])=>`<button class="chip${v===size?' on':''}" data-v="${v}">${n}</button>`).join('')}</div>
     <div class="btns">${edit?'<button class="btn dng" id="tDel">Löschen</button>':''}<button class="btn" id="tCancel">Abbrechen</button><button class="btn pri" id="tOk">Fertig</button></div>`);
-  const ta=$('#tIn'); ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(_){}
+  const ta=$('#tIn'); ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(_){} showKb(ta);
   $('#tSyms').onclick=e=>{ if(e.target.tagName!=='BUTTON') return; insertAtCaret(ta,e.target.textContent); };
   $('#tSize').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; size=+b.dataset.v; $$('#tSize .chip').forEach(x=>x.classList.toggle('on',x===b)); };
   $('#tCancel').onclick=closeModal;
@@ -1997,7 +1999,7 @@ $$('[data-tool]').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
   if(t==='shape' && S.tool==='shape'){ openPop($('#shapePop'),b); return; }
   if(['pen','hl','eraser'].includes(t) && S.tool===t){ const p=$('#sizePop'); if(p.classList.contains('open')) return closePops(); updateSize(); openPop(p,b); updateSize(); return; }
-  setTool(t); if(t==='shape') openPop($('#shapePop'),b);
+  setTool(t); if(t==='shape') openPop($('#shapePop'),b); if(t==='text') textAtCenter();
 }));
 function renderFillDash(){ $$('#fillChips [data-fill]').forEach(b=>b.classList.toggle('on',+b.dataset.fill===(S.fill||0))); $$('#dashChips [data-dash]').forEach(b=>b.classList.toggle('on',+b.dataset.dash===(S.dash||0))); }
 $('#fillChips').onclick=e=>{ const b=e.target.closest('[data-fill]'); if(!b) return; S.fill=+b.dataset.fill; saveSettings(); renderFillDash(); };
@@ -2854,7 +2856,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(parseFloat(av)<2.4||av==='alt') av+=' – bitte die neue APK 2.4 installieren'; else av='keine (Browser)'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 21 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.7||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 22 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
