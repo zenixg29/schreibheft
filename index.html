@@ -617,9 +617,9 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(2px)}
   <button class="mi" id="newFolder"><i data-ic="folder"></i>Neuer Ordner</button>
   <button class="mi" id="newImport"><i data-ic="upload"></i>Schreibheft-Datei öffnen</button>
   <button class="mi" id="newPdf"><i data-ic="file"></i>PDF oder Bild importieren</button>
-  <button class="mi" id="newMulti"><i data-ic="folder"></i>Ordner importieren (mehrere PDFs, z. B. Samsung Notes)</button>
+  <button class="mi" id="newMulti"><i data-ic="folder"></i>Ordner importieren (PDFs oder ZIP mit Unterordnern)</button>
 </div>
-<input type="file" id="multiFile" accept="application/pdf,.pdf,image/*" multiple style="display:none">
+<input type="file" id="multiFile" accept="application/pdf,.pdf,image/*,.zip,application/zip" multiple style="display:none">
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast"></div>
@@ -2498,26 +2498,49 @@ async function pdfToPage(doc,pdfId,pre){
     pg.sheets.push([0,r]); pg.objects.push({t:'i',lk:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}});
   }
   return pg; }
+/* Mini-ZIP-Leser (stored + deflate) */
+async function unzip(buf){ const u=new Uint8Array(buf), dv=new DataView(buf); let e=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-70000);i--) if(dv.getUint32(i,true)===0x06054b50){ e=i; break; }
+  if(e<0) throw new Error('kein ZIP'); const cnt=dv.getUint16(e+10,true); let o=dv.getUint32(e+16,true); const out=[];
+  const u8=new TextDecoder('utf-8'), cp=new TextDecoder('ibm866');
+  for(let k=0;k<cnt;k++){ if(dv.getUint32(o,true)!==0x02014b50) break; const fl=dv.getUint16(o+8,true), m=dv.getUint16(o+10,true), cs=dv.getUint32(o+20,true), nl=dv.getUint16(o+28,true), xl=dv.getUint16(o+30,true), cl=dv.getUint16(o+32,true), lo=dv.getUint32(o+42,true);
+    const nb=u.subarray(o+46,o+46+nl); let name; try{ name=new TextDecoder('utf-8',{fatal:true}).decode(nb); }catch(_){ name=(fl&0x800)?u8.decode(nb):cp.decode(nb); }
+    o+=46+nl+xl+cl; if(name.endsWith('/')) continue;
+    out.push({name, get:async()=>{ const ln=dv.getUint16(lo+26,true), lx=dv.getUint16(lo+28,true), st=lo+30+ln+lx, raw=u.slice(st,st+cs);
+      if(m===0) return raw; if(m!==8) throw new Error('ZIP-Methode '+m);
+      const ds=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return new Uint8Array(await new Response(ds).arrayBuffer()); }}); }
+  return out; }
+const isPdfName=n=>/\.pdf$/i.test(n), isImgName=n=>/\.(jpe?g|png|webp|gif)$/i.test(n);
+function mkFolder(name,parent){ const ex=meta.folders.find(f=>f.name===name&&(f.parent||null)===(parent||null)); if(ex) return ex;
+  const f={id:uid(),name,color:FCOLORS[meta.folders.length%FCOLORS.length],icon:'folder',parent:parent||null}; meta.folders.push(f); return f; }
+async function importOne(f,folderId,pre){ const title=f.name.replace(/^.*\//,'').replace(/\.[^.]+$/,'')||'Import';
+  if(!isPdfName(f.name)&&!/pdf$/i.test(f.type)){ const src=await fileToDataURL(f), img=await loadImg(src), a=await storeImage(img,img.naturalWidth,img.naturalHeight,false);
+    const pg=newPage('blank','sheets'); pg.sheets=[[0,0]]; const kk=Math.min(A4W/a.w,A4H/a.h); pg.objects.push({t:'i',lk:1,x:(A4W-a.w*kk)/2,y:(A4H-a.h*kk)/2,w:a.w*kk,h:a.h*kk,a:a.id}); fitView(pg);
+    const n=createNote(title,{folder:folderId}); n.pages=[pg]; await DB.put(n); return; }
+  toast(pre+'„'+title+'“ wird geladen …'); const lib=await getPdfLib();
+  const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf.slice(0)}).promise;
+  const pdfA={id:'a'+uid(), pdf:await fileToDataURL(f)}; await DB.putAsset(pdfA);
+  const pg=await pdfToPage(doc,pdfA.id,pre); fitView(pg); const n=createNote(title,{folder:folderId}); n.pages=[pg]; await DB.put(n); }
 async function importMany(files){
-  files=files.filter(f=>/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name)||/^image\//.test(f.type));
-  const bad=[...arguments[0]].length-files.length;
-  if(!files.length) return toast('Bitte PDF-Dateien auswählen (Samsung-Notes-Dateien vorher als PDF speichern)');
-  const name=await ask('Ordner für '+files.length+' Datei'+(files.length>1?'en':''),'Samsung Notes'); if(name===null) return;
-  const fo={id:uid(),name:name.trim()||'Samsung Notes',color:FCOLORS[0],icon:'folder',parent:(libView==='home'?curFolder:null)||null}; meta.folders.push(fo); saveMeta();
-  const lib=await getPdfLib(); let ok=0;
-  for(let k=0;k<files.length;k++){ const f=files[k], pre=(k+1)+'/'+files.length+' · ';
-    try{ const title=f.name.replace(/\.[^.]+$/,'')||'Import';
-      if(/^image\//.test(f.type)){ const src=await fileToDataURL(f), img=await loadImg(src), a=await storeImage(img,img.naturalWidth,img.naturalHeight,false);
-        const pg=newPage('blank','sheets'); pg.sheets=[[0,0]]; const kk=Math.min(A4W/a.w,A4H/a.h); pg.objects.push({t:'i',lk:1,x:(A4W-a.w*kk)/2,y:(A4H-a.h*kk)/2,w:a.w*kk,h:a.h*kk,a:a.id}); fitView(pg);
-        const n=createNote(title,{folder:fo.id}); n.pages=[pg]; await DB.put(n); ok++; continue; }
-      toast(pre+'„'+title+'“ wird geladen …');
-      const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf.slice(0)}).promise;
-      const pdfA={id:'a'+uid(), pdf:await fileToDataURL(f)}; await DB.putAsset(pdfA);
-      const pg=await pdfToPage(doc,pdfA.id,pre); fitView(pg);
-      const n=createNote(title,{folder:fo.id}); n.pages=[pg]; await DB.put(n); ok++;
-    }catch(err){ console.error(err); } }
-  try{ showLib(true); goFolder(fo.id); }catch(e){ console.error(e); }
-  toast(ok+' von '+files.length+' importiert in „'+fo.name+'“'+(bad?' · '+bad+' Datei(en) übersprungen':'')); }
+  const base=(libView==='home'?curFolder:null)||null; let ok=0, skip=0, total=0, first=null;
+  const zips=files.filter(f=>/\.zip$/i.test(f.name)||/zip/.test(f.type)), plain=files.filter(f=>!zips.includes(f)&&(isPdfName(f.name)||/pdf$/i.test(f.type)||/^image\//.test(f.type)||isImgName(f.name)));
+  skip=files.length-zips.length-plain.length;
+  if(!zips.length&&!plain.length) return toast('Bitte PDF-Dateien oder einen ZIP-Ordner auswählen (Samsung-Notes-Dateien vorher als PDF speichern)');
+  if(plain.length){ const name=await ask('Ordner für '+plain.length+' Datei'+(plain.length>1?'en':''),'Samsung Notes'); if(name===null) return;
+    const fo=mkFolder(name.trim()||'Samsung Notes',base); first=fo; saveMeta(); total+=plain.length;
+    for(let k=0;k<plain.length;k++){ try{ await importOne(plain[k],fo.id,(k+1)+'/'+plain.length+' · '); ok++; }catch(err){ console.error(err); } } }
+  for(const z of zips){ toast('ZIP wird gelesen …'); let ents; try{ ents=await unzip(await z.arrayBuffer()); }catch(err){ console.error(err); toast('ZIP konnte nicht gelesen werden'); continue; }
+    ents=ents.filter(x=>!/(^|\/)(__MACOSX|\.)/.test(x.name)); const use=ents.filter(x=>isPdfName(x.name)||isImgName(x.name)); skip+=ents.length-use.length; total+=use.length;
+    let paths=use.map(x=>x.name.split('/').slice(0,-1)); const zname=z.name.replace(/\.zip$/i,'');
+    // gemeinsamen obersten Ordner als Wurzel nehmen
+    let rootName=zname; if(paths.length&&paths.every(q=>q.length&&q[0]===paths[0][0])){ rootName=paths[0][0]; paths=paths.map(q=>q.slice(1)); }
+    const root=mkFolder(rootName,base); if(!first) first=root;
+    for(let k=0;k<use.length;k++){ let par=root; for(const seg of paths[k]) par=mkFolder(seg,par.id);
+      try{ const data=await use[k].get(); const nm=use[k].name.split('/').pop(); const bl=new File([data],nm,{type:isPdfName(nm)?'application/pdf':'image/'+(nm.split('.').pop().toLowerCase().replace('jpg','jpeg'))});
+        await importOne(bl,par.id,(k+1)+'/'+use.length+' · '); ok++; }catch(err){ console.error(err); } }
+    saveMeta(); }
+  saveMeta(); try{ showLib(true); goFolder(first?first.id:base); }catch(e){ console.error(e); }
+  toast(ok+' von '+total+' importiert'+(first?' in „'+first.name+'“':'')+(skip?' · '+skip+' andere Datei(en) übersprungen':'')); }
 $('#multiFile').onchange=e=>{ const fs=[...e.target.files]; e.target.value=''; if(fs.length) importMany(fs); };
 
 async function pdfPageImg(doc,i){ const p=await doc.getPage(i); const vp0=p.getViewport({scale:1}); const vp=p.getViewport({scale:1700/vp0.width});
@@ -2915,7 +2938,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.8||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 24 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.8||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 25 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
