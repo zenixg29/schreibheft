@@ -960,10 +960,10 @@ async function runHiRes(){ if(!note) return; if(hiBusy){ hiAgain=true; return; }
       const u0=(x0-o.x)/o.w, v0=(y0-o.y)/o.h, u1=(x1-o.x)/o.w, v1=(y1-o.y)/o.h, h=HIRES.get(o);
       if(h&&h.o===o.a&&h.fw>=fullW*0.97&&h.u0<=u0+1e-4&&h.v0<=v0+1e-4&&h.u1>=u1-1e-4&&h.v1>=v1-1e-4) continue;
       const doc=await pdfDoc(o.pdf.a), p=await doc.getPage(o.pdf.n), vp0=p.getViewport({scale:1});
-      const sc=fullW/vp0.width, fullH=vp0.height*sc, cw=Math.ceil((u1-u0)*fullW), ch=Math.ceil((v1-v0)*fullH);
+      const s0=o.pdf.s0||0, s1=o.pdf.s1==null?1:o.pdf.s1, sc=fullW/vp0.width, pageH=vp0.height*sc, fullH=(s1-s0)*pageH, cw=Math.ceil((u1-u0)*fullW), ch=Math.ceil((v1-v0)*fullH);
       if(cw<2||ch<2||cw*ch>4096*4096) continue;
       const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cw,ch);
-      await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetX:-u0*fullW,offsetY:-v0*fullH})}).promise;
+      await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetX:-u0*fullW,offsetY:-(s0*pageH+v0*fullH)})}).promise;
       HIRES.set(o,{cv,o:o.a,fw:fullW,u0,v0,u1:u0+cw/fullW,v1:v0+ch/fullH}); redraw();
     }
   }catch(err){ console.warn('PDF-Hochauflösung',err); }
@@ -2487,14 +2487,24 @@ async function importPdf(f){
   toast('PDF eingefügt ('+doc.numPages+' Seite'+(doc.numPages>1?'n':'')+')');
 }
 async function pdfToPage(doc,pdfId,pre){
-  const pg=newPage('blank','sheets'); pg.sheets=[];
+  const pg=newPage('blank','sheets'); pg.sheets=[]; let row=0;
   for(let i=1;i<=doc.numPages;i++){
     toast(pre+'Seite '+i+' von '+doc.numPages+' …');
-    const p=await doc.getPage(i); const vp0=p.getViewport({scale:1}); const sc=1700/vp0.width; const vp=p.getViewport({scale:sc});
+    const p=await doc.getPage(i); const vp0=p.getViewport({scale:1});
+    // lange Seiten (z. B. Samsung Notes) in A4-Blätter teilen, in voller Breite
+    const ratio=vp0.height/vp0.width;
+    if(ratio>(A4H/A4W)*1.25){ const Ht=A4W*ratio, n=Math.ceil(Ht/A4H-0.03), sc=2000/vp0.width, fullH=vp0.height*sc;
+      for(let k=0;k<n;k++){ const s0=k*A4H/Ht, s1=Math.min(1,(k+1)*A4H/Ht), hh=Math.round((s1-s0)*fullH); if(hh<4) continue;
+        const c=document.createElement('canvas'); c.width=2000; c.height=hh; const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+        await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetY:-s0*fullH})}).promise;
+        const a=await storeImage(c,c.width,c.height,false), y0=row*(A4H+GAP);
+        pg.sheets.push([0,row]); pg.objects.push({t:'i',lk:1,x:0,y:y0,w:A4W,h:(s1-s0)*Ht,a:a.id,pdf:{a:pdfId,n:i,s0,s1}}); row++; }
+      continue; }
+    const sc=2000/vp0.width; const vp=p.getViewport({scale:sc});
     const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
     const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise;
     const a=await storeImage(c,c.width,c.height,false);
-    const r=i-1, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
+    const r=row++, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
     pg.sheets.push([0,r]); pg.objects.push({t:'i',lk:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}});
   }
   return pg; }
@@ -2938,7 +2948,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 27 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 28 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
