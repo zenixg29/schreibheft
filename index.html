@@ -950,6 +950,24 @@ const HIRES=new WeakMap(), PDFDOCS=new Map(); let hiT=0, hiBusy=false, hiAgain=f
 function pdfDoc(aid){ let p=PDFDOCS.get(aid); if(!p){ p=(async()=>{ const a=await DB.getAsset(aid); if(!a||!a.pdf) throw new Error('kein PDF');
     const lib=await getPdfLib(); const bin=atob(a.pdf.slice(a.pdf.indexOf(',')+1)); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
     return lib.getDocument({data:u}).promise; })(); PDFDOCS.set(aid,p); p.catch(()=>PDFDOCS.delete(aid)); } return p; }
+/* pdf.js schaltet beim Vergrößern eingebetteter Bilder (Samsung-Handschrift) die Glättung aus → pixelig. Immer glätten. */
+function inkSharp(src,sx,sy,sw,sh,tw,th){ // kleines Schrift-Bild glatt vergrößern und Kanten wieder scharf machen
+  const c=document.createElement('canvas'); c.width=tw; c.height=th; const g=c.getContext('2d'); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; g.drawImage(src,sx,sy,sw,sh,0,0,tw,th);
+  const id=g.getImageData(0,0,tw,th), d=id.data, N=tw*th; let white=0, alpha=false; for(let i=0;i<N;i+=7){ const k=i*4; if(d[k+3]<250) alpha=true; else if(d[k]>235&&d[k+1]>235&&d[k+2]>235) white++; }
+  if(!alpha && white<N/7*0.55) return null; // Foto o. ä. → nicht anfassen
+  const ss=(a,b,x)=>{ x=(x-a)/(b-a); x=x<0?0:x>1?1:x; return x*x*(3-2*x); };
+  for(let i=0;i<N;i++){ const k=i*4;
+    if(alpha){ d[k+3]=Math.round(ss(.18,.62,d[k+3]/255)*255); }
+    else { const m=Math.min(d[k],d[k+1],d[k+2]), dk=1-m/255; if(dk<0.02) continue; const f=ss(.12,.55,dk)/dk; for(let q=0;q<3;q++) d[k+q]=Math.round(255-(255-d[k+q])*Math.min(f,3)); } }
+  g.putImageData(id,0,0); return c; }
+function smoothCtx(g){ try{ g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; Object.defineProperty(g,'imageSmoothingEnabled',{configurable:true,get(){return true},set(){}});
+    const di=g.drawImage.bind(g);
+    g.drawImage=function(img,...a){ try{ const iw=img.width||img.naturalWidth, ih=img.height||img.naturalHeight; let sx=0,sy=0,sw=iw,sh=ih,dx,dy,dw,dh;
+        if(a.length===8){ [sx,sy,sw,sh,dx,dy,dw,dh]=a; } else if(a.length===4){ [dx,dy,dw,dh]=a; } else { [dx,dy]=a; dw=iw; dh=ih; }
+        const t=g.getTransform(), pw=Math.abs(dw)*Math.hypot(t.a,t.b), ph=Math.abs(dh)*Math.hypot(t.c,t.d);
+        if(iw&&ih&&sw>=8&&sh>=8&&pw/sw>1.6&&ph/sh>1.6&&pw*ph<5e6){ const c=inkSharp(img,sx,sy,sw,sh,Math.round(pw),Math.round(ph)); if(c) return di(c,0,0,c.width,c.height,dx,dy,dw,dh); }
+      }catch(e){} return di(img,...a); };
+  }catch(e){} return g; }
 function schedHiRes(){ clearTimeout(hiT); hiT=setTimeout(runHiRes,160); }
 async function runHiRes(){ if(!note) return; if(hiBusy){ hiAgain=true; return; } hiBusy=true;
   try{ const v=V(), vx0=-v.x/v.s, vy0=-v.y/v.s, vx1=vx0+W/v.s, vy1=vy0+H/v.s;
@@ -963,7 +981,7 @@ async function runHiRes(){ if(!note) return; if(hiBusy){ hiAgain=true; return; }
       const s0=o.pdf.s0||0, s1=o.pdf.s1==null?1:o.pdf.s1, sc=fullW/vp0.width, pageH=vp0.height*sc, fullH=(s1-s0)*pageH, cw=Math.ceil((u1-u0)*fullW), ch=Math.ceil((v1-v0)*fullH);
       if(cw<2||ch<2||cw*ch>4096*4096) continue;
       const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cw,ch);
-      await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetX:-u0*fullW,offsetY:-(s0*pageH+v0*fullH)})}).promise;
+      await p.render({canvasContext:smoothCtx(g),viewport:p.getViewport({scale:sc,offsetX:-u0*fullW,offsetY:-(s0*pageH+v0*fullH)})}).promise;
       HIRES.set(o,{cv,o:o.a,fw:fullW,u0,v0,u1:u0+cw/fullW,v1:v0+ch/fullH}); redraw();
     }
   }catch(err){ console.warn('PDF-Hochauflösung',err); }
@@ -2496,13 +2514,13 @@ async function pdfToPage(doc,pdfId,pre){
     if(ratio>(A4H/A4W)*1.25){ const Ht=A4W*ratio, n=Math.ceil(Ht/A4H-0.03), sc=2000/vp0.width, fullH=vp0.height*sc;
       for(let k=0;k<n;k++){ const s0=k*A4H/Ht, s1=Math.min(1,(k+1)*A4H/Ht), hh=Math.round((s1-s0)*fullH); if(hh<4) continue;
         const c=document.createElement('canvas'); c.width=2000; c.height=hh; const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
-        await p.render({canvasContext:g,viewport:p.getViewport({scale:sc,offsetY:-s0*fullH})}).promise;
+        await p.render({canvasContext:smoothCtx(g),viewport:p.getViewport({scale:sc,offsetY:-s0*fullH})}).promise;
         const a=await storeImage(c,c.width,c.height,false), y0=row*(A4H+GAP);
         pg.sheets.push([0,row]); pg.objects.push({t:'i',lk:1,x:0,y:y0,w:A4W,h:(s1-s0)*Ht,a:a.id,pdf:{a:pdfId,n:i,s0,s1}}); row++; }
       continue; }
     const sc=2000/vp0.width; const vp=p.getViewport({scale:sc});
     const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
-    const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise;
+    const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:smoothCtx(g),viewport:vp}).promise;
     const a=await storeImage(c,c.width,c.height,false);
     const r=row++, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
     pg.sheets.push([0,r]); pg.objects.push({t:'i',lk:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}});
@@ -2555,7 +2573,7 @@ $('#multiFile').onchange=e=>{ const fs=[...e.target.files]; e.target.value=''; i
 
 async function pdfPageImg(doc,i){ const p=await doc.getPage(i); const vp0=p.getViewport({scale:1}); const vp=p.getViewport({scale:1700/vp0.width});
   const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
-  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:g,viewport:vp}).promise; return storeImage(c,c.width,c.height,false); }
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:smoothCtx(g),viewport:vp}).promise; return storeImage(c,c.width,c.height,false); }
 // PDF-Seiten auf die aktuelle Seite unten anhängen (endloses A4, freie Seite oder Blätter)
 async function pdfOnPage(doc,pdfId){
   pushUndo(); const pg=page(), L=lay(), list=objs(); const added=[];
@@ -2948,7 +2966,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 28 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 29 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
