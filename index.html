@@ -215,7 +215,10 @@ svg.ic.acc{color:var(--accent)}
 .chip svg.ic{width:15px;height:15px}
 .ib svg.ic{width:22px;height:22px;margin:0}
 #favBtn svg.ic{color:#e0a400}
-.mi{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:9px;text-align:left;font-size:15px;white-space:nowrap}
+.mi{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:9px;text-align:left;font-size:15px;white-space:normal;line-height:1.25;overflow-wrap:anywhere;min-width:0}
+.mi>svg,.mi>i{flex:none}
+.mi small{display:block;font-size:12px;color:var(--muted)}
+.pop{max-width:calc(100vw - 16px)}
 .mi:hover{background:var(--hover)}
 .mi.on{background:var(--accent-soft);color:var(--accent)}
 .mi.dng{color:var(--danger)}
@@ -408,14 +411,14 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(-4px)}
   <button class="mi" data-open="formulas"><span class="glyph">Σ</span>Formeln &amp; Konstanten</button>
   <button class="mi" data-open="science"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/></svg>Einheiten &amp; Periodensystem</button>
 </div>
-<div class="pop" id="topMorePop" style="width:260px">
+<div class="pop" id="topMorePop" style="width:280px">
   <button class="mi" id="tmPages"><i data-ic="grid"></i>Seitenübersicht</button>
   <button class="mi" id="splitBtn"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="8.5" height="15" rx="1.5"/><rect x="13" y="4.5" width="8.5" height="15" rx="1.5"/></svg>Zwei Seiten nebeneinander</button>
   <button class="mi" id="readBtn"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Lesemodus</button>
   <button class="mi" id="themeBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Hell / Dunkel</button>
   <div class="msep"></div>
   <button class="mi" id="tmPdf"><i data-ic="file"></i>Als PDF speichern</button>
-  <button class="mi" id="tmShareNote"><i data-ic="share"></i>Zum Bearbeiten teilen (Schreibheft-Datei)</button>
+  <button class="mi" id="tmShareNote"><i data-ic="share"></i><span>Zum Bearbeiten teilen<small>als Schreibheft-Datei</small></span></button>
   <button class="mi" id="tmShare"><i data-ic="share"></i>Als PDF teilen</button>
   <div class="msep"></div>
   <button class="mi" id="tmSettings"><i data-ic="gear"></i>Einstellungen</button>
@@ -2751,7 +2754,7 @@ async function noteMenu(n){
     <button class="mi" data-a="fav">${ic('star',n.fav?'fill':'')}${n.fav?'Aus Favoriten entfernen':'Zu Favoriten'}</button>
     <button class="mi" data-a="pin">${ic(n.pinHash?'unlock':'lock')}${n.pinHash?'PIN entfernen':'Mit PIN sperren'}</button><button class="mi" data-a="dup">${ic('copy')}Notiz kopieren</button>
     <div class="msep"></div><button class="mi" data-a="pdf">${ic('file')}Als PDF speichern</button><button class="mi" data-a="spdf">${ic('share')}Als PDF teilen</button>
-    <div class="msep"></div><button class="mi" data-a="shf">${ic('share')}Zum Bearbeiten teilen (Schreibheft-Datei)</button><button class="mi" data-a="svf">${ic('download')}Als Schreibheft-Datei speichern</button>
+    <div class="msep"></div><button class="mi" data-a="shf">${ic('share')}<span>Zum Bearbeiten teilen<small>als Schreibheft-Datei</small></span></button><button class="mi" data-a="svf">${ic('download')}Als Schreibheft-Datei speichern</button>
     <div class="msep"></div><button class="mi dng" data-a="del">${ic('trash')}In den Papierkorb</button></div>
     <div class="btns"><button class="btn" id="nmNo">Schließen</button></div>`);
     $('#modalBox .mlist').onclick=e=>{ const b=e.target.closest('[data-a]'); if(b){ closeModal(); res(b.dataset.a); } }; $('#nmNo').onclick=()=>{ closeModal(); res(null); }; });
@@ -2967,7 +2970,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 30 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 31 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
