@@ -343,14 +343,14 @@ body.setOpen #scrim{display:block;z-index:45}
 .slotrow button.on svg.pensvg{transform:translateY(0)}
 .slotrow button small{position:absolute;bottom:2px;right:4px;font-size:10px;color:var(--muted);font-weight:600}
 .slotrow button.on small{color:var(--accent)}
-#quickSizes .ib.slot{width:50px;height:28px;overflow:hidden;background:none!important}
-#quickSizes .ib.slot svg.pensvg{width:13px;height:36px;transform:rotate(90deg) translateY(10px);transition:transform .15s;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}
-#quickSizes .ib.slot.on svg.pensvg{transform:rotate(90deg) translateY(1px)}
-body.bar-right #quickSizes .ib.slot svg.pensvg{transform:rotate(-90deg) translateY(10px)}
-body.bar-right #quickSizes .ib.slot.on svg.pensvg{transform:rotate(-90deg) translateY(1px)}
+#quickSizes .ib.slot{width:46px;height:28px;overflow:visible;background:none!important;display:flex;align-items:center;justify-content:center}
+#quickSizes .ib.slot svg.pensvg{width:12px;height:34px;flex:none;transform:rotate(90deg) translateY(3px);transition:transform .15s;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}
+#quickSizes .ib.slot.on svg.pensvg{transform:rotate(90deg) translateY(-4px)}
+body.bar-right #quickSizes .ib.slot svg.pensvg{transform:rotate(-90deg) translateY(3px)}
+body.bar-right #quickSizes .ib.slot.on svg.pensvg{transform:rotate(-90deg) translateY(-4px)}
 body.bar-bottom #quickSizes .ib.slot{width:26px;height:48px}
-body.bar-bottom #quickSizes .ib.slot svg.pensvg{transform:translateY(12px)}
-body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(2px)}
+body.bar-bottom #quickSizes .ib.slot svg.pensvg{transform:translateY(4px)}
+body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(-4px)}
 #quickSizes .ib span.hlq{border-radius:3px}
 .ptrow button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border-radius:10px;border:1.5px solid transparent;font-size:11.5px;color:var(--muted)}
 .ptrow button:hover{background:var(--hover)}
@@ -612,12 +612,12 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(2px)}
     <div id="notes"></div>
   </main>
 </div>
-<div class="pop" id="newPop" style="width:240px">
+<div class="pop" id="newPop" style="width:330px">
   <button class="mi" id="newNote"><i data-ic="note"></i>Neue Notiz</button>
   <button class="mi" id="newFolder"><i data-ic="folder"></i>Neuer Ordner</button>
   <button class="mi" id="newImport"><i data-ic="upload"></i>Schreibheft-Datei öffnen</button>
   <button class="mi" id="newPdf"><i data-ic="file"></i>PDF oder Bild importieren</button>
-  <button class="mi" id="newMulti"><i data-ic="folder"></i>Ordner importieren (mehrere PDFs)</button>
+  <button class="mi" id="newMulti"><i data-ic="folder"></i>Mehrere PDFs als Ordner importieren</button>
 </div>
 <input type="file" id="multiFile" accept="application/pdf,.pdf,image/*,.zip,application/zip" multiple style="display:none">
 
@@ -714,7 +714,7 @@ const dist = (a,b,c,d) => Math.hypot(c-a,d-b);
 
 /* ---------------- Einstellungen ---------------- */
 const DEF = {theme:'system',accent:'himmel',tool:'pen',color:'ink',sizes:{pen:3,hl:18,eraser:24,peraser:16,shape:3},eraserMode:'stroke',mathSolve:true,pressure:true,snap:true,holdMs:500,
-  fingerDraw:false,shape:'line',barPos:'left',split:false,penDbl:true,autoBackup:!!window.AndroidApp,lastAutoBk:0,penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:true,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
+  fingerDraw:false,shape:'line',barPos:'left',split:false,penDbl:true,autoBackup:!!window.AndroidApp,lastAutoBk:0,penType:'ball',favPens:[],smooth:2,scratch:true,autoScroll:false,fill:0,dash:0,calcDeg:true,lastNote:null,custom:'#ff3399'};
 let S = DEF;
 try{ S = Object.assign({},DEF,JSON.parse(localStorage.getItem('sh-settings')||'{}')); S.sizes=Object.assign({},DEF.sizes,S.sizes); }catch(e){}
 function saveSettings(){ try{ syncSlot(); }catch(e){} try{ localStorage.setItem('sh-settings',JSON.stringify(S)); }catch(e){} }
@@ -1826,6 +1826,7 @@ function hwTrain(){ const CH=['0','1','2','3','4','5','6','7','8','9','+','×','
   $('#hwReset').onclick=async()=>{ for(const k in data) delete data[k]; hwSave(data); HWT=null; toast('Gelernte Schrift gelöscht'); show(); };
   show(); }
 /* Automatisch weiterscrollen */
+if(!S.asMig){ S.asMig=1; S.autoScroll=false; try{ saveSettings(); }catch(e){} }
 function autoScroll(o){ if(!S.autoScroll||lay()==='sheets') return; const b=bbox(o); const sy=toScreen(0,b[3])[1]; if(sy<H-130) return;
   const v=V(), from=v.y, to=v.y-(sy-H*0.55), t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/380), e=1-Math.pow(1-k,3); v.y=from+(to-from)*e; clampView(); render(); drawLive(); if(k<1) requestAnimationFrame(step); else scheduleSave(); };
@@ -2966,7 +2967,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 29 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 30 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
