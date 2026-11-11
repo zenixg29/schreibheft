@@ -954,21 +954,41 @@ function pdfDoc(aid){ let p=PDFDOCS.get(aid); if(!p){ p=(async()=>{ const a=awai
     const lib=await getPdfLib(); const bin=atob(a.pdf.slice(a.pdf.indexOf(',')+1)); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
     return lib.getDocument({data:u}).promise; })(); PDFDOCS.set(aid,p); p.catch(()=>PDFDOCS.delete(aid)); } return p; }
 /* pdf.js schaltet beim Vergrößern eingebetteter Bilder (Samsung-Handschrift) die Glättung aus → pixelig. Immer glätten. */
-function inkSharp(src,sx,sy,sw,sh,tw,th){ // kleines Schrift-Bild glatt vergrößern und Kanten wieder scharf machen
-  const c=document.createElement('canvas'); c.width=tw; c.height=th; const g=c.getContext('2d'); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; g.drawImage(src,sx,sy,sw,sh,0,0,tw,th);
-  const id=g.getImageData(0,0,tw,th), d=id.data, N=tw*th; let white=0, alpha=false; for(let i=0;i<N;i+=7){ const k=i*4; if(d[k+3]<250) alpha=true; else if(d[k]>235&&d[k+1]>235&&d[k+2]>235) white++; }
-  if(!alpha && white<N/7*0.55) return null; // Foto o. ä. → nicht anfassen
-  const ss=(a,b,x)=>{ x=(x-a)/(b-a); x=x<0?0:x>1?1:x; return x*x*(3-2*x); };
-  for(let i=0;i<N;i++){ const k=i*4;
-    if(alpha){ d[k+3]=Math.round(ss(.18,.62,d[k+3]/255)*255); }
-    else { const m=Math.min(d[k],d[k+1],d[k+2]), dk=1-m/255; if(dk<0.02) continue; const f=ss(.12,.55,dk)/dk; for(let q=0;q<3;q++) d[k+q]=Math.round(255-(255-d[k+q])*Math.min(f,3)); } }
+function inkSharp(src,sx,sy,sw,sh,tw,th,scale){ // kleines Schrift-Bild glatt vergrößern, Kanten scharf, Helligkeit (z. B. Kästchen) bleibt
+  const nw=Math.max(1,Math.round(sw)), nh=Math.max(1,Math.round(sh)); if(nw*nh>4e6) return null;
+  const s0=document.createElement('canvas'); s0.width=nw; s0.height=nh; const g0=s0.getContext('2d'); g0.drawImage(src,sx,sy,sw,sh,0,0,nw,nh);
+  const sd=g0.getImageData(0,0,nw,nh).data, n0=nw*nh; let white=0, alpha=false;
+  for(let i=0;i<n0;i++){ const k=i*4; if(sd[k+3]<250) alpha=true; else if(sd[k]>235&&sd[k+1]>235&&sd[k+2]>235) white++; }
+  if(!alpha && white<n0*0.55) return null; // Foto o. ä. → nicht anfassen
+  const D=new Float32Array(n0); for(let i=0;i<n0;i++){ const k=i*4; D[i]=alpha?sd[k+3]/255:1-Math.min(sd[k],sd[k+1],sd[k+2])/255; }
+  const mm=document.createElement('canvas'); mm.width=nw; mm.height=nh; const gm=mm.getContext('2d'), mid=gm.createImageData(nw,nh), md=mid.data;
+  for(let y=0;y<nh;y++) for(let x=0;x<nw;x++){ let m=0; for(let yy=Math.max(0,y-1);yy<=Math.min(nh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(nw-1,x+1);xx++){ const v=D[yy*nw+xx]; if(v>m) m=v; }
+    const k=(y*nw+x)*4; md[k]=Math.round(m*255); md[k+3]=255; }
+  gm.putImageData(mid,0,0);
+  const c=document.createElement('canvas'); c.width=tw; c.height=th; const g=c.getContext('2d'); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; g.drawImage(s0,0,0,nw,nh,0,0,tw,th);
+  const cm=document.createElement('canvas'); cm.width=tw; cm.height=th; const gc=cm.getContext('2d'); gc.imageSmoothingEnabled=true; gc.imageSmoothingQuality='high'; gc.drawImage(mm,0,0,nw,nh,0,0,tw,th);
+  const id=g.getImageData(0,0,tw,th), d=id.data, M=gc.getImageData(0,0,tw,th).data, N=tw*th;
+  const bw=Math.max(.06,Math.min(.35,.9/(scale||2))), lo=.5-bw, hi=.5+bw;
+  for(let i=0;i<N;i++){ const k=i*4, Mv=M[k]/255; if(Mv<0.03) continue;
+    const dk=alpha?d[k+3]/255:1-Math.min(d[k],d[k+1],d[k+2])/255; let v=dk/Mv; v=v>1?1:v; let t=(v-lo)/(hi-lo); t=t<0?0:t>1?1:t; const nd=Mv*t*t*(3-2*t);
+    if(alpha) d[k+3]=Math.round(nd*255);
+    else { if(dk<0.004){ if(nd<0.02) continue; continue; } const f=Math.min(nd/dk,4); for(let q=0;q<3;q++) d[k+q]=Math.round(Math.max(0,255-(255-d[k+q])*f)); } }
   g.putImageData(id,0,0); return c; }
 function smoothCtx(g){ try{ g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; Object.defineProperty(g,'imageSmoothingEnabled',{configurable:true,get(){return true},set(){}});
     const di=g.drawImage.bind(g);
     g.drawImage=function(img,...a){ try{ const iw=img.width||img.naturalWidth, ih=img.height||img.naturalHeight; let sx=0,sy=0,sw=iw,sh=ih,dx,dy,dw,dh;
         if(a.length===8){ [sx,sy,sw,sh,dx,dy,dw,dh]=a; } else if(a.length===4){ [dx,dy,dw,dh]=a; } else { [dx,dy]=a; dw=iw; dh=ih; }
-        const t=g.getTransform(), pw=Math.abs(dw)*Math.hypot(t.a,t.b), ph=Math.abs(dh)*Math.hypot(t.c,t.d);
-        if(iw&&ih&&sw>=8&&sh>=8&&pw/sw>1.6&&ph/sh>1.6&&pw*ph<5e6){ const c=inkSharp(img,sx,sy,sw,sh,Math.round(pw),Math.round(ph)); if(c) return di(c,0,0,c.width,c.height,dx,dy,dw,dh); }
+        const t=g.getTransform(), pw=Math.abs(dw)*Math.hypot(t.a,t.b), ph=Math.abs(dh)*Math.hypot(t.c,t.d), sc=Math.min(pw/sw,ph/sh);
+        if(iw&&ih&&sw>=8&&sh>=8&&sc>1.6&&Math.abs(t.b)<1e-6&&Math.abs(t.c)<1e-6&&dw>0&&dh>0){
+          // nur den sichtbaren Teil in Bildschirmauflösung aufbereiten
+          const CW=g.canvas.width, CH=g.canvas.height, X0=t.e+t.a*dx, X1=t.e+t.a*(dx+dw), Y0=t.f+t.d*dy, Y1=t.f+t.d*(dy+dh);
+          const ix0=Math.max(0,Math.floor(Math.min(X0,X1))-2), ix1=Math.min(CW,Math.ceil(Math.max(X0,X1))+2), iy0=Math.max(0,Math.floor(Math.min(Y0,Y1))-2), iy1=Math.min(CH,Math.ceil(Math.max(Y0,Y1))+2);
+          if(ix1>ix0&&iy1>iy0&&(ix1-ix0)*(iy1-iy0)<1.2e7){
+            const la=[(ix0-t.e)/t.a,(ix1-t.e)/t.a].sort((p,q)=>p-q), lb=[(iy0-t.f)/t.d,(iy1-t.f)/t.d].sort((p,q)=>p-q);
+            const lx0=Math.max(dx,la[0]), lx1=Math.min(dx+dw,la[1]), ly0=Math.max(dy,lb[0]), ly1=Math.min(dy+dh,lb[1]);
+            if(lx1>lx0&&ly1>ly0){ const ssx=sx+(lx0-dx)/dw*sw, ssw=(lx1-lx0)/dw*sw, ssy=sy+(ly0-dy)/dh*sh, ssh=(ly1-ly0)/dh*sh;
+              const ow=Math.max(1,Math.round((lx1-lx0)*Math.abs(t.a))), oh=Math.max(1,Math.round((ly1-ly0)*Math.abs(t.d)));
+              const c=inkSharp(img,ssx,ssy,ssw,ssh,ow,oh,sc); if(c) return di(c,0,0,ow,oh,lx0,ly0,lx1-lx0,ly1-ly0); } } }
       }catch(e){} return di(img,...a); };
   }catch(e){} return g; }
 function schedHiRes(){ clearTimeout(hiT); hiT=setTimeout(runHiRes,160); }
@@ -2970,7 +2990,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 31 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 32 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
