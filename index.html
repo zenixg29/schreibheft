@@ -2526,10 +2526,12 @@ async function importPdf(f){
   const pg=await pdfToPage(doc,pdfA.id,'');
   if(where==='new'){ const n=createNote(f.name.replace(/\.pdf$/i,''),{folder:curFolder}); n.pages=[pg]; fitView(pg); DB.put(n); openNote(n); }
   else { fitView(pg); note.pages.splice(pageIdx+1,0,pg); gotoPage(pageIdx+1); scheduleSave(); }
-  toast('PDF eingefügt ('+doc.numPages+' Seite'+(doc.numPages>1?'n':'')+')');
+  { const k=doc.numPages-(pg.cut||0); toast('PDF eingefügt ('+k+' Seite'+(k>1?'n':'')+')'+(pg.cut?' · '+pg.cut+' leere Seite'+(pg.cut>1?'n':'')+' am Ende weggelassen':'')); }
 }
+function isBlankCanvas(c){ const w=140, h=Math.max(1,Math.round(c.height*w/c.width)), t=document.createElement('canvas'); t.width=w; t.height=h; const g=t.getContext('2d'); g.drawImage(c,0,0,w,h);
+  const d=g.getImageData(0,0,w,h).data; let n=0; for(let i=0;i<d.length;i+=4){ const mn=Math.min(d[i],d[i+1],d[i+2]), mx=Math.max(d[i],d[i+1],d[i+2]); if(mn<150||mx-mn>70) n++; } return n<=2; }
 async function pdfToPage(doc,pdfId,pre){
-  const pg=newPage('blank','sheets'); pg.sheets=[]; let row=0;
+  const pg=newPage('blank','sheets'); pg.sheets=[]; let row=0; const blank=[];
   for(let i=1;i<=doc.numPages;i++){
     toast(pre+'Seite '+i+' von '+doc.numPages+' …');
     const p=await doc.getPage(i); const vp0=p.getViewport({scale:1});
@@ -2539,17 +2541,19 @@ async function pdfToPage(doc,pdfId,pre){
       for(let k=0;k<n;k++){ const s0=k*A4H/Ht, s1=Math.min(1,(k+1)*A4H/Ht), hh=Math.round((s1-s0)*fullH); if(hh<4) continue;
         const c=document.createElement('canvas'); c.width=2000; c.height=hh; const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
         await p.render({canvasContext:smoothCtx(g),viewport:p.getViewport({scale:sc,offsetY:-s0*fullH})}).promise;
-        const a=await storeImage(c,c.width,c.height,false), y0=row*(A4H+GAP);
+        blank[row]=isBlankCanvas(c); const a=await storeImage(c,c.width,c.height,false), y0=row*(A4H+GAP);
         pg.sheets.push([0,row]); pg.objects.push({t:'i',lk:1,x:0,y:y0,w:A4W,h:(s1-s0)*Ht,a:a.id,pdf:{a:pdfId,n:i,s0,s1}}); row++; }
       continue; }
     const sc=2000/vp0.width; const vp=p.getViewport({scale:sc});
     const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
     const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); await p.render({canvasContext:smoothCtx(g),viewport:vp}).promise;
-    const a=await storeImage(c,c.width,c.height,false);
+    blank[row]=isBlankCanvas(c); const a=await storeImage(c,c.width,c.height,false);
     const r=row++, x0=0, y0=r*(A4H+GAP), k=Math.min(A4W/a.w,A4H/a.h), w=a.w*k, h=a.h*k;
     pg.sheets.push([0,r]); pg.objects.push({t:'i',lk:1,x:x0+(A4W-w)/2,y:y0+(A4H-h)/2,w,h,a:a.id,pdf:{a:pdfId,n:i}});
   }
-  return pg; }
+  // leere Seiten am Ende weglassen (Samsung hängt oft viele an)
+  let cut=0; while(row>1&&blank[row-1]){ row--; cut++; pg.sheets=pg.sheets.filter(q=>q[1]!==row); pg.objects=pg.objects.filter(o=>!(o.t==='i'&&o.y>=row*(A4H+GAP)-1)); }
+  pg.cut=cut; return pg; }
 /* Mini-ZIP-Leser (stored + deflate) */
 async function unzip(buf){ const u=new Uint8Array(buf), dv=new DataView(buf); let e=-1;
   for(let i=u.length-22;i>=Math.max(0,u.length-70000);i--) if(dv.getUint32(i,true)===0x06054b50){ e=i; break; }
@@ -2990,7 +2994,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 32 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 33 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
