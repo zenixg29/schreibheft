@@ -619,6 +619,7 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(-4px)}
   <button class="mi" id="newNote"><i data-ic="note"></i>Neue Notiz</button>
   <button class="mi" id="newFolder"><i data-ic="folder"></i>Neuer Ordner</button>
   <button class="mi" id="newImport"><i data-ic="upload"></i>Schreibheft-Datei öffnen</button>
+  <button class="mi" id="newScan"><i data-ic="scan"></i>Dokument scannen</button>
   <button class="mi" id="newPdf"><i data-ic="file"></i>PDF oder Bild importieren</button>
   <button class="mi" id="newMulti"><i data-ic="folder"></i>Mehrere PDFs als Ordner importieren</button>
 </div>
@@ -2408,7 +2409,7 @@ function download(blob,name){
 $('#insertBtn').title='Einfügen: Bild, PDF, Foto, Scan, Tabelle';
 $('#insertBtn').onclick=e=>{ const p=$('#insPop'); if(p.classList.contains('open')) return closePops(); const r=e.currentTarget.getBoundingClientRect(); closePops(); p.classList.add('open'); p.style.left=clamp(r.left-100,8,W-260)+'px'; p.style.top=(r.bottom+8)+'px'; };
 $('#insPop').onclick=e=>{ const b=e.target.closest('[data-ins]'); if(!b) return; closePops(); const k=b.dataset.ins;
-  if(k==='file') $('#insertFile').click(); else if(k==='cam') openCamera(false); else if(k==='scan') openCamera(true); else if(k==='table') tableDialog(null); };
+  if(k==='file') $('#insertFile').click(); else if(k==='cam') openCamera(false); else if(k==='scan') startScan('page'); else if(k==='table') tableDialog(null); };
 function tableDialog(o){ let R=o?o.rh.length:3, C=o?o.cw.length:3; let cells=o?o.cells.map(r=>r.slice()):[]; let hd=o?!!o.hd:true;
   const build=()=>{ const g=$('#tbGrid'); g.style.gridTemplateColumns=`repeat(${C},minmax(70px,1fr))`; g.innerHTML='';
     for(let j=0;j<R;j++) for(let i=0;i<C;i++){ const inp=document.createElement('input'); inp.type='text'; inp.value=(cells[j]||[])[i]||''; inp.dataset.j=j; inp.dataset.i=i; inp.style.cssText='padding:7px;font-size:14px;min-width:0'+(hd&&j===0?';font-weight:600':''); g.appendChild(inp); }
@@ -2438,58 +2439,116 @@ async function openCamera(scan){
   try{ camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}},audio:false}); }
   catch(e){ console.warn(e); if(window.AndroidApp && !(window.AndroidApp.version)) toast('Für die Kamera bitte die neue Schreibheft-APK (2.2) installieren'); else toast('Kamera nicht erlaubt – ich öffne die Bildauswahl'); return camFallback(scan); }
   modal(`<h3 style="margin:0 0 8px">${scan?'Dokument scannen':'Foto aufnehmen'}</h3><video id="camV" autoplay playsinline muted style="width:100%;max-height:60vh;border-radius:10px;background:#000"></video>
-    <div class="btns"><button class="btn" id="camNo">Abbrechen</button><button class="btn pri" id="camShot" style="font-size:17px">● Auslösen</button></div>`);
+    <div class="btns">${scan?'<button class="btn" id="camGal">Aus Galerie</button>':''}<button class="btn" id="camNo">Abbrechen</button><button class="btn pri" id="camShot" style="font-size:17px">● Auslösen</button></div>`);
+  if(scan) $('#camGal').onclick=()=>{ stopCam(); closeModal(); const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=async()=>{ const f=i.files[0]; if(!f) return; const img=await loadImg(await fileToDataURL(f)); const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); scanEditor(c); }; i.click(); };
   const v=$('#camV'); v.srcObject=camStream;
-  $('#camNo').onclick=()=>{ stopCam(); closeModal(); };
+  $('#camNo').onclick=()=>{ stopCam(); closeModal(); if(scan&&SCAN&&SCAN.pages.length){ const pages=SCAN.pages, tg=SCAN.target; SCAN=null; insertScans(pages,tg); } else SCAN=null; };
   $('#camShot').onclick=()=>{ if(!v.videoWidth) return; const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); stopCam(); closeModal();
     if(scan) scanEditor(c); else insertCanvas(c); };
 }
 function camFallback(scan){ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.setAttribute('capture','environment');
   i.onchange=async()=>{ const f=i.files[0]; if(!f) return; const img=await loadImg(await fileToDataURL(f)); const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); if(scan) scanEditor(c); else insertCanvas(c); }; i.click(); }
 async function insertCanvas(c){ const a=await storeImage(c,c.width,c.height,false); const maxW=Math.min(A4W*0.8,(W*0.6)/V().s), k=Math.min(1,maxW/a.w); insertObjCentered({t:'i',x:0,y:0,w:a.w*k,h:a.h*k,a:a.id}); }
-function scanEditor(src){ const iw=src.width, ih=src.height, k=Math.min(600/iw,460/ih), cw=Math.round(iw*k), ch=Math.round(ih*k);
-  let Q=[[iw*.08,ih*.08],[iw*.92,ih*.08],[iw*.92,ih*.92],[iw*.08,ih*.92]], mode='doc';
-  modal(`<h3 style="margin:0 0 6px">Dokument zurechtziehen</h3><p style="margin:0 0 8px;color:var(--muted);font-size:13px">Die 4 Punkte auf die Ecken vom Blatt ziehen</p>
-    <div style="display:flex;justify-content:center"><canvas id="scC" width="${cw}" height="${ch}" style="position:static;touch-action:none;max-width:100%"></canvas></div>
-    <div class="chips" id="scMode" style="margin-top:8px"><button class="chip" data-m="orig">Original</button><button class="chip on" data-m="doc">Dokument (kontrastreich)</button><button class="chip" data-m="gray">Graustufen</button><button class="chip" data-m="bw">Schwarz-Weiß</button></div>
-    <div class="btns"><button class="btn" id="scNo">Abbrechen</button><button class="btn pri" id="scOk">Einfügen</button></div>`);
-  const cv2=$('#scC'), g=cv2.getContext('2d');
-  const draw=()=>{ g.drawImage(src,0,0,cw,ch); g.fillStyle='rgba(40,110,255,.18)'; g.strokeStyle='#2f7bff'; g.lineWidth=2.5; g.beginPath(); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.fill(); g.stroke();
-    Q.forEach(q=>{ g.beginPath(); g.arc(q[0]*k,q[1]*k,11,0,7); g.fillStyle='#fff'; g.fill(); g.stroke(); }); };
-  draw(); let di=-1;
-  const pos=ev=>{ const bb=cv2.getBoundingClientRect(), sx=cw/bb.width; return [(ev.clientX-bb.left)*sx/k,(ev.clientY-bb.top)*sx/k]; };
-  cv2.onpointerdown=ev=>{ const [x,y]=pos(ev); let bd=1e9; Q.forEach((q,i)=>{ const d=dist(x,y,q[0],q[1]); if(d<bd){bd=d;di=i;} }); if(bd*k>40) di=-1; try{cv2.setPointerCapture(ev.pointerId)}catch(_){} };
-  cv2.onpointermove=ev=>{ if(di<0) return; const [x,y]=pos(ev); Q[di]=[clamp(x,0,iw),clamp(y,0,ih)]; draw(); };
-  cv2.onpointerup=()=>di=-1;
-  $('#scMode').onclick=e=>{ const b=e.target.closest('[data-m]'); if(!b) return; mode=b.dataset.m; $$('#scMode .chip').forEach(x=>x.classList.toggle('on',x===b)); };
-  $('#scNo').onclick=closeModal;
-  $('#scOk').onclick=async()=>{ closeModal(); toast('Scan wird berechnet …'); await new Promise(r=>setTimeout(r,30)); const out=warpScan(src,Q,mode); await insertCanvas(out); };
-}
+/* ---------- Scanner: Blatt erkennen, gerade ziehen, weiß machen, mehrere Seiten ---------- */
+let SCAN=null; // {pages:[canvas], target:'page'|'note'}
+function startScan(target){ SCAN={pages:[],target:target||'page'}; openCamera(true); }
+function detectQuad(src){ const iw=src.width, ih=src.height, k=Math.min(1,360/Math.max(iw,ih)), w=Math.max(8,Math.round(iw*k)), h=Math.max(8,Math.round(ih*k));
+  const t=document.createElement('canvas'); t.width=w; t.height=h; const g=t.getContext('2d'); g.drawImage(src,0,0,w,h); const d=g.getImageData(0,0,w,h).data, N=w*h;
+  const gr=new Uint8Array(N), hist=new Float64Array(256); for(let i=0;i<N;i++){ const v=(d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11)|0; gr[i]=v; hist[v]++; }
+  let sum=0; for(let i=0;i<256;i++) sum+=i*hist[i]; let sB=0,wB=0,best=0,th=128; for(let i=0;i<256;i++){ wB+=hist[i]; if(!wB) continue; const wF=N-wB; if(!wF) break; sB+=i*hist[i]; const mB=sB/wB, mF=(sum-sB)/wF, v=wB*wF*(mB-mF)*(mB-mF); if(v>best){ best=v; th=i; } }
+  const seen=new Uint8Array(N); let bestC=null, bestN=0; const st=new Int32Array(N);
+  for(let s0=0;s0<N;s0++){ if(seen[s0]||gr[s0]<=th) continue; let sp=0, n=0, a=1e9,b=-1e9,c=-1e9,e=1e9, A=0,B=0,C=0,E=0; st[sp++]=s0; seen[s0]=1;
+    while(sp){ const i=st[--sp], x=i%w, y=(i/w)|0; n++; const p=x+y, q=x-y; if(p<a){a=p;A=i;} if(p>b){b=p;B=i;} if(q>c){c=q;C=i;} if(q<e){e=q;E=i;}
+      if(x>0&&!seen[i-1]&&gr[i-1]>th){seen[i-1]=1;st[sp++]=i-1;} if(x<w-1&&!seen[i+1]&&gr[i+1]>th){seen[i+1]=1;st[sp++]=i+1;}
+      if(y>0&&!seen[i-w]&&gr[i-w]>th){seen[i-w]=1;st[sp++]=i-w;} if(y<h-1&&!seen[i+w]&&gr[i+w]>th){seen[i+w]=1;st[sp++]=i+w;} }
+    if(n>bestN){ bestN=n; bestC=[A,C,B,E]; } }
+  if(!bestC||bestN<N*0.12) return null;
+  const Q=bestC.map(i=>[(i%w+0.5)/k,(((i/w)|0)+0.5)/k]);
+  const area=Math.abs(Q.reduce((s,q,i)=>{ const r=Q[(i+1)%4]; return s+q[0]*r[1]-r[0]*q[1]; },0))/2; if(area<iw*ih*0.1) return null;
+  return Q; }
+function rotCanvas(c){ const o=document.createElement('canvas'); o.width=c.height; o.height=c.width; const g=o.getContext('2d'); g.translate(o.width,0); g.rotate(Math.PI/2); g.drawImage(c,0,0); return o; }
+function scanEditor(src){ if(!SCAN) SCAN={pages:[],target:'page'};
+  let Q=null, mode=S.scanMode||'auto'; const wide=innerWidth>760;
+  const build=()=>{ const iw=src.width, ih=src.height, k=Math.min((wide?470:600)/iw,(wide?520:420)/ih), cw=Math.round(iw*k), ch=Math.round(ih*k);
+    Q=detectQuad(src)||[[iw*.06,ih*.06],[iw*.94,ih*.06],[iw*.94,ih*.94],[iw*.06,ih*.94]];
+    modal(`<h3 style="margin:0 0 4px">Dokument scannen${SCAN.pages.length?' · Seite '+(SCAN.pages.length+1):''}</h3><p style="margin:0 0 8px;color:var(--muted);font-size:13px">Ecken werden automatisch erkannt – bei Bedarf die Punkte verschieben.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:flex-start"><canvas id="scC" width="${cw}" height="${ch}" style="position:static;touch-action:none;max-width:100%;border-radius:8px"></canvas>
+      <canvas id="scP" style="position:static;max-width:${wide?'340px':'100%'};max-height:${wide?'520px':'320px'};border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.25);background:#fff"></canvas></div>
+      <div class="chips" id="scMode" style="margin-top:10px;flex-wrap:wrap"><button class="chip" data-m="auto">Automatisch</button><button class="chip" data-m="gray">Graustufen</button><button class="chip" data-m="bw">Schwarz-Weiß</button><button class="chip" data-m="orig">Original</button></div>
+      <div class="btns" style="flex-wrap:wrap"><button class="btn" id="scNo">Abbrechen</button><button class="btn" id="scRot">⟳ Drehen</button><button class="btn" id="scAgain">Neu aufnehmen</button><button class="btn" id="scMore">+ Weitere Seite</button><button class="btn pri" id="scOk">Fertig${SCAN.pages.length?' ('+(SCAN.pages.length+1)+' Seiten)':''}</button></div>`);
+    $('#modalBox').style.width=wide?'min(900px,100%)':'';
+    const cv2=$('#scC'), g=cv2.getContext('2d');
+    const draw=()=>{ g.drawImage(src,0,0,cw,ch); g.fillStyle='rgba(0,0,0,.35)'; g.beginPath(); g.rect(0,0,cw,ch); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.fill('evenodd');
+      g.strokeStyle=accC(); g.lineWidth=2.5; g.beginPath(); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.stroke();
+      Q.forEach(q=>{ g.beginPath(); g.arc(q[0]*k,q[1]*k,12,0,7); g.fillStyle='rgba(255,255,255,.9)'; g.fill(); g.stroke(); }); };
+    let pvT=0; const preview=()=>{ clearTimeout(pvT); pvT=setTimeout(()=>{ const pc=$('#scP'); if(!pc) return; const o=warpScan(src,Q,mode,520); pc.width=o.width; pc.height=o.height; pc.getContext('2d').drawImage(o,0,0); },60); };
+    draw(); preview(); let di=-1;
+    const pos=ev=>{ const bb=cv2.getBoundingClientRect(), sx=cw/bb.width; return [(ev.clientX-bb.left)*sx/k,(ev.clientY-bb.top)*sx/k]; };
+    cv2.onpointerdown=ev=>{ const [x,y]=pos(ev); let bd=1e9; Q.forEach((q,i)=>{ const d=dist(x,y,q[0],q[1]); if(d<bd){bd=d;di=i;} }); if(bd*k>48) di=-1; try{cv2.setPointerCapture(ev.pointerId)}catch(_){} };
+    cv2.onpointermove=ev=>{ if(di<0) return; const [x,y]=pos(ev); Q[di]=[clamp(x,0,iw),clamp(y,0,ih)]; draw(); };
+    cv2.onpointerup=()=>{ if(di>=0) preview(); di=-1; };
+    $$('#scMode .chip').forEach(x=>x.classList.toggle('on',x.dataset.m===mode));
+    $('#scMode').onclick=e=>{ const b=e.target.closest('[data-m]'); if(!b) return; mode=b.dataset.m; S.scanMode=mode; saveSettings(); $$('#scMode .chip').forEach(x=>x.classList.toggle('on',x===b)); preview(); };
+    $('#scNo').onclick=()=>{ SCAN=null; $('#modalBox').style.width=''; closeModal(); };
+    $('#scRot').onclick=()=>{ src=rotCanvas(src); build(); };
+    $('#scAgain').onclick=()=>{ $('#modalBox').style.width=''; closeModal(); openCamera(true); };
+    const finish=async(more)=>{ $('#modalBox').style.width=''; closeModal(); toast('Scan wird berechnet …'); await new Promise(r=>setTimeout(r,30));
+      SCAN.pages.push(warpScan(src,Q,mode,2400)); if(more){ openCamera(true); return; } const pages=SCAN.pages, tg=SCAN.target; SCAN=null; await insertScans(pages,tg); };
+    $('#scMore').onclick=()=>finish(true); $('#scOk').onclick=()=>finish(false); };
+  build(); }
+async function insertScans(pages,target){ if(!pages.length) return;
+  const mk=async(pg,row,c)=>{ const a=await storeImage(c,c.width,c.height,false), PW=pw(pg), PH=ph(pg), k=Math.min(PW/a.w,PH/a.h), w=a.w*k, h=a.h*k;
+    pg.objects.push({t:'i',lk:1,x:(PW-w)/2,y:row*(PH+GAP)+(PH-h)/2,w,h,a:a.id,scan:1}); };
+  if(target==='note'){ const n=createNote('Scan '+new Date().toLocaleDateString('de-DE'),{layout:'sheets',bg:'blank',folder:(libView==='home'?curFolder:null)}); const pg=n.pages[0]; pg.sheets=[];
+    for(let i=0;i<pages.length;i++){ pg.sheets.push([0,i]); await mk(pg,i,pages[i]); } fitView(pg); await DB.put(n); openNote(n); try{ showLib(false); }catch(e){}
+    toast(pages.length+' Seite'+(pages.length>1?'n':'')+' gescannt'); return; }
+  pushUndo(); let pg=page();
+  if(lay()==='sheets'){ const sh=pg.sheets||(pg.sheets=[[0,0]]); let r=Math.max(...sh.map(q=>q[1])); const PH=ph(pg);
+    const lastEmpty=!pg.objects.some(o=>{ const b=bbox(o); return b[3]>r*(PH+GAP)&&b[1]<(r+1)*(PH+GAP); });
+    for(let i=0;i<pages.length;i++){ if(!(i===0&&lastEmpty)) { r++; sh.push([0,r]); } await mk(pg,r,pages[i]); }
+    commit(); const v=V(); v.y=72-(r-pages.length+1)*(PH+GAP)*v.s; clampView(); render(); toast('Scan eingefügt – du kannst direkt darauf schreiben'); return; }
+  // freie / endlose Seite: neue Blatt-Seite in dieser Notiz
+  const np=newPage('blank','sheets'); np.sheets=[]; for(let i=0;i<pages.length;i++){ np.sheets.push([0,i]); await mk(np,i,pages[i]); } fitView(np);
+  note.pages.splice(pageIdx+1,0,np); gotoPage(pageIdx+1); scheduleSave(); toast('Scan als neue Seite eingefügt'); }
 function homography(s,d){ // 4 Punktpaare: d -> s
   const A=[],B=[]; for(let i=0;i<4;i++){ const [x,y]=d[i],[u,v]=s[i]; A.push([x,y,1,0,0,0,-u*x,-u*y]); B.push(u); A.push([0,0,0,x,y,1,-v*x,-v*y]); B.push(v); }
   for(let c=0;c<8;c++){ let p=c; for(let r=c+1;r<8;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r; [A[c],A[p]]=[A[p],A[c]]; [B[c],B[p]]=[B[p],B[c]];
     for(let r=0;r<8;r++){ if(r===c) continue; const f=A[r][c]/A[c][c]; for(let k=c;k<8;k++) A[r][k]-=f*A[c][k]; B[r]-=f*B[c]; } }
   return B.map((b,i)=>b/A[i][i]); }
-function warpScan(src,Q,mode){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); let ow=Math.max(L(Q[0],Q[1]),L(Q[3],Q[2])), oh=Math.max(L(Q[0],Q[3]),L(Q[1],Q[2]));
-  const sc=Math.min(1,2000/Math.max(ow,oh)); ow=Math.round(ow*sc); oh=Math.round(oh*sc);
+function warpScan(src,Q,mode,maxS){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); let ow=Math.max(L(Q[0],Q[1]),L(Q[3],Q[2])), oh=Math.max(L(Q[0],Q[3]),L(Q[1],Q[2]));
+  // fast A4? dann genau A4-Seitenverhältnis
+  const r=oh/ow; if(Math.abs(r-1.414)<0.12) oh=ow*1.414; else if(Math.abs(1/r-1.414)<0.12) ow=oh*1.414;
+  const sc=Math.min(maxS>1000?1.6:1,(maxS||2400)/Math.max(ow,oh)); ow=Math.max(2,Math.round(ow*sc)); oh=Math.max(2,Math.round(oh*sc));
   const h=homography(Q,[[0,0],[ow,0],[ow,oh],[0,oh]]); const sd=src.getContext('2d').getImageData(0,0,src.width,src.height).data, SW=src.width, SH=src.height;
   const out=document.createElement('canvas'); out.width=ow; out.height=oh; const og=out.getContext('2d'); const id=og.createImageData(ow,oh), od=id.data;
   for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const z=h[6]*x+h[7]*y+1, u=(h[0]*x+h[1]*y+h[2])/z, v=(h[3]*x+h[4]*y+h[5])/z;
     const xi=Math.floor(u), yi=Math.floor(v), o=(y*ow+x)*4; if(xi<0||yi<0||xi>=SW-1||yi>=SH-1){ od[o]=od[o+1]=od[o+2]=255; od[o+3]=255; continue; }
     const fx=u-xi, fy=v-yi, i0=(yi*SW+xi)*4, i1=i0+4, i2=i0+SW*4, i3=i2+4;
     for(let c=0;c<3;c++) od[o+c]=(sd[i0+c]*(1-fx)+sd[i1+c]*fx)*(1-fy)+(sd[i2+c]*(1-fx)+sd[i3+c]*fx)*fy; od[o+3]=255; }
-  if(mode!=='orig'){ const N=ow*oh, gr=new Float32Array(N); for(let i=0;i<N;i++) gr[i]=od[i*4]*0.299+od[i*4+1]*0.587+od[i*4+2]*0.114;
-    if(mode==='doc'||mode==='bw'){ // Hintergrund (Schatten) per grober Unschärfe ausgleichen
-      const bs=Math.max(8,Math.round(Math.max(ow,oh)/40)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), mx=new Float32Array(gw*gh);
-      for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const k=Math.floor(y/bs)*gw+Math.floor(x/bs); if(gr[y*ow+x]>mx[k]) mx[k]=gr[y*ow+x]; }
-      const bg=(x,y)=>{ const gx=clamp(x/bs-0.5,0,gw-1), gy=clamp(y/bs-0.5,0,gh-1), x0=Math.floor(gx), y0=Math.floor(gy), x1=Math.min(gw-1,x0+1), y1=Math.min(gh-1,y0+1), fx=gx-x0, fy=gy-y0;
-        return (mx[y0*gw+x0]*(1-fx)+mx[y0*gw+x1]*fx)*(1-fy)+(mx[y1*gw+x0]*(1-fx)+mx[y1*gw+x1]*fx)*fy; };
-      for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const i=y*ow+x, b=Math.max(40,bg(x,y)); let v=clamp(gr[i]/b,0,1);
-        if(mode==='bw') v=v>0.72?1:0; else v=Math.pow(clamp((v-0.35)/0.55,0,1),1.6);
-        if(mode==='doc'){ const sat=Math.max(od[i*4],od[i*4+1],od[i*4+2])-Math.min(od[i*4],od[i*4+1],od[i*4+2]); if(sat>60){ const f=v*255/Math.max(1,gr[i]); for(let c=0;c<3;c++) od[i*4+c]=clamp(od[i*4+c]*f,0,255); continue; } }
-        od[i*4]=od[i*4+1]=od[i*4+2]=v*255; } }
-    else for(let i=0;i<N;i++) od[i*4]=od[i*4+1]=od[i*4+2]=gr[i]; }
+  if(mode!=='orig') enhanceScan(od,ow,oh,mode);
   og.putImageData(id,0,0); return out; }
+function enhanceScan(od,ow,oh,mode){ const N=ow*oh;
+  // Papierhelligkeit pro Bereich schätzen (Schatten, Licht) – je Farbkanal
+  const bs=Math.max(8,Math.round(Math.max(ow,oh)/36)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), M=[new Float32Array(gw*gh),new Float32Array(gw*gh),new Float32Array(gw*gh)];
+  const tmp=new Float32Array(gw*gh);
+  for(let c=0;c<3;c++){ const m=M[c]; for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const k=((y/bs)|0)*gw+((x/bs)|0), v=od[(y*ow+x)*4+c]; if(v>m[k]) m[k]=v; }
+    // Ausdehnen (große farbige Flächen sind kein Papier), dann glätten
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let mx=0; for(let yy=Math.max(0,y-2);yy<=Math.min(gh-1,y+2);yy++) for(let xx=Math.max(0,x-2);xx<=Math.min(gw-1,x+2);xx++) if(m[yy*gw+xx]>mx) mx=m[yy*gw+xx]; tmp[y*gw+x]=mx; } m.set(tmp);
+    for(let it=0;it<2;it++){ for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let s=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ s+=m[yy*gw+xx]; n++; } tmp[y*gw+x]=s/n; } m.set(tmp); } }
+  const bg=(m,x,y)=>{ const gx=clamp(x/bs-0.5,0,gw-1), gy=clamp(y/bs-0.5,0,gh-1), x0=gx|0, y0=gy|0, x1=Math.min(gw-1,x0+1), y1=Math.min(gh-1,y0+1), fx=gx-x0, fy=gy-y0;
+    return (m[y0*gw+x0]*(1-fx)+m[y0*gw+x1]*fx)*(1-fy)+(m[y1*gw+x0]*(1-fx)+m[y1*gw+x1]*fx)*fy; };
+  const L=new Float32Array(N);
+  for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const i=y*ow+x, o=i*4; let r=od[o]/Math.max(40,bg(M[0],x,y)), g=od[o+1]/Math.max(40,bg(M[1],x,y)), b=od[o+2]/Math.max(40,bg(M[2],x,y));
+    r=Math.min(1,r); g=Math.min(1,g); b=Math.min(1,b); const l=0.3*r+0.59*g+0.11*b;
+    if(mode==='auto'){ const t=clamp((l-0.12)/0.8,0,1), nl=Math.pow(t,1.35), sat=Math.max(r,g,b)-Math.min(r,g,b);
+      if(sat>0.18){ const f=nl/Math.max(0.01,l), boost=1.25; const m=(r+g+b)/3; r=clamp((m+(r-m)*boost)*f,0,1); g=clamp((m+(g-m)*boost)*f,0,1); b=clamp((m+(b-m)*boost)*f,0,1); }
+      else { r=g=b=nl; }
+      if(nl>0.965){ r=g=b=1; } od[o]=r*255; od[o+1]=g*255; od[o+2]=b*255; L[i]=-1; }
+    else { L[i]=l; } }
+  if(mode==='gray'||mode==='bw'){ for(let i=0;i<N;i++){ let v=L[i]; v=mode==='bw'?(v>0.68?1:0):Math.pow(clamp((v-0.12)/0.8,0,1),1.35); if(mode==='gray'&&v>0.965) v=1; od[i*4]=od[i*4+1]=od[i*4+2]=v*255; } }
+  if(mode!=='bw'){ // leicht nachschärfen
+    const src=new Uint8ClampedArray(od); for(let y=1;y<oh-1;y++) for(let x=1;x<ow-1;x++){ const o=(y*ow+x)*4; for(let c=0;c<3;c++){ const v=src[o+c]; if(v>=250) continue; const b=(src[o+c-4]+src[o+c+4]+src[o+c-ow*4]+src[o+c+ow*4])/4; od[o+c]=v+0.7*(v-b); } } }
+}
 let importNew=false;
 $('#insertFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f){ importNew=false; return; }
   if(importNew){ importNew=false; const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name); const n=createNote(f.name.replace(/\.[^.]+$/,'')||'Import',{layout:isPdf?'sheets':'roll',bg:isPdf?'blank':'block',folder:libView==='home'?curFolder:null}); openNote(n); showLib(false); }
@@ -2859,6 +2918,7 @@ function dropPop(pop,btn){ if(pop.classList.contains('open')) return closePops()
 $('#newBtn').onclick=e=>dropPop($('#newPop'),e.currentTarget);
 $('#newNote').onclick=()=>{ closePops(); newNoteDialog(); };
 $('#newFolder').onclick=()=>{ closePops(); addFolder(libView==='home'?curFolder:null); };
+$('#newScan').onclick=()=>{ closePops(); startScan('note'); };
 $('#newMulti').onclick=()=>{ closePops(); $('#multiFile').click(); };
 $('#newPdf').onclick=()=>{ closePops(); importNew=true; $('#insertFile').click(); };
 $('#toolsBtn').onclick=e=>dropPop($('#mathPop'),e.currentTarget);
@@ -2994,7 +3054,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 33 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 34 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
