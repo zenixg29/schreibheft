@@ -2567,25 +2567,97 @@ function detectQuad(src){ const iw=src.width, ih=src.height, k=Math.min(1,360/Ma
   const Q=bestC.map(i=>[(i%w+0.5)/k,(((i/w)|0)+0.5)/k]);
   const area=Math.abs(Q.reduce((s,q,i)=>{ const r=Q[(i+1)%4]; return s+q[0]*r[1]-r[0]*q[1]; },0))/2; if(area<iw*ih*0.1) return null;
   return Q; }
+function quadArea(Q){ return Math.abs(Q.reduce((s,q,i)=>{ const r=Q[(i+1)%4]; return s+q[0]*r[1]-r[0]*q[1]; },0))/2; }
+function inQuad(Q,x,y){ let sg=0; for(let i=0;i<4;i++){ const a=Q[i], b=Q[(i+1)%4], c=(b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]); if(c===0) continue; const s=c>0?1:-1; if(!sg) sg=s; else if(s!==sg) return false; } return true; }
+function detectQuads(src){ const iw=src.width, ih=src.height, k=Math.min(1,360/Math.max(iw,ih)), w=Math.max(8,Math.round(iw*k)), h=Math.max(8,Math.round(ih*k)), N=w*h;
+  const t=document.createElement('canvas'); t.width=w; t.height=h; const g=t.getContext('2d'); g.drawImage(src,0,0,w,h); const d=g.getImageData(0,0,w,h).data;
+  const g0=new Float32Array(N); for(let i=0;i<N;i++) g0[i]=d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11;
+  const gr=new Float32Array(N); for(let y=0;y<h;y++) for(let x=0;x<w;x++){ let s=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(h-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(w-1,x+1);xx++){ s+=g0[yy*w+xx]; n++; } gr[y*w+x]=s/n; }
+  // Kanten (Sobel, inkl. Farbkanten über Kanal-Summe)
+  const G=new Float32Array(N); const ch=c=>{ const a=new Float32Array(N); for(let i=0;i<N;i++) a[i]=d[i*4+c]; return a; }; const RC=ch(0), GC=ch(1), BC=ch(2);
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){ const i=y*w+x; let m=0;
+    for(const A of [gr,RC,GC,BC]){ const gx=A[i-w+1]+2*A[i+1]+A[i+w+1]-A[i-w-1]-2*A[i-1]-A[i+w-1], gy=A[i+w-1]+2*A[i+w]+A[i+w+1]-A[i-w-1]-2*A[i-w]-A[i-w+1]; const v=Math.hypot(gx,gy)*(A===gr?1:0.6); if(v>m) m=v; } G[i]=m; }
+  const sorted=Float32Array.from(G).sort(), thr=Math.max(40,sorted[Math.floor(N*0.88)]);
+  const E=new Uint8Array(N); for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=y*w+x; if(G[i]>=thr){ for(let yy=Math.max(0,y-1);yy<=Math.min(h-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(w-1,x+1);xx++) E[yy*w+xx]=1; } }
+  const raw=[]; const st=new Int32Array(N);
+  const comps=(ok)=>{ const seen=new Uint8Array(N); for(let s0=0;s0<N;s0++){ if(seen[s0]||!ok(s0)) continue; let sp=0,n=0,a=1e9,b=-1e9,c=-1e9,e=1e9,A=0,B=0,C=0,EE=0; st[sp++]=s0; seen[s0]=1;
+      while(sp){ const i=st[--sp], x=i%w, y=(i/w)|0; n++; const p=x+y, q=x-y; if(p<a){a=p;A=i;} if(p>b){b=p;B=i;} if(q>c){c=q;C=i;} if(q<e){e=q;EE=i;}
+        if(x>0&&!seen[i-1]&&ok(i-1)){seen[i-1]=1;st[sp++]=i-1;} if(x<w-1&&!seen[i+1]&&ok(i+1)){seen[i+1]=1;st[sp++]=i+1;}
+        if(y>0&&!seen[i-w]&&ok(i-w)){seen[i-w]=1;st[sp++]=i-w;} if(y<h-1&&!seen[i+w]&&ok(i+w)){seen[i+w]=1;st[sp++]=i+w;} }
+      if(n>N*0.025) raw.push([A,C,B,EE].map(i=>[i%w+0.5,((i/w)|0)+0.5])); } };
+  comps(i=>!E[i]);
+  // zusätzlich: helle und dunkle Flächen (Otsu)
+  const hist=new Float64Array(256); for(let i=0;i<N;i++) hist[gr[i]|0]++; let sum=0; for(let i=0;i<256;i++) sum+=i*hist[i]; let sB=0,wB=0,best=0,th=128;
+  for(let i=0;i<256;i++){ wB+=hist[i]; if(!wB) continue; const wF=N-wB; if(!wF) break; sB+=i*hist[i]; const mB=sB/wB, mF=(sum-sB)/wF, v=wB*wF*(mB-mF)*(mB-mF); if(v>best){ best=v; th=i; } }
+  comps(i=>gr[i]>th); comps(i=>gr[i]<=th);
+  // Bewertung: Seiten müssen auf Kanten liegen
+  const onB=(p)=>p[0]<3||p[1]<3||p[0]>w-3||p[1]>h-3;
+  const edgeAt=(x,y)=>{ x=Math.round(x); y=Math.round(y); for(let yy=Math.max(0,y-2);yy<=Math.min(h-1,y+2);yy++) for(let xx=Math.max(0,x-2);xx<=Math.min(w-1,x+2);xx++) if(G[yy*w+xx]>=thr*0.7) return true; return false; };
+  const out=[];
+  for(let Q of raw){ const cx=Q.reduce((s,q)=>s+q[0],0)/4, cy=Q.reduce((s,q)=>s+q[1],0)/4; Q=Q.map(q=>{ const dx=q[0]-cx, dy=q[1]-cy, L=Math.hypot(dx,dy)||1; return [clamp(q[0]+dx/L*1.2,0,w),clamp(q[1]+dy/L*1.2,0,h)]; });
+    const ar=quadArea(Q); if(ar<N*0.04) continue;
+    let bad=false, bsides=0; for(let i=0;i<4;i++){ const a=Q[(i+3)%4], b=Q[i], c=Q[(i+1)%4], v1=[a[0]-b[0],a[1]-b[1]], v2=[c[0]-b[0],c[1]-b[1]], cs=(v1[0]*v2[0]+v1[1]*v2[1])/((Math.hypot(...v1)*Math.hypot(...v2))||1); if(Math.abs(cs)>0.72) bad=true; } if(bad) continue;
+    let sc=0, minS=1;
+    for(let i=0;i<4;i++){ const a=Q[i], b=Q[(i+1)%4]; let hit=0, onb=0; const M=40; for(let j=1;j<M;j++){ const x=a[0]+(b[0]-a[0])*j/M, y=a[1]+(b[1]-a[1])*j/M; if(onB([x,y])){ onb++; hit++; } else if(edgeAt(x,y)) hit++; }
+      if(onb>(M-1)*0.7) bsides++; const r=hit/(M-1); sc+=r/4; if(r<minS) minS=r; }
+    if(bsides>=2||minS<0.5||sc<0.7) continue;
+    let br=0,bn=0; const b0=[Math.min(...Q.map(q=>q[0])),Math.min(...Q.map(q=>q[1])),Math.max(...Q.map(q=>q[0])),Math.max(...Q.map(q=>q[1]))];
+    for(let y=b0[1];y<b0[3];y+=3) for(let x=b0[0];x<b0[2];x+=3) if(inQuad(Q,x,y)){ br+=gr[(y|0)*w+(x|0)]; bn++; }
+    out.push({Q:Q.map(q=>[q[0]/k,q[1]/k]),area:ar/N,sc,br:bn?br/bn:0}); }
+  // doppelte zusammenfassen
+  const D=Math.hypot(iw,ih)*0.035, res=[];
+  for(const c of out.sort((a,b)=>b.sc-a.sc)){ if(res.some(r=>r.Q.every((q,i)=>dist(q[0],q[1],c.Q[i][0],c.Q[i][1])<D))) continue; res.push(c); }
+  res.sort((a,b)=>b.area-a.area); const top=res.slice(0,4); try{ refineQuads(src,top); }catch(e){ console.error(e); } return top; }
+// Kanten genauer: jede Seite in mittlerer Auflösung an die stärkste Kante schieben
+function refineQuads(src,list){ if(!list.length) return; const iw=src.width, ih=src.height, m=Math.min(1,1200/Math.max(iw,ih)), w=Math.round(iw*m), h=Math.round(ih*m), N=w*h;
+  const t=document.createElement('canvas'); t.width=w; t.height=h; const g=t.getContext('2d'); g.drawImage(src,0,0,w,h); const d=g.getImageData(0,0,w,h).data;
+  const gr=new Float32Array(N); for(let i=0;i<N;i++) gr[i]=d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11;
+  const Gm=(x,y)=>{ x=Math.round(x); y=Math.round(y); if(x<1||y<1||x>=w-1||y>=h-1) return 0; const i=y*w+x;
+    const gx=gr[i-w+1]+2*gr[i+1]+gr[i+w+1]-gr[i-w-1]-2*gr[i-1]-gr[i+w-1], gy=gr[i+w-1]+2*gr[i+w]+gr[i+w+1]-gr[i-w-1]-2*gr[i-w]-gr[i-w+1]; return Math.hypot(gx,gy); };
+  const RNG=Math.max(5,Math.round(Math.max(w,h)/90));
+  for(const c of list){ const P=c.Q.map(q=>[q[0]*m,q[1]*m]), lines=[];
+    for(let i=0;i<4;i++){ const a=P[i], b=P[(i+1)%4], L=dist(a[0],a[1],b[0],b[1])||1, u=[(b[0]-a[0])/L,(b[1]-a[1])/L], n=[-u[1],u[0]]; const pts=[];
+      for(let j=2;j<=22;j++){ const tt=j/24, px=a[0]+(b[0]-a[0])*tt, py=a[1]+(b[1]-a[1])*tt; let bs=0, bv=0;
+        for(let s=-RNG;s<=RNG;s+=0.5){ const v=Gm(px+n[0]*s,py+n[1]*s); if(v>bv){ bv=v; bs=s; } } if(bv>60) pts.push([tt,bs]); }
+      if(pts.length<6){ lines.push([a,b]); continue; }
+      const med=pts.map(q=>q[1]).sort((x,y)=>x-y)[pts.length>>1], use=pts.filter(q=>Math.abs(q[1]-med)<=2); if(use.length<5){ lines.push([a,b]); continue; }
+      let st=0,ss=0,stt=0,sts=0; for(const [tt,sv] of use){ st+=tt; ss+=sv; stt+=tt*tt; sts+=tt*sv; } const k=use.length, den=k*stt-st*st||1, be=(k*sts-st*ss)/den, al=(ss-be*st)/k;
+      lines.push([[a[0]+n[0]*al,a[1]+n[1]*al],[b[0]+n[0]*(al+be),b[1]+n[1]*(al+be)]]); }
+    const X=(l1,l2)=>{ const [p1,p2]=l1,[p3,p4]=l2, d1=[p2[0]-p1[0],p2[1]-p1[1]], d2=[p4[0]-p3[0],p4[1]-p3[1]], den=d1[0]*d2[1]-d1[1]*d2[0]; if(Math.abs(den)<1e-6) return null; const tt=((p3[0]-p1[0])*d2[1]-(p3[1]-p1[1])*d2[0])/den; return [p1[0]+d1[0]*tt,p1[1]+d1[1]*tt]; };
+    const NQ=[]; let ok=true; for(let i=0;i<4;i++){ const q=X(lines[(i+3)%4],lines[i]); if(!q||dist(q[0],q[1],P[i][0],P[i][1])>Math.max(w,h)*0.03){ ok=false; break; } NQ.push([clamp(q[0]/m,0,iw),clamp(q[1]/m,0,ih)]); }
+    if(ok) c.Q=NQ; } }
 function rotCanvas(c){ const o=document.createElement('canvas'); o.width=c.height; o.height=c.width; const g=o.getContext('2d'); g.translate(o.width,0); g.rotate(Math.PI/2); g.drawImage(c,0,0); return o; }
 function scanEditor(src){ if(!SCAN) SCAN={pages:[],target:'page'};
   let Q=null, mode=S.scanMode||'auto'; const wide=innerWidth>760;
   const build=()=>{ const iw=src.width, ih=src.height, k=Math.min((wide?470:600)/iw,(wide?520:420)/ih), cw=Math.round(iw*k), ch=Math.round(ih*k);
-    Q=detectQuad(src)||[[iw*.06,ih*.06],[iw*.94,ih*.06],[iw*.94,ih*.94],[iw*.06,ih*.94]];
-    modal(`<h3 style="margin:0 0 4px">Dokument scannen${SCAN.pages.length?' · Seite '+(SCAN.pages.length+1):''}</h3><p style="margin:0 0 8px;color:var(--muted);font-size:13px">Ecken werden automatisch erkannt – bei Bedarf die Punkte verschieben.</p>
+    let cands=[]; try{ cands=detectQuads(src); }catch(e){ console.error(e); }
+    if(!cands.length){ const q=detectQuad(src); if(q) cands=[{Q:q,area:quadArea(q)/(iw*ih),br:200}]; }
+    let sel=-1; if(cands.length){ const big=cands.filter(c=>c.area>=0.06); sel=cands.indexOf((big.length?big:cands).reduce((a,b)=>b.br>a.br?b:a)); }
+    Q=sel>=0?cands[sel].Q.map(q=>q.slice()):[[iw*.06,ih*.06],[iw*.94,ih*.06],[iw*.94,ih*.94],[iw*.06,ih*.94]];
+    modal(`<h3 style="margin:0 0 4px">Dokument scannen${SCAN.pages.length?' · Seite '+(SCAN.pages.length+1):''}</h3><p style="margin:0 0 8px;color:var(--muted);font-size:13px">${cands.length>1?cands.length+' Flächen erkannt – tippe die an, die du scannen willst. ':''}Ecken bei Bedarf verschieben.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:flex-start"><canvas id="scC" width="${cw}" height="${ch}" style="position:static;touch-action:none;max-width:100%;border-radius:8px"></canvas>
       <canvas id="scP" style="position:static;max-width:${wide?'340px':'100%'};max-height:${wide?'520px':'320px'};border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.25);background:#fff"></canvas></div>
-      <div class="chips" id="scMode" style="margin-top:10px;flex-wrap:wrap"><button class="chip" data-m="auto">Automatisch</button><button class="chip" data-m="gray">Graustufen</button><button class="chip" data-m="bw">Schwarz-Weiß</button><button class="chip" data-m="orig">Original</button></div>
+      <div class="chips" id="scMode" style="margin-top:10px;flex-wrap:wrap"><button class="chip" data-m="auto">Automatisch</button><button class="chip" data-m="gray">Graustufen</button><button class="chip" data-m="bw">Schwarz-Weiß</button><button class="chip" data-m="board">Tafel</button><button class="chip" data-m="orig">Original</button></div>
       <div class="btns" style="flex-wrap:wrap"><button class="btn" id="scNo">Abbrechen</button><button class="btn" id="scRot">⟳ Drehen</button><button class="btn" id="scAgain">Neu aufnehmen</button><button class="btn" id="scMore">+ Weitere Seite</button><button class="btn pri" id="scOk">Fertig${SCAN.pages.length?' ('+(SCAN.pages.length+1)+' Seiten)':''}</button></div>`);
     $('#modalBox').style.width=wide?'min(900px,100%)':'';
     const cv2=$('#scC'), g=cv2.getContext('2d');
-    const draw=()=>{ g.drawImage(src,0,0,cw,ch); g.fillStyle='rgba(0,0,0,.35)'; g.beginPath(); g.rect(0,0,cw,ch); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.fill('evenodd');
+    const draw=()=>{ g.drawImage(src,0,0,cw,ch);
+      cands.forEach((c,ci)=>{ if(ci===sel) return; g.save(); g.setLineDash([7,5]); g.lineWidth=2.5; g.strokeStyle='rgba(255,255,255,.95)'; g.beginPath(); c.Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.stroke();
+        g.lineDashOffset=6; g.strokeStyle=accC(); g.stroke(); g.restore(); const cx=c.Q.reduce((s,q)=>s+q[0],0)/4*k, cy=c.Q.reduce((s,q)=>s+q[1],0)/4*k, sc0=[Q.reduce((s,q)=>s+q[0],0)/4*k,Q.reduce((s,q)=>s+q[1],0)/4*k];
+        let mx=cx, my=cy, bd=-1; for(let i=0;i<4;i++){ const a=c.Q[i], b=c.Q[(i+1)%4]; let px=(a[0]+b[0])/2*k, py=(a[1]+b[1])/2*k; const L=Math.hypot(cx-px,cy-py)||1; px+=(cx-px)/L*24; py+=(cy-py)/L*24;
+          const inside=inQuad(Q.map(q=>[q[0]*k,q[1]*k]),px,py), dd=(inside?0:1e6)+Math.hypot(px-sc0[0],py-sc0[1]); if(dd>bd){ bd=dd; mx=px; my=py; } }
+        g.fillStyle='rgba(0,0,0,.55)'; g.beginPath(); g.roundRect?g.roundRect(mx-44,my-13,88,26,13):g.rect(mx-44,my-13,88,26); g.fill(); g.fillStyle='#fff'; g.font='600 12px '+FONT; g.textAlign='center'; g.textBaseline='middle'; g.fillText('Antippen',mx,my); g.textAlign='start'; g.textBaseline='alphabetic'; });
+      g.fillStyle='rgba(0,0,0,.35)'; g.beginPath(); g.rect(0,0,cw,ch); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.fill('evenodd');
       g.strokeStyle=accC(); g.lineWidth=2.5; g.beginPath(); Q.forEach((q,i)=>i?g.lineTo(q[0]*k,q[1]*k):g.moveTo(q[0]*k,q[1]*k)); g.closePath(); g.stroke();
       Q.forEach(q=>{ g.beginPath(); g.arc(q[0]*k,q[1]*k,12,0,7); g.fillStyle='rgba(255,255,255,.9)'; g.fill(); g.stroke(); }); };
     let pvT=0; const preview=()=>{ clearTimeout(pvT); pvT=setTimeout(()=>{ const pc=$('#scP'); if(!pc) return; const o=warpScan(src,Q,mode,520); pc.width=o.width; pc.height=o.height; pc.getContext('2d').drawImage(o,0,0); },60); };
     draw(); preview(); let di=-1;
     const pos=ev=>{ const bb=cv2.getBoundingClientRect(), sx=cw/bb.width; return [(ev.clientX-bb.left)*sx/k,(ev.clientY-bb.top)*sx/k]; };
-    cv2.onpointerdown=ev=>{ const [x,y]=pos(ev); let bd=1e9; Q.forEach((q,i)=>{ const d=dist(x,y,q[0],q[1]); if(d<bd){bd=d;di=i;} }); if(bd*k>48) di=-1; try{cv2.setPointerCapture(ev.pointerId)}catch(_){} };
+    cv2.onpointerdown=ev=>{ const [x,y]=pos(ev); let bd=1e9; Q.forEach((q,i)=>{ const d=dist(x,y,q[0],q[1]); if(d<bd){bd=d;di=i;} }); if(bd*k>48) di=-1;
+      if(di<0 && cands.length){ // Fläche wählen: kleinste, die den Punkt enthält
+        let bi=-1, ba=1e18; cands.forEach((c,ci)=>{ if(inQuad(c.Q,x,y)){ const a=quadArea(c.Q); if(a<ba){ ba=a; bi=ci; } } });
+        if(bi>=0 && bi!==sel){ sel=bi; Q=cands[bi].Q.map(q=>q.slice()); draw(); preview(); return; } }
+      try{cv2.setPointerCapture(ev.pointerId)}catch(_){} };
     cv2.onpointermove=ev=>{ if(di<0) return; const [x,y]=pos(ev); Q[di]=[clamp(x,0,iw),clamp(y,0,ih)]; draw(); };
     cv2.onpointerup=()=>{ if(di>=0) preview(); di=-1; };
     $$('#scMode .chip').forEach(x=>x.classList.toggle('on',x.dataset.m===mode));
@@ -2616,7 +2688,7 @@ function homography(s,d){ // 4 Punktpaare: d -> s
   for(let c=0;c<8;c++){ let p=c; for(let r=c+1;r<8;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r; [A[c],A[p]]=[A[p],A[c]]; [B[c],B[p]]=[B[p],B[c]];
     for(let r=0;r<8;r++){ if(r===c) continue; const f=A[r][c]/A[c][c]; for(let k=c;k<8;k++) A[r][k]-=f*A[c][k]; B[r]-=f*B[c]; } }
   return B.map((b,i)=>b/A[i][i]); }
-function warpScan(src,Q,mode,maxS){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); let ow=Math.max(L(Q[0],Q[1]),L(Q[3],Q[2])), oh=Math.max(L(Q[0],Q[3]),L(Q[1],Q[2]));
+function warpScan(src,Q,mode,maxS){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); { const cx=Q.reduce((s,q)=>s+q[0],0)/4, cy=Q.reduce((s,q)=>s+q[1],0)/4; Q=Q.map(q=>[cx+(q[0]-cx)*0.994,cy+(q[1]-cy)*0.994]); } let ow=Math.max(L(Q[0],Q[1]),L(Q[3],Q[2])), oh=Math.max(L(Q[0],Q[3]),L(Q[1],Q[2]));
   // fast A4? dann genau A4-Seitenverhältnis
   const r=oh/ow; if(Math.abs(r-1.414)<0.12) oh=ow*1.414; else if(Math.abs(1/r-1.414)<0.12) ow=oh*1.414;
   const sc=Math.min(maxS>1000?1.6:1,(maxS||2400)/Math.max(ow,oh)); ow=Math.max(2,Math.round(ow*sc)); oh=Math.max(2,Math.round(oh*sc));
@@ -2626,9 +2698,27 @@ function warpScan(src,Q,mode,maxS){ const L=(a,b)=>dist(a[0],a[1],b[0],b[1]); le
     const xi=Math.floor(u), yi=Math.floor(v), o=(y*ow+x)*4; if(xi<0||yi<0||xi>=SW-1||yi>=SH-1){ od[o]=od[o+1]=od[o+2]=255; od[o+3]=255; continue; }
     const fx=u-xi, fy=v-yi, i0=(yi*SW+xi)*4, i1=i0+4, i2=i0+SW*4, i3=i2+4;
     for(let c=0;c<3;c++) od[o+c]=(sd[i0+c]*(1-fx)+sd[i1+c]*fx)*(1-fy)+(sd[i2+c]*(1-fx)+sd[i3+c]*fx)*fy; od[o+3]=255; }
-  if(mode!=='orig') enhanceScan(od,ow,oh,mode);
+  if(mode!=='orig'){ enhanceScan(od,ow,oh,mode); const bw=Math.max(2,Math.round(Math.max(ow,oh)*0.003)), c0=[od[((oh>>1)*ow+(ow>>1))*4]]; const dk=mode==='board'||(mode==='auto'&&od[0]<128&&od[(ow*oh-1)*4]<128);
+    const col=dk?[24,26,30]:[255,255,255]; for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ if(x>=bw&&y>=bw&&x<ow-bw&&y<oh-bw) continue; const o=(y*ow+x)*4; od[o]=col[0]; od[o+1]=col[1]; od[o+2]=col[2]; } }
   og.putImageData(id,0,0); return out; }
+function enhanceBoard(od,ow,oh){ const N=ow*oh;
+  // Hintergrund = dunkle Tafel: blockweise Minimum, ausdehnen, glätten
+  const bs=Math.max(8,Math.round(Math.max(ow,oh)/36)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), tmp=new Float32Array(gw*gh), M=[0,1,2].map(()=>new Float32Array(gw*gh).fill(255));
+  for(let c=0;c<3;c++){ const m=M[c]; for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const k=((y/bs)|0)*gw+((x/bs)|0), v=od[(y*ow+x)*4+c]; if(v<m[k]) m[k]=v; }
+    // nicht Minimum (Rauschen), sondern Mittel der dunklen Blöcke
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let mn=255; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++) if(m[yy*gw+xx]<mn) mn=m[yy*gw+xx]; tmp[y*gw+x]=mn; } m.set(tmp);
+    for(let it=0;it<2;it++){ for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let s=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ s+=m[yy*gw+xx]; n++; } tmp[y*gw+x]=s/n; } m.set(tmp); } }
+  const bg=(m,x,y)=>{ const gx=clamp(x/bs-0.5,0,gw-1), gy=clamp(y/bs-0.5,0,gh-1), x0=gx|0, y0=gy|0, x1=Math.min(gw-1,x0+1), y1=Math.min(gh-1,y0+1), fx=gx-x0, fy=gy-y0;
+    return (m[y0*gw+x0]*(1-fx)+m[y0*gw+x1]*fx)*(1-fy)+(m[y1*gw+x0]*(1-fx)+m[y1*gw+x1]*fx)*fy; };
+  const BASE=[24,26,30];
+  for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const o=(y*ow+x)*4; const e=[0,0,0]; let mx=0;
+    for(let c=0;c<3;c++){ const b=bg(M[c],x,y); e[c]=clamp((od[o+c]-b-6)/Math.max(40,(235-b)),0,1); if(e[c]>mx) mx=e[c]; }
+    if(mx<0.06){ od[o]=BASE[0]; od[o+1]=BASE[1]; od[o+2]=BASE[2]; continue; }
+    const a=Math.min(1,Math.pow((mx-0.06)/0.6,0.75)), mean=(e[0]+e[1]+e[2])/3;
+    for(let c=0;c<3;c++){ let col=e[c]/mx; col=clamp(1-(1-col)*1.6,0,1); if(mean/mx>0.82) col=1; od[o+c]=BASE[c]+(255*col-BASE[c])*a; } } }
+function isDarkScan(od,ow,oh){ let s=0,n=0; for(let y=0;y<oh;y+=4) for(let x=0;x<ow;x+=4){ const o=(y*ow+x)*4; s+=od[o]*0.3+od[o+1]*0.59+od[o+2]*0.11; n++; } return n&&s/n<95; }
 function enhanceScan(od,ow,oh,mode){ const N=ow*oh;
+  if(mode==='board'||(mode==='auto'&&isDarkScan(od,ow,oh))) return enhanceBoard(od,ow,oh);
   // Papierhelligkeit pro Bereich schätzen (Schatten, Licht) – je Farbkanal
   const bs=Math.max(8,Math.round(Math.max(ow,oh)/36)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), M=[new Float32Array(gw*gh),new Float32Array(gw*gh),new Float32Array(gw*gh)];
   const tmp=new Float32Array(gw*gh);
@@ -2641,10 +2731,10 @@ function enhanceScan(od,ow,oh,mode){ const N=ow*oh;
   const L=new Float32Array(N);
   for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const i=y*ow+x, o=i*4; let r=od[o]/Math.max(40,bg(M[0],x,y)), g=od[o+1]/Math.max(40,bg(M[1],x,y)), b=od[o+2]/Math.max(40,bg(M[2],x,y));
     r=Math.min(1,r); g=Math.min(1,g); b=Math.min(1,b); const l=0.3*r+0.59*g+0.11*b;
-    if(mode==='auto'){ const t=clamp((l-0.12)/0.8,0,1), nl=Math.pow(t,1.35), sat=Math.max(r,g,b)-Math.min(r,g,b);
+    if(mode==='auto'){ const t=clamp((l-0.12)/0.76,0,1), wv=clamp((l-0.87)/0.07,0,1); let nl=t*t; nl=nl*(1-wv)+wv; const sat=Math.max(r,g,b)-Math.min(r,g,b);
       if(sat>0.18){ const f=nl/Math.max(0.01,l), boost=1.25; const m=(r+g+b)/3; r=clamp((m+(r-m)*boost)*f,0,1); g=clamp((m+(g-m)*boost)*f,0,1); b=clamp((m+(b-m)*boost)*f,0,1); }
       else { r=g=b=nl; }
-      if(nl>0.965){ r=g=b=1; } od[o]=r*255; od[o+1]=g*255; od[o+2]=b*255; L[i]=-1; }
+      if(nl>0.95&&sat<0.25){ r=g=b=1; } od[o]=r*255; od[o+1]=g*255; od[o+2]=b*255; L[i]=-1; }
     else { L[i]=l; } }
   if(mode==='gray'||mode==='bw'){ for(let i=0;i<N;i++){ let v=L[i]; v=mode==='bw'?(v>0.68?1:0):Math.pow(clamp((v-0.12)/0.8,0,1),1.35); if(mode==='gray'&&v>0.965) v=1; od[i*4]=od[i*4+1]=od[i*4+2]=v*255; } }
   if(mode!=='bw'){ // leicht nachschärfen
@@ -3155,7 +3245,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 35 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 36 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
