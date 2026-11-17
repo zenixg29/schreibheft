@@ -2720,19 +2720,25 @@ function isDarkScan(od,ow,oh){ let s=0,n=0; for(let y=0;y<oh;y+=4) for(let x=0;x
 function enhanceScan(od,ow,oh,mode){ const N=ow*oh;
   if(mode==='board'||(mode==='auto'&&isDarkScan(od,ow,oh))) return enhanceBoard(od,ow,oh);
   // Papierhelligkeit pro Bereich schätzen (Schatten, Licht) – je Farbkanal
-  const bs=Math.max(8,Math.round(Math.max(ow,oh)/36)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), M=[new Float32Array(gw*gh),new Float32Array(gw*gh),new Float32Array(gw*gh)];
-  const tmp=new Float32Array(gw*gh);
-  for(let c=0;c<3;c++){ const m=M[c]; for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const k=((y/bs)|0)*gw+((x/bs)|0), v=od[(y*ow+x)*4+c]; if(v>m[k]) m[k]=v; }
-    // Ausdehnen (große farbige Flächen sind kein Papier), dann glätten
-    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let mx=0; for(let yy=Math.max(0,y-2);yy<=Math.min(gh-1,y+2);yy++) for(let xx=Math.max(0,x-2);xx<=Math.min(gw-1,x+2);xx++) if(m[yy*gw+xx]>mx) mx=m[yy*gw+xx]; tmp[y*gw+x]=mx; } m.set(tmp);
-    for(let it=0;it<2;it++){ for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let s=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ s+=m[yy*gw+xx]; n++; } tmp[y*gw+x]=s/n; } m.set(tmp); } }
+  const bs=Math.max(6,Math.round(Math.max(ow,oh)/60)), gw=Math.ceil(ow/bs), gh=Math.ceil(oh/bs), G=gw*gh, M=[new Float32Array(G),new Float32Array(G),new Float32Array(G)];
+  for(let c=0;c<3;c++){ const m=M[c]; for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const k=((y/bs)|0)*gw+((x/bs)|0), v=od[(y*ow+x)*4+c]; if(v>m[k]) m[k]=v; } }
+  // Blöcke ohne Papier (Schrift, Bilder, farbige Flächen) aus hellen Nachbarn auffüllen – Schatten bleiben erhalten
+  const Lb=new Float32Array(G), T=[new Float32Array(G),new Float32Array(G),new Float32Array(G)], TL=new Float32Array(G);
+  for(let it=0;it<8;it++){ for(let k=0;k<G;k++) Lb[k]=0.3*M[0][k]+0.59*M[1][k]+0.11*M[2][k]; let ch=0;
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ const k=y*gw+x; let nm=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++) if(Lb[yy*gw+xx]>nm) nm=Lb[yy*gw+xx];
+      for(let c=0;c<3;c++) T[c][k]=M[c][k];
+      if(Lb[k]<nm*0.86){ let s0=0,s1=0,s2=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ const q=yy*gw+xx; if(Lb[q]>=nm*0.86){ s0+=M[0][q]; s1+=M[1][q]; s2+=M[2][q]; n++; } }
+        if(n){ T[0][k]=s0/n; T[1][k]=s1/n; T[2][k]=s2/n; ch++; } } }
+    for(let c=0;c<3;c++) M[c].set(T[c]); if(!ch) break; }
+  const tmp=new Float32Array(G);
+  for(let c=0;c<3;c++){ const m=M[c]; for(let it=0;it<2;it++){ for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ let s=0,n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ s+=m[yy*gw+xx]; n++; } tmp[y*gw+x]=s/n; } m.set(tmp); } }
   const bg=(m,x,y)=>{ const gx=clamp(x/bs-0.5,0,gw-1), gy=clamp(y/bs-0.5,0,gh-1), x0=gx|0, y0=gy|0, x1=Math.min(gw-1,x0+1), y1=Math.min(gh-1,y0+1), fx=gx-x0, fy=gy-y0;
     return (m[y0*gw+x0]*(1-fx)+m[y0*gw+x1]*fx)*(1-fy)+(m[y1*gw+x0]*(1-fx)+m[y1*gw+x1]*fx)*fy; };
   const L=new Float32Array(N);
   for(let y=0;y<oh;y++) for(let x=0;x<ow;x++){ const i=y*ow+x, o=i*4; let r=od[o]/Math.max(40,bg(M[0],x,y)), g=od[o+1]/Math.max(40,bg(M[1],x,y)), b=od[o+2]/Math.max(40,bg(M[2],x,y));
     r=Math.min(1,r); g=Math.min(1,g); b=Math.min(1,b); const l=0.3*r+0.59*g+0.11*b;
     if(mode==='auto'){ const t=clamp((l-0.12)/0.76,0,1), wv=clamp((l-0.87)/0.07,0,1); let nl=t*t; nl=nl*(1-wv)+wv; const sat=Math.max(r,g,b)-Math.min(r,g,b);
-      if(sat>0.18){ const f=nl/Math.max(0.01,l), boost=1.25; const m=(r+g+b)/3; r=clamp((m+(r-m)*boost)*f,0,1); g=clamp((m+(g-m)*boost)*f,0,1); b=clamp((m+(b-m)*boost)*f,0,1); }
+      if(sat>0.18){ const f=Math.pow(t,1.15)/Math.max(0.01,l), boost=1.25; const m=(r+g+b)/3; r=clamp((m+(r-m)*boost)*f,0,1); g=clamp((m+(g-m)*boost)*f,0,1); b=clamp((m+(b-m)*boost)*f,0,1); }
       else { r=g=b=nl; }
       if(nl>0.95&&sat<0.25){ r=g=b=1; } od[o]=r*255; od[o+1]=g*255; od[o+2]=b*255; L[i]=-1; }
     else { L[i]=l; } }
@@ -3245,7 +3251,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 36 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 37 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
