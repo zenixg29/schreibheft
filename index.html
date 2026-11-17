@@ -538,6 +538,7 @@ body.bar-bottom #quickSizes .ib.slot.on svg.pensvg{transform:translateY(-4px)}
   <label class="f" style="margin-top:0">Format</label>
   <div class="chips" id="layoutChips"></div>
   <div class="chips" id="orientChips" style="margin-top:8px"><button class="chip" data-or="0">▯ Hochformat</button><button class="chip" data-or="1">▭ Querformat</button></div>
+  <div class="chips" id="dirChips" style="margin-top:8px"><button class="chip" data-dir="0">↓ Seiten untereinander</button><button class="chip" data-dir="1">→ Seiten nebeneinander</button></div>
   <div id="layoutHint" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
   <label class="f">Papier</label>
   <div class="papers" id="papers"></div>
@@ -1062,8 +1063,9 @@ function moveObj(o,dx,dy){
 }
 
 function renderPage(c,pg,v,w,h,list){
-  const rects=sheetRects(pg);
-  if(rects){
+  let rects=sheetRects(pg);
+  if(rects){ const m=40/v.s, qx0=-v.x/v.s-m, qy0=-v.y/v.s-m, qx1=qx0+w/v.s+2*m, qy1=qy0+h/v.s+2*m;
+    rects=rects.filter(r=>r[2]>=qx0&&r[0]<=qx1&&r[3]>=qy0&&r[1]<=qy1);
     c.fillStyle=DESK[isDark()?1:0]; c.fillRect(-1e7,-1e7,2e7,2e7);
     c.fillStyle=isDark()?'rgba(0,0,0,.5)':'rgba(30,40,60,.16)';
     for(const r of rects){ const b=Math.min(r[3],1e7); c.fillRect(r[0]+3/v.s,r[1]+4/v.s,r[2]-r[0],b-r[1]); }
@@ -1088,15 +1090,100 @@ function contentRect(){ const r=sheetRects(); if(!r) return null; return [Math.m
 let splitBase=0;
 function fullRegion(){ const bp=S.barPos||'left'; return [bp==='left'?72:20, W-(bp==='right'?72:24)]; }
 function regionOf(i){ const [L,R]=fullRegion(); if(!S.split) return [L,R]; const m=(L+R)/2; return i===splitBase?[L,m-8]:[m+8,R]; }
+let OVOK=false; const OVMAX=120, OVGROW=75;
 function clampView(pg,idx){ pg=pg||page(); if(idx===undefined) idx=pageIdx;
-  const r=sheetRects(pg)?[Math.min(...sheetRects(pg).map(q=>q[0])),Math.min(...sheetRects(pg).map(q=>q[1])),Math.max(...sheetRects(pg).map(q=>q[2])),Math.max(...sheetRects(pg).map(q=>q[3]))]:null; if(!r) return; const v=pg.view; const [left,RR]=regionOf(idx), top=72, pad=W-RR;
+  const sr=sheetRects(pg); if(!sr) return; const r=[Infinity,Infinity,-Infinity,-Infinity]; for(const q of sr){ if(q[0]<r[0]) r[0]=q[0]; if(q[1]<r[1]) r[1]=q[1]; if(q[2]>r[2]) r[2]=q[2]; if(q[3]>r[3]) r[3]=q[3]; }
+  const v=pg.view; const [left,RR]=regionOf(idx), top=72, pad=W-RR;
+  const sheets=lay(pg)==='sheets', ov=(OVOK&&sheets&&idx===pageIdx)?OVMAX:0, hz=!!pg.hz; let over=0;
   const w=(r[2]-r[0])*v.s;
-  if(w<=W-left-pad) v.x=left+(W-left-pad-w)/2-r[0]*v.s;
-  else v.x=clamp(v.x, W-pad-r[2]*v.s, left-r[0]*v.s);
+  let loX, hiX; if(w<=W-left-pad){ loX=hiX=left+(W-left-pad-w)/2-r[0]*v.s; } else { loX=W-pad-r[2]*v.s; hiX=left-r[0]*v.s; }
+  if(hz){ v.x=clamp(v.x,loX-ov,hiX); over=Math.max(over,loX-v.x); } else v.x=clamp(v.x,loX,hiX);
   const maxY=top+16-r[1]*v.s;
   if(r[3]===Infinity) v.y=Math.min(v.y,maxY);
-  else { const minY=H-pad-r[3]*v.s; v.y = minY>maxY ? maxY : clamp(v.y,minY,maxY); }
+  else { let minY=H-pad-r[3]*v.s; if(minY>maxY) minY=maxY;
+    if(!hz){ v.y=clamp(v.y,minY-ov,maxY); over=Math.max(over,minY-v.y); } else v.y=clamp(v.y,minY,maxY); }
+  if(idx===pageIdx) pg._over=over>0.5?over:0;
 }
+/* Samsung-Art: am Ende weiterziehen -> neues Blatt */
+const GROW={lock:false,wt:0};
+let frq=0; function frame(){ if(frq) return; frq=requestAnimationFrame(()=>{ frq=0; render(); drawLive(); }); }
+function maybeGrow(){ const pg=page(); if(lay(pg)!=='sheets'||GROW.lock||READ) return; if((pg._over||0)<OVGROW) return;
+  GROW.lock=true; const sh=pg.sheets||(pg.sheets=[[0,0]]);
+  if(pg.hz){ const mc=Math.max(...sh.map(q=>q[0])); sh.push([mc+1,0]); } else { const mr=Math.max(...sh.map(q=>q[1])); sh.push([0,mr+1]); }
+  pg._over=0; scheduleSave(); if(navigator.vibrate) try{ navigator.vibrate(10); }catch(e){} toast('Neue Seite angehängt'); }
+let springRaf=0;
+function springBack(){ OVOK=false; cancelAnimationFrame(springRaf); const pg=page(); if(!pg||!pg._over) { return; }
+  const v=pg.view, tgt={...v}; pg.view=tgt; clampView(pg); pg.view=v; pg._over=pg._over||1;
+  const step=()=>{ v.x+=(tgt.x-v.x)*0.28; v.y+=(tgt.y-v.y)*0.28; if(Math.abs(tgt.x-v.x)<0.6&&Math.abs(tgt.y-v.y)<0.6){ v.x=tgt.x; v.y=tgt.y; pg._over=0; render(); drawLive(); scheduleSave(); return; }
+    OVOK=true; clampView(pg); OVOK=false; render(); drawLive(); springRaf=requestAnimationFrame(step); };
+  springRaf=requestAnimationFrame(step); }
+function drawGrowHint(){ const pg=page(); if(lay(pg)!=='sheets'||!pg._over||READ) return; const a=Math.min(1,pg._over/OVGROW);
+  const txt=pg.hz?'Weiter nach rechts ziehen → neue Seite':'Weiter nach unten ziehen ↓ neue Seite'; lctx.font='600 14px '+FONT; const tw=lctx.measureText(txt).width+28;
+  const [L,R]=regionOf(pageIdx); let x,y; if(pg.hz){ x=R-tw/2-12; y=H/2; } else { x=(L+R)/2; y=H-92; }
+  lctx.globalAlpha=0.35+0.65*a; lctx.fillStyle=isDark()?'#2b2e36':'#ffffff'; lctx.strokeStyle=accC(); lctx.lineWidth=1.5;
+  lctx.beginPath(); lctx.roundRect?lctx.roundRect(x-tw/2,y-17,tw,34,17):lctx.rect(x-tw/2,y-17,tw,34); lctx.fill(); lctx.stroke();
+  lctx.fillStyle=accC(); lctx.textAlign='center'; lctx.textBaseline='middle'; lctx.fillText(txt,x,y+1); lctx.textAlign='start'; lctx.textBaseline='alphabetic';
+  // Fortschritt
+  lctx.globalAlpha=0.9; lctx.fillRect(x-tw/2+14,y+11,(tw-28)*a,2.5); lctx.globalAlpha=1; }
+
+/* Griffe zum Verschieben von PDF-Seiten */
+const isPdfImg=o=>o.t==='i'&&(o.pdf||o.scan);
+const ctr=o=>{ const b=bbox(o); return [(b[0]+b[2])/2,(b[1]+b[3])/2]; };
+function laneOf(pg,c,r){ const sh=pg.sheets||[[0,0]]; return pg.hz? sh.filter(q=>q[1]===r).map(q=>q[0]).sort((a,b)=>a-b) : sh.filter(q=>q[0]===c).map(q=>q[1]).sort((a,b)=>a-b); }
+function pdfHandles(){ const pg=page(), L=lay(pg); if(READ||!note||(L!=='roll'&&L!=='sheets')) return []; const out=[], v=V();
+  if(L==='roll'){ const hx=Math.min(W-24, toScreen(pw(pg),0)[0]+24);
+    for(const o of objs()) if(isPdfImg(o)){ const y0=o.y*v.s+v.y, y1=(o.y+o.h)*v.s+v.y; if(y1<110||y0>H-40) continue;
+      const lo=Math.max(y0,80)+34, hi=Math.min(y1,H)-34, y=lo<=hi?clamp((y0+y1)/2,lo,hi):(Math.max(y0,80)+Math.min(y1,H))/2; out.push({kind:'roll',o,x:hx,y,ax:'y'}); }
+    return out; }
+  const sh=pg.sheets||[[0,0]], P=pw(pg), Q=ph(pg), list=objs();
+  sh.forEach(([c,r],i)=>{ const x0=c*(P+GAP), y0=r*(Q+GAP), x1=x0+P, y1=y0+Q;
+    if(!list.some(o=>isPdfImg(o)&&(()=>{ const [cx,cy]=ctr(o); return cx>=x0&&cx<=x1&&cy>=y0&&cy<=y1; })())) return;
+    const sx0=x0*v.s+v.x, sx1=x1*v.s+v.x, sy0=y0*v.s+v.y, sy1=y1*v.s+v.y; if(sx1<0||sx0>W||sy1<60||sy0>H) return;
+    if(pg.hz){ const y=Math.min(H-26,sy1+Math.max(22,GAP*v.s/2)); const lo=Math.max(sx0,0)+34, hi=Math.min(sx1,W)-34; const x=lo<=hi?clamp((sx0+sx1)/2,lo,hi):(sx0+sx1)/2; out.push({kind:'sheet',c,r,x,y,ax:'x'}); }
+    else { const x=Math.min(W-24,sx1+Math.max(22,GAP*v.s/2)); const lo=Math.max(sy0,80)+34, hi=Math.min(sy1,H)-34; const y=lo<=hi?clamp((sy0+sy1)/2,lo,hi):(sy0+sy1)/2; out.push({kind:'sheet',c,r,x,y,ax:'y'}); } });
+  return out; }
+function hitHandle(x,y){ return pdfHandles().find(h=> h.ax==='y' ? (Math.abs(x-h.x)<24&&Math.abs(y-h.y)<34) : (Math.abs(x-h.x)<34&&Math.abs(y-h.y)<24)); }
+function drawHandles(){ const act=cur&&cur.kind==='hdrag'?cur:null;
+  for(const h of (act?[]:pdfHandles())) drawHandle(h.x,h.y,h.ax,false);
+  if(act){ const h=act.hd, d=act.d*V().s; drawHandle(h.x+(h.ax==='x'?d:0),h.y+(h.ax==='y'?d:0),h.ax,true);
+    if(act.slot){ const v=V(), [a,b,c2,e]=act.slot; lctx.strokeStyle=accC(); lctx.lineWidth=2.5; lctx.setLineDash([10,6]); lctx.strokeRect(a*v.s+v.x,b*v.s+v.y,(c2-a)*v.s,(e-b)*v.s); lctx.setLineDash([]); } } }
+function drawHandle(x,y,ax,on){ const vt=ax==='y', w=vt?30:56, h=vt?56:30;
+  lctx.save(); lctx.shadowColor='rgba(0,0,0,.25)'; lctx.shadowBlur=6; lctx.fillStyle=on?accC():(isDark()?'#2b2e36':'#ffffff');
+  lctx.beginPath(); lctx.roundRect?lctx.roundRect(x-w/2,y-h/2,w,h,15):lctx.rect(x-w/2,y-h/2,w,h); lctx.fill(); lctx.restore();
+  lctx.strokeStyle=on?'#fff':accC(); lctx.lineWidth=2.2; lctx.lineCap='round'; lctx.lineJoin='round'; lctx.beginPath();
+  if(vt){ lctx.moveTo(x-6,y-9); lctx.lineTo(x,y-16); lctx.lineTo(x+6,y-9); lctx.moveTo(x-6,y+9); lctx.lineTo(x,y+16); lctx.lineTo(x+6,y+9); lctx.moveTo(x,y-15); lctx.lineTo(x,y+15); }
+  else { lctx.moveTo(x-9,y-6); lctx.lineTo(x-16,y); lctx.lineTo(x-9,y+6); lctx.moveTo(x+9,y-6); lctx.lineTo(x+16,y); lctx.lineTo(x+9,y+6); lctx.moveTo(x-15,y); lctx.lineTo(x+15,y); }
+  lctx.stroke(); if(!on){ lctx.strokeStyle=accC(); lctx.lineWidth=1.2; lctx.beginPath(); lctx.roundRect?lctx.roundRect(x-w/2,y-h/2,w,h,15):lctx.rect(x-w/2,y-h/2,w,h); lctx.stroke(); } }
+function sheetContents(pg,c,r){ const P=pw(pg),Q=ph(pg), x0=c*(P+GAP), y0=r*(Q+GAP), x1=x0+P+GAP/2, y1=y0+Q+GAP/2, xa=x0-GAP/2, ya=y0-GAP/2;
+  return objs().filter(o=>{ const [cx,cy]=ctr(o); return cx>=xa&&cx<x1&&cy>=ya&&cy<y1; }); }
+function startHandle(e,hd,x,y){ const pg=page(); pushUndo(); let list;
+  let minD=-Infinity;
+  if(hd.kind==='roll'){ const o=hd.o; // diese PDF-Seite und alles darunter wandert mit, darüber bleibt
+    list=objs().filter(q=>q===o||ctr(q)[1]>=o.y); let pb=0; for(const q of objs()) if(q!==o&&isPdfImg(q)&&q.y<o.y) pb=Math.max(pb,q.y+q.h); minD=pb-o.y; }
+  else list=sheetContents(pg,hd.c,hd.r);
+  cur={kind:'hdrag',id:e.pointerId,ptype:e.pointerType,hd,list,start:[x,y],d:0,slot:null,minD}; hideSelbar&&selection.length&&clearSel(); drawLive(); }
+function handleSlot(pg,hd,d){ const P=pw(pg),Q=ph(pg), step=(hd.ax==='y'?Q:P)+GAP, k=Math.round(d/step), from=hd.ax==='y'?hd.r:hd.c, t=Math.max(0,from+k);
+  return {t, rect:hd.ax==='y'?[hd.c*(P+GAP),t*(Q+GAP),hd.c*(P+GAP)+P,t*(Q+GAP)+Q]:[t*(P+GAP),hd.r*(Q+GAP),t*(P+GAP)+P,hd.r*(Q+GAP)+Q]}; }
+function moveHandle(x,y){ const pg=page(), v=V(), hd=cur.hd; let d=(hd.ax==='y'?y-cur.start[1]:x-cur.start[0])/v.s;
+  if(hd.kind==='roll'){ d=Math.max(d,cur.minD); }
+  const dd=d-cur.d; for(const o of cur.list) moveObj(o,hd.ax==='x'?dd:0,hd.ax==='y'?dd:0); cur.d=d;
+  if(hd.kind==='sheet'){ const sl=handleSlot(pg,hd,d); cur.slot=sl.rect; cur.t=sl.t; }
+  frame(); }
+function endHandle(c){ const pg=page(), hd=c.hd;
+  if(Math.abs(c.d)<0.5){ hist().u.pop(); updateUndo(); return; }
+  if(hd.kind==='roll'){ commit(); toast('PDF-Seite verschoben'); return; }
+  for(const o of c.list) moveObj(o,hd.ax==='x'?-c.d:0,hd.ax==='y'?-c.d:0); // zurück, dann Blatt für Blatt einsortieren
+  const from=hd.ax==='y'?hd.r:hd.c, t=handleSlot(pg,hd,c.d).t; if(t===from){ commit(); return; }
+  const sh=pg.sheets||(pg.sheets=[[0,0]]); const has=(cc,rr)=>sh.some(q=>q[0]===cc&&q[1]===rr);
+  // fehlende Blätter bis zum Ziel anlegen
+  if(hd.ax==="y"){ let mr=Math.max(...laneOf(pg,hd.c,hd.r)); for(let rr=mr+1;rr<=t;rr++) if(!has(hd.c,rr)) sh.push([hd.c,rr]); }
+  else { let mc=Math.max(...laneOf(pg,hd.c,hd.r)); for(let cc=mc+1;cc<=t;cc++) if(!has(cc,hd.r)) sh.push([cc,hd.r]); }
+  const lane=laneOf(pg,hd.c,hd.r), fi=lane.indexOf(from), ti=lane.indexOf(t); if(fi<0||ti<0){ commit(); return; }
+  const groups=lane.map(pos=>({pos,list:hd.ax==='y'?sheetContents(pg,hd.c,pos):sheetContents(pg,pos,hd.r)}));
+  const [g]=groups.splice(fi,1); groups.splice(ti,0,g);
+  const P=pw(pg),Q=ph(pg), step=(hd.ax==='y'?Q:P)+GAP;
+  groups.forEach((gr,j)=>{ const dd=(lane[j]-gr.pos)*step; if(dd) for(const o of gr.list) moveObj(o,hd.ax==='x'?dd:0,hd.ax==='y'?dd:0); });
+  commit(); toast('Seite verschoben: jetzt Blatt '+(ti+1)); }
 function fitView(pg){ const r=sheetRects(pg); if(!r) return; const i=note&&note.pages?note.pages.indexOf(pg):-1, [L,R]=regionOf(i<0?pageIdx:i); const s=clamp((R-L-16)/pw(pg),0.2,1.25); pg.view={s,x:0,y:72+16}; }
 function addButtons(){
   if(lay()!=='sheets') return [];
@@ -1106,7 +1193,7 @@ function addButtons(){
     if(!has(c+1,r)) out.push({c:c+1,r,p:toScreen(x0+pw()+GAP/2,y0+ph()/2),dir:'rechts'}); }
   return out.filter(b=>b.p[0]>-30&&b.p[0]<W+30&&b.p[1]>-30&&b.p[1]<H+30);
 }
-function hitAdd(x,y){ return addButtons().find(b=>dist(x,y,b.p[0],b.p[1])<24); }
+function hitAdd(x,y){ return null; }
 function drawAddButtons(){
   for(const b of addButtons()){ const [x,y]=b.p;
     lctx.fillStyle=isDark()?'#2b2e36':'#ffffff'; lctx.strokeStyle=accC(); lctx.lineWidth=1.5;
@@ -1236,7 +1323,7 @@ function drawLive(){
       lctx.beginPath(); lctx.arc(h[0],h[1],4.5,-0.3,Math.PI*1.3); lctx.lineWidth=1.6; lctx.stroke(); }
     if(!selLocked() && !(cur&&(cur.kind==='move'||cur.kind==='scale'||cur.kind==='rot'))) for(const [px,py] of [[sb[0],sb[1]],[sb[2],sb[1]],[sb[0],sb[3]],[sb[2],sb[3]]]){ lctx.beginPath(); lctx.arc(px,py,9,0,Math.PI*2); lctx.fillStyle=isDark()?'#25272d':'#fff'; lctx.fill(); lctx.lineWidth=2.5; lctx.strokeStyle=accC(); lctx.stroke(); }
     lctx.fillStyle=accC(); lctx.globalAlpha=.05; lctx.fillRect(sb[0],sb[1],sb[2]-sb[0],sb[3]-sb[1]); lctx.globalAlpha=1; }
-  drawAddButtons();
+  drawGrowHint(); drawHandles();
   if(TOOLS.ruler.on) drawRuler(lctx,TOOLS.ruler);
   if(TOOLS.geo.on) drawGeo(lctx,TOOLS.geo);
   if(TOOLS.compass.on) drawCompass(lctx);
@@ -1442,7 +1529,7 @@ function moveGesture(){
     gest.t=now;
     if(m.d!==undefined && p.d!==undefined){ const ns=clamp(v.s*m.d/p.d,0.2,8), k=ns/v.s; v.x=m.c[0]-(p.c[0]-v.x)*k; v.y=m.c[1]-(p.c[1]-v.y)*k; v.s=ns; }
     else { v.x+=m.c[0]-p.c[0]; v.y+=m.c[1]-p.c[1]; }
-    clampView(); render(); drawLive(); scheduleSave(); }
+    OVOK=true; clampView(); if(m.d===undefined) maybeGrow(); frame(); scheduleSave(); }
   gest.prev=m;
 }
 
@@ -1465,7 +1552,8 @@ lv.addEventListener('pointerdown',e=>{
   splitPick(x);
   if(READ && e.pointerType!=='touch' && !cur){ capture(e); cur={kind:'pan',id:e.pointerId,ptype:e.pointerType,last:[x,y]}; return; }
   if(TOOLS.compass.on && !cur && compKnob(x,y)){ capture(e); cur={kind:'ckn',id:e.pointerId,ptype:e.pointerType}; return; }
-  if(!cur && !touches.size && !READ){ const ab=hitAdd(x,y); if(ab){ addSheet(ab); return; } }
+  if(!cur && !touches.size){ GROW.lock=false; cancelAnimationFrame(springRaf); }
+  if(!cur && !touches.size && !READ){ const hd=hitHandle(x,y); if(hd){ capture(e); startHandle(e,hd,x,y); return; } }
   if(e.pointerType==='pen') penSeen=true;
   if(e.pointerType==='touch'){
     if(cur && cur.ptype!=='touch') return;               // Handballen ignorieren
@@ -1587,7 +1675,8 @@ lv.addEventListener('pointermove',e=>{
     return;
   }
   const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
-  if(cur.kind==='pan'){ const v=V(); v.x+=x-cur.last[0]; v.y+=y-cur.last[1]; cur.last=[x,y]; clampView(); render(); drawLive(); return; }
+  if(cur.kind==='pan'){ const v=V(); v.x+=x-cur.last[0]; v.y+=y-cur.last[1]; cur.last=[x,y]; OVOK=true; clampView(); maybeGrow(); frame(); return; }
+  if(cur.kind==='hdrag'){ moveHandle(x,y); return; }
   if(cur.kind==='ckn'){ const t=TOOLS.compass; t.r=Math.max(12,dist(x,y,t.x,t.y)); t.a=Math.atan2(y-t.y,x-t.x); drawLive(); return; }
   if(cur.kind==='mtool'){ cur.t.x+=x-cur.last[0]; cur.t.y+=y-cur.last[1]; cur.last=[x,y]; drawLive(); return; }
   if(cur.kind==='stroke' && cur.ptype==='pen' && ((e.buttons&(2|32)) || penBtnDown)){ penToErase(); }
@@ -1636,11 +1725,13 @@ lv.addEventListener('pointermove',e=>{
 function endPointer(e,cancel){
   if(e.pointerType==='touch' && touches.has(e.pointerId)){
     touches.delete(e.pointerId); if(lpO){ clearTimeout(lpT); lpO=null; }
-    if(!(cur && cur.ptype==='touch' && cur.id===e.pointerId)){ if(touches.size){ startGesture(); if(gest) gest.vx=gest.vy=0; } else { if(gest && gest.kind==='view' && gest.t && performance.now()-gest.t<80) startFling(gest.vx||0,gest.vy||0); gest=null; } return; }
+    if(!(cur && cur.ptype==='touch' && cur.id===e.pointerId)){ if(touches.size){ startGesture(); if(gest) gest.vx=gest.vy=0; } else { if(page()._over) springBack(); else { OVOK=false; if(gest && gest.kind==='view' && gest.t && performance.now()-gest.t<80) startFling(gest.vx||0,gest.vy||0); } gest=null; } return; }
   }
   if(!cur || cur.id!==e.pointerId) return;
   clearTimeout(holdT);
   const c=cur; cur=null; liveLabel=null;
+  if(c.kind==='pan'){ springBack(); }
+  if(c.kind==='hdrag'){ if(cancel){ for(const o of c.list) moveObj(o,c.hd.ax==='x'?-c.d:0,c.hd.ax==='y'?-c.d:0); hist().u.pop(); render(); } else endHandle(c); drawLive(); return; }
   if(cancel){ drawLive(); return; }
   if(c.kind==='stroke'){
     const o=c.obj;
@@ -1664,7 +1755,9 @@ lv.addEventListener('pointerleave',e=>{ lastHover=null; if(hover && !cur){hover=
 lv.addEventListener('wheel',e=>{ e.preventDefault(); splitPick(e.clientX); const v=V();
   if(e.ctrlKey){ const ns=clamp(v.s*Math.exp(-e.deltaY*0.01),0.2,8), k=ns/v.s; v.x=e.clientX-(e.clientX-v.x)*k; v.y=e.clientY-(e.clientY-v.y)*k; v.s=ns; }
   else { v.x-=e.deltaX; v.y-=e.deltaY; }
-  clampView(); render(); drawLive(); scheduleSave(); },{passive:false});
+  const now=performance.now(); if(now-GROW.wt>450) GROW.lock=false; GROW.wt=now; clearTimeout(GROW.wT);
+  if(!e.ctrlKey){ OVOK=true; clampView(); maybeGrow(); GROW.wT=setTimeout(springBack,350); } else clampView();
+  frame(); scheduleSave(); },{passive:false});
 
 /* Radierer */
 const ERKEY=()=> S.eraserMode==='point'?'peraser':'eraser';
@@ -2315,8 +2408,9 @@ $('#plotInsert').onclick=()=>{ let o; try{ o=buildPlot(); }catch(e){ return toas
 /* ---------------- Papier ---------------- */
 const PAPERS=[['blank','Blanko'],['lines','Liniert'],['grid','Kariert'],['block','Block-Karo'],['dots','Punkte'],['mm','Millimeter'],['coord','Koordinaten']];
 const LAYOUTS=[['free','Unendlich'],['roll','DIN A4 endlos ↓'],['sheets','DIN A4 Seiten']];
-const LAYOUT_HINT={free:'Unendlich groß in alle Richtungen.',roll:'So breit wie ein A4-Blatt, nach unten geht es unendlich weiter.',sheets:'Echte A4-Blätter. Mit den ＋-Knöpfen hängst du unten oder rechts eine neue Seite an.'};
-function renderPapers(){ { const pg=page(); $('#orientChips').style.display=lay()==='free'?'none':''; $$('#orientChips [data-or]').forEach(b=>b.classList.toggle('on',(+b.dataset.or)===(pg.land?1:0))); }
+const LAYOUT_HINT={free:'Unendlich groß in alle Richtungen.',roll:'So breit wie ein A4-Blatt, nach unten geht es unendlich weiter.',sheets:'Echte A4-Blätter. Scroll am letzten Blatt einfach weiter, dann kommt ein neues dazu. Mit dem Pfeil neben einer PDF-Seite verschiebst du sie Blatt für Blatt.'};
+function renderPapers(){ { const pg=page(); $('#orientChips').style.display=lay()==='free'?'none':''; $$('#orientChips [data-or]').forEach(b=>b.classList.toggle('on',(+b.dataset.or)===(pg.land?1:0)));
+    $('#dirChips').style.display=lay()==='sheets'?'':'none'; $$('#dirChips [data-dir]').forEach(b=>b.classList.toggle('on',(+b.dataset.dir)===(pg.hz?1:0))); }
   const pg=page();
   $('#layoutChips').innerHTML=LAYOUTS.map(([k,n])=>`<button class="chip${lay()===k?' on':''}" data-lay="${k}">${n}</button>`).join('');
   $('#layoutHint').textContent=LAYOUT_HINT[lay()];
@@ -2339,6 +2433,13 @@ $('#orientChips').onclick=e=>{ const b=e.target.closest('[data-or]'); if(!b) ret
 $('#layoutChips').onclick=e=>{ const b=e.target.closest('[data-lay]'); if(!b) return; const pg=page(); const L=b.dataset.lay; if(L===lay()) return;
   pg.layout=L; if(L==='sheets' && !pg.sheets) pg.sheets=[[0,0]]; if(L!=='free'){ delete pg.o; fitView(pg); }
   clampView(); renderPapers(); render(); drawLive(); scheduleSave(); };
+$('#dirChips').onclick=e=>{ const b=e.target.closest('[data-dir]'); if(!b) return; const pg=page(); const hz=!!+b.dataset.dir; if(!!pg.hz===hz) return;
+  // Blätter neu anordnen (Inhalt wandert mit)
+  const sh=(pg.sheets||[[0,0]]).slice().sort((a,q)=>pg.hz?(a[0]-q[0]||a[1]-q[1]):(a[1]-q[1]||a[0]-q[0]));
+  const P=pw(pg),Q=ph(pg), moves=sh.map(([c,r],i)=>{ const [nc,nr]=hz?[i,0]:[0,i]; return {list:sheetContents(pg,c,r),dx:(nc-c)*(P+GAP),dy:(nr-r)*(Q+GAP),n:[nc,nr]}; });
+  for(const m of moves) for(const o of m.list) moveObj(o,m.dx,m.dy);
+  pg.sheets=moves.map(m=>m.n); if(hz) pg.hz=1; else delete pg.hz; HIST.delete(pg); updateUndo();
+  fitView(pg); clampView(); renderPapers(); render(); drawLive(); scheduleSave(); toast(hz?'Seiten nebeneinander – nach rechts scrollen':'Seiten untereinander – nach unten scrollen'); };
 function addSheet(b){ const pg=page(); pg.sheets=pg.sheets||[[0,0]]; pg.sheets.push([b.c,b.r]); scheduleSave(); render(); drawLive(); toast('Neue Seite '+b.dir+' angehängt'); }
 function sheetAtCenter(){ const [cx,cy]=toWorld(W/2,H/2); const sh=page().sheets||[]; let best=-1,bd=1e18;
   sh.forEach(([c,r],i)=>{ const x=c*(pw()+GAP)+pw()/2, y=r*(ph()+GAP)+ph()/2, d=(x-cx)**2+(y-cy)**2; if(d<bd){bd=d;best=i;} }); return best; }
@@ -3054,7 +3155,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 34 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 35 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
