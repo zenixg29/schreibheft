@@ -2056,6 +2056,7 @@ $('#pasteBtn').onclick=()=>doPaste(pasteAt);
 $('#selMore').onclick=e=>{ const one=selection.length===1?selection[0]:null;
   const items=[['front',ic('front')+'Ganz nach vorne'],['back',ic('back')+'Ganz nach hinten'],['clip',ic('clipboard')+'In die Ablage kopieren']];
   if(one&&one.t==='i'&&!one.pdf) items.push(['crop',ic('crop')+'Zuschneiden']);
+  if(selection.some(o=>o.t==='i'&&!o.ink)) items.push(['ink',ic('pen')+'Handschrift ablösen (radierbar machen)']);
   if(selection.some(o=>o.r||o.t==='s')) items.push(['r0',ic('rotate')+'Drehung zurücksetzen']);
   $('#moreList').innerHTML=items.map(([k,n])=>`<button class="mi" data-mo="${k}">${n}</button>`).join('');
   const p=$('#morePop'), r=e.currentTarget.getBoundingClientRect(); closePops(); p.classList.add('open'); p.style.left=clamp(r.left-90,8,W-230)+'px'; p.style.top=clamp(r.bottom+8,8,H-p.offsetHeight-8)+'px'; };
@@ -2063,6 +2064,7 @@ $('#moreList').onclick=e=>{ const b=e.target.closest('[data-mo]'); if(!b) return
   if(k==='front'||k==='back'){ pushUndo(); const rest=objs().filter(o=>!selection.includes(o)), sel=objs().filter(o=>selection.includes(o)); page().objects=k==='front'?[...rest,...sel]:[...sel,...rest]; commit(); showSelbar(); toast(k==='front'?'Nach vorne gelegt':'Nach hinten gelegt'); }
   else if(k==='clip'){ toClip(); toast('In der Ablage – mit dem Lasso auf eine freie Stelle tippen → Einfügen'); }
   else if(k==='crop') cropImage(selection[0]);
+  else if(k==='ink'){ const sel=selection.filter(o=>o.t==='i'&&!o.ink); clearSel(); pushUndo(); inkifyPage(page(),'',sel).then(n=>{ commit(); toast(n?'Handschrift abgelöst – jetzt radierbar':'Keine Schrift gefunden'); }); }
   else if(k==='r0'){ pushUndo(); selection.forEach(o=>{ if(o.t!=='s'&&o.r){ delete o.r; BB.delete(o); } }); commit(); drawLive(); showSelbar(); } };
 /* Bild zuschneiden */
 async function cropImage(o){ const e=getImg(o.a); if(!e.ok) return toast('Bild lädt noch …'); const img=e.img, iw=img.naturalWidth, ih=img.naturalHeight;
@@ -2770,16 +2772,116 @@ async function getPdfLib(){ if(pdfLib) return pdfLib;
   try{ await loadScript('lib/pdf.min.js'); window.pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js'; }
   catch(e){ await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'); window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
   pdfLib=window.pdfjsLib; return pdfLib; }
+/* Handschrift aus PDF-/Bildseiten ablösen: Tinte → echte Striche, Hintergrund bleibt als Bild */
+async function assetImg(id){ const e=IMGS.get(id); if(e&&e.ok) return e.img; const a=await DB.getAsset(id); if(!a||!a.data) throw new Error('Bild fehlt'); return await loadImg(a.data); }
+function inkify(img){
+  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height, k=Math.min(1,2000/iw), W=Math.round(iw*k), H=Math.round(ih*k), N=W*H;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,W,H); g.drawImage(img,0,0,W,H);
+  const id=g.getImageData(0,0,W,H), d=id.data;
+  // Papierhelligkeit (Schatten/Ton) blockweise
+  const bs=Math.max(8,Math.round(Math.max(W,H)/60)), gw=Math.ceil(W/bs), gh=Math.ceil(H/bs), G=gw*gh, B=[new Float32Array(G),new Float32Array(G),new Float32Array(G)];
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const q=((y/bs)|0)*gw+((x/bs)|0), o=(y*W+x)*4; for(let c=0;c<3;c++) if(d[o+c]>B[c][q]) B[c][q]=d[o+c]; }
+  const Lb=new Float32Array(G), T=[new Float32Array(G),new Float32Array(G),new Float32Array(G)];
+  for(let it=0;it<8;it++){ for(let q=0;q<G;q++) Lb[q]=0.3*B[0][q]+0.59*B[1][q]+0.11*B[2][q]; let ch=0;
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ const q=y*gw+x; let nm=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++) if(Lb[yy*gw+xx]>nm) nm=Lb[yy*gw+xx];
+      for(let c=0;c<3;c++) T[c][q]=B[c][q];
+      if(Lb[q]<nm*0.86){ let s=[0,0,0],n=0; for(let yy=Math.max(0,y-1);yy<=Math.min(gh-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(gw-1,x+1);xx++){ const r=yy*gw+xx; if(Lb[r]>=nm*0.86){ for(let c=0;c<3;c++) s[c]+=B[c][r]; n++; } } if(n){ for(let c=0;c<3;c++) T[c][q]=s[c]/n; ch++; } } }
+    for(let c=0;c<3;c++) B[c].set(T[c]); if(!ch) break; }
+  const bgAt=(c,x,y)=>{ const fx0=clamp(x/bs-0.5,0,gw-1), fy0=clamp(y/bs-0.5,0,gh-1), x0=fx0|0, y0=fy0|0, x1=Math.min(gw-1,x0+1), y1=Math.min(gh-1,y0+1), fx=fx0-x0, fy=fy0-y0, m=B[c];
+    return (m[y0*gw+x0]*(1-fx)+m[y0*gw+x1]*fx)*(1-fy)+(m[y1*gw+x0]*(1-fx)+m[y1*gw+x1]*fx)*fy; };
+  { const BGc=[new Uint8ClampedArray(N),new Uint8ClampedArray(N),new Uint8ClampedArray(N)];
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=y*W+x; for(let c=0;c<3;c++) BGc[c][i]=bgAt(c,x,y); }
+    var BGA=BGc; }
+  const bgP=(c,x,y)=>BGA[c][y*W+x];
+  // Tinte finden
+  const M=new Uint8Array(N), L=new Float32Array(N); let inkN=0;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=y*W+x, o=i*4, r=d[o],gg=d[o+1],b=d[o+2];
+    const bl=Math.max(60,0.3*BGA[0][i]+0.59*BGA[1][i]+0.11*BGA[2][i]), l=(0.3*r+0.59*gg+0.11*b)/bl, sat=(Math.max(r,gg,b)-Math.min(r,gg,b))/255; L[i]=l;
+    if(l<0.6||(sat>0.3&&l<0.86)){ M[i]=1; inkN++; } }
+  if(inkN<30) return {strokes:[],bg:null,frac:0};
+  const frac=inkN/N; if(frac>0.2) return {strokes:[],bg:null,frac};
+  // Zusammenhängende Teile
+  const lab=new Int32Array(N), st=new Int32Array(N); const comps=[], small=[]; let nl=0;
+  for(let s0=0;s0<N;s0++){ if(!M[s0]||lab[s0]) continue; nl++; let sp=0, n=0; st[sp++]=s0; lab[s0]=nl; const pix=[];
+    while(sp){ const i=st[--sp], x=i%W, y=(i/W)|0; pix.push(i); n++;
+      for(let dy=-1;dy<=1;dy++){ const yy=y+dy; if(yy<0||yy>=H) continue; for(let dx=-1;dx<=1;dx++){ const xx=x+dx; if(xx<0||xx>=W||(!dx&&!dy)) continue; const j=yy*W+xx; if(M[j]&&!lab[j]){ lab[j]=nl; st[sp++]=j; } } } }
+    if(n<10){ for(const i of pix){ M[i]=0; lab[i]=0; small.push(i); } nl--; continue; } comps.push(pix); }
+  // Abstand zum Rand (Strichbreite)
+  const DT=new Float32Array(N); for(let i=0;i<N;i++) DT[i]=M[i]?1e6:0;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=y*W+x; if(!M[i]) continue; let v=DT[i];
+    if(x>0) v=Math.min(v,DT[i-1]+1); if(y>0){ v=Math.min(v,DT[i-W]+1); if(x>0) v=Math.min(v,DT[i-W-1]+1.414); if(x<W-1) v=Math.min(v,DT[i-W+1]+1.414); } if(x===0||y===0) v=Math.min(v,1); DT[i]=v; }
+  for(let y=H-1;y>=0;y--) for(let x=W-1;x>=0;x--){ const i=y*W+x; if(!M[i]) continue; let v=DT[i];
+    if(x<W-1) v=Math.min(v,DT[i+1]+1); if(y<H-1){ v=Math.min(v,DT[i+W]+1); if(x<W-1) v=Math.min(v,DT[i+W+1]+1.414); if(x>0) v=Math.min(v,DT[i+W-1]+1.414); } if(x===W-1||y===H-1) v=Math.min(v,1); DT[i]=v; }
+  // Skelett (Zhang-Suen) auf allen Tintenpixeln
+  const S=new Uint8Array(M); let list=[]; for(const c of comps) for(const i of c) list.push(i);
+  const nb=i=>{ const x=i%W; const P=(dx,dy)=>{ const xx=x+dx, j=i+dy*W+dx; return (xx<0||xx>=W||j<0||j>=N)?0:S[j]; };
+    return [P(0,-1),P(1,-1),P(1,0),P(1,1),P(0,1),P(-1,1),P(-1,0),P(-1,-1)]; };
+  for(let pass=0;pass<60;pass++){ let changed=0;
+    for(const step of [0,1]){ const del=[];
+      for(const i of list){ if(!S[i]) continue; const p=nb(i); let b=0; for(const v of p) b+=v; if(b<2||b>6) continue; let a=0; for(let k=0;k<8;k++) if(!p[k]&&p[(k+1)%8]) a++; if(a!==1) continue;
+        if(step===0){ if(p[0]&&p[2]&&p[4]) continue; if(p[2]&&p[4]&&p[6]) continue; } else { if(p[0]&&p[2]&&p[6]) continue; if(p[0]&&p[4]&&p[6]) continue; }
+        del.push(i); }
+      for(const i of del) S[i]=0; changed+=del.length; }
+    list=list.filter(i=>S[i]); if(!changed) break; }
+  // Skelett in Linien zerlegen
+  const OFF=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+  const nbs=i=>{ const x=i%W, y=(i/W)|0, r=[]; for(const [dx,dy] of OFF){ const xx=x+dx, yy=y+dy; if(xx<0||yy<0||xx>=W||yy>=H) continue; const j=yy*W+xx; if(S[j]) r.push(j); } return r; };
+  const deg=new Uint8Array(N); for(const i of list) deg[i]=nbs(i).length;
+  const used=new Set(), key=(a,b)=>a<b?a*N+b:b*N+a, paths=new Map(); // label -> [path]
+  const walk=(a,b)=>{ const P=[a,b]; used.add(key(a,b)); let prev=a, cur=b;
+    while(deg[cur]===2){ const nx=nbs(cur).find(j=>j!==prev&&!used.has(key(cur,j))); if(nx===undefined) break; used.add(key(cur,nx)); P.push(nx); prev=cur; cur=nx; } return P; };
+  const add=(P)=>{ const l=lab[P[0]]; if(!paths.has(l)) paths.set(l,[]); paths.get(l).push(P); };
+  for(const i of list){ if(deg[i]===2) continue; if(deg[i]===0){ add([i]); continue; } for(const j of nbs(i)) if(!used.has(key(i,j))) add(walk(i,j)); }
+  for(const i of list){ if(deg[i]!==2) continue; for(const j of nbs(i)) if(!used.has(key(i,j))) add(walk(i,j)); }
+  // Vereinfachen (Douglas-Peucker)
+  const rdp=(pts,eps)=>{ if(pts.length<3) return pts; const keep=new Uint8Array(pts.length); keep[0]=keep[pts.length-1]=1; const stk=[[0,pts.length-1]];
+    while(stk.length){ const [a,b]=stk.pop(); let md=0, mi=-1; for(let i=a+1;i<b;i++){ const dd=segDist(pts[i][0],pts[i][1],pts[a][0],pts[a][1],pts[b][0],pts[b][1]); if(dd>md){ md=dd; mi=i; } } if(md>eps){ keep[mi]=1; stk.push([a,mi],[mi,b]); } }
+    return pts.filter((_,i)=>keep[i]); };
+  const strokes=[];
+  comps.forEach((pix,ci)=>{ const l=lab[pix[0]], P=paths.get(l); if(!P) return;
+    const ds=[]; for(const p of P) for(const i of p) ds.push(DT[i]); ds.sort((a,b)=>a-b); const med=ds[ds.length>>1]||1;
+    let cr=0,cg=0,cb=0,cn=0, br=0,bgc=0,bb=0; const core=pix.filter(i=>DT[i]>=Math.max(1,med*0.6)); for(const i of (core.length?core:pix)){ const o=i*4, x=i%W, y=(i/W)|0; cr+=d[o]; cg+=d[o+1]; cb+=d[o+2]; cn++; br+=bgP(0,x,y); bgc+=bgP(1,x,y); bb+=bgP(2,x,y); }
+    const col=[cr/br,cg/bgc,cb/bb].map(v=>clamp(Math.round(v*255),0,255)); const lum=0.3*col[0]+0.59*col[1]+0.11*col[2], sat=Math.max(...col)-Math.min(...col);
+    const c2=sat<40?(lum<135?[22,22,26]:col):col.map(v=>Math.round(v*0.9));
+    const hex='#'+c2.map(v=>clamp(v,0,255).toString(16).padStart(2,'0')).join('');
+    const segs=P.map(p=>rdp(p.map(i=>[i%W+0.5,((i/W)|0)+0.5]),0.6));
+    strokes.push({c:hex,w:Math.max(1.3,med*2-0.4),segs}); });
+  // Hintergrund ohne Tinte: Lücken waagrecht/senkrecht nachziehen (Kästchenlinien bleiben)
+  const U=new Uint8Array(N); const RR=4; for(const pix of [...comps,small]) for(const i of pix){ const x=i%W, y=(i/W)|0; for(let dy=-RR;dy<=RR;dy++) for(let dx=-RR;dx<=RR;dx++){ const xx=x+dx, yy=y+dy; if(xx>=0&&yy>=0&&xx<W&&yy<H) U[yy*W+xx]=1; } }
+  const out=new Uint8ClampedArray(d); const MAXG=70, HV=new Int16Array(N*3).fill(-1);
+  // waagrecht: nur wenn links und rechts gleich aussehen (Linie läuft durch)
+  for(let y=0;y<H;y++){ let x=0; while(x<W){ if(!U[y*W+x]){ x++; continue; } let e=x; while(e<W&&U[y*W+e]) e++; const a=x-1, b=e;
+      if(e-x<=MAXG&&a>=0&&b<W){ const ia=(y*W+a)*4, ib=(y*W+b)*4; if(Math.abs(d[ia]-d[ib])+Math.abs(d[ia+1]-d[ib+1])+Math.abs(d[ia+2]-d[ib+2])<45)
+        for(let xx=x;xx<e;xx++){ const t=(xx-a)/(b-a), q=(y*W+xx)*3; for(let c=0;c<3;c++) HV[q+c]=d[ia+c]*(1-t)+d[ib+c]*t; } }
+      x=e; } }
+  for(let x=0;x<W;x++){ let y=0; while(y<H){ if(!U[y*W+x]){ y++; continue; } let e=y; while(e<H&&U[e*W+x]) e++; const a=y-1, b=e;
+      const ok=e-y<=MAXG&&a>=0&&b<H; let ia=0, ib=0, sim=false; if(ok){ ia=(a*W+x)*4; ib=(b*W+x)*4; sim=Math.abs(d[ia]-d[ib])+Math.abs(d[ia+1]-d[ib+1])+Math.abs(d[ia+2]-d[ib+2])<45; }
+      for(let yy=y;yy<e;yy++){ const i=yy*W+x, o=i*4, q=i*3, t=ok?(yy-a)/(b-a):0;
+        for(let c=0;c<3;c++){ let v=BGA[c][i]; const h=HV[q+c]; if(h>=0) v=Math.min(v,h); if(sim){ const vv=d[ia+c]*(1-t)+d[ib+c]*t; v=Math.min(v,vv); } out[o+c]=v; } }
+      y=e; } }
+  // leichte Reste (Schatten der Schrift, JPEG-Ränder) auf Papierfarbe setzen, Kästchenlinien bleiben
+  for(let i=0;i<N;i++){ const o=i*4, bl=0.3*BGA[0][i]+0.59*BGA[1][i]+0.11*BGA[2][i], l=(0.3*out[o]+0.59*out[o+1]+0.11*out[o+2])/Math.max(60,bl); if(l>0.9){ out[o]=BGA[0][i]; out[o+1]=BGA[1][i]; out[o+2]=BGA[2][i]; } }
+  id.data.set(out); g.putImageData(id,0,0);
+  return {strokes,bg:cv,frac,W,H}; }
+async function inkifyObj(o){ const img=await assetImg(o.a); const r=inkify(img); if(!r.bg||!r.strokes.length) return 0;
+  const a=await storeImage(r.bg,r.W,r.H,false); const sx=o.w/r.W, sy=o.h/r.H;
+  const made=r.strokes.map(s=>{ const p=[]; s.segs.forEach((sg,i)=>{ if(i) p.push(NaN,NaN,0); for(const [x,y] of sg) p.push(+(o.x+x*sx).toFixed(2),+(o.y+y*sy).toFixed(2),0.5); }); return {t:'s',c:s.c,w:+(s.w*sx).toFixed(2),u:1,vx:1,p}; });
+  o.a=a.id; delete o.pdf; o.scan=1; o.ink=1; BB.delete(o); HIRES.delete(o); return made; }
+async function inkifyPage(pg,pre,only){ let n=0; const imgs=pg.objects.filter(o=>o.t==='i'&&!o.ink&&!o.r&&(!only||only.includes(o)));
+  for(let k=0;k<imgs.length;k++){ const o=imgs[k]; toast((pre||'')+'Handschrift wird abgelöst · Seite '+(k+1)+' von '+imgs.length+' …'); await new Promise(r=>setTimeout(r,20));
+    try{ const made=await inkifyObj(o); if(made&&made.length){ const at=pg.objects.indexOf(o); pg.objects.splice(at+1,0,...made); n+=made.length; } }catch(e){ console.error(e); } }
+  return n; }
 async function importPdf(f){
   const where=await new Promise(res=>{ modal(`<h3 style="margin:0 0 6px">PDF einfügen</h3><p style="margin:0;color:var(--muted)">${esc(f.name)}</p><p style="margin:10px 0 0">Du kannst direkt auf die PDF schreiben. Sie ist gesperrt, damit sie nicht verrutscht – zum Verschieben mit dem Auswahl-Werkzeug antippen und „Entsperren“.</p>
+    <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:15px;cursor:pointer"><input type="checkbox" id="pdInk" style="width:20px;height:20px;margin-top:1px;flex:none" ${S.pdfInk!==false?'checked':''}><span>Handschrift ablösen<br><span style="color:var(--muted);font-size:13px">Geschriebenes (z. B. aus Samsung Notes) wird zu echten Strichen, die du radieren, verschieben und umfärben kannst.</span></span></label>
     <div class="btns" style="flex-wrap:wrap"><button class="btn" id="pdNo">Abbrechen</button><button class="btn" id="pdOn">Auf diese Seite (unten dran)</button><button class="btn" id="pdHere">Neue Seite in dieser Notiz</button><button class="btn pri" id="pdNew">Als neue Notiz</button></div>`);
-    $('#pdNo').onclick=()=>{closeModal();res(null)}; $('#pdOn').onclick=()=>{closeModal();res('on')}; $('#pdHere').onclick=()=>{closeModal();res('here')}; $('#pdNew').onclick=()=>{closeModal();res('new')}; });
+    const inkS=()=>{ S.pdfInk=$('#pdInk').checked; saveSettings(); }; $('#pdNo').onclick=()=>{closeModal();res(null)}; [$('#pdOn'),$('#pdHere'),$('#pdNew')].forEach(b=>b.addEventListener('click',inkS,true)); $('#pdOn').onclick=()=>{closeModal();res('on')}; $('#pdHere').onclick=()=>{closeModal();res('here')}; $('#pdNew').onclick=()=>{closeModal();res('new')}; });
   if(!where) return;
   toast('PDF wird geladen …');
   const lib=await getPdfLib(); const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf.slice(0)}).promise;
   const pdfA={id:'a'+uid(), pdf:await fileToDataURL(f)}; await DB.putAsset(pdfA);
-  if(where==='on') return pdfOnPage(doc,pdfA.id);
-  const pg=await pdfToPage(doc,pdfA.id,'');
+  if(where==='on'){ const before=new Set(objs()); await pdfOnPage(doc,pdfA.id); if(S.pdfInk!==false){ const pg=page(), nw=pg.objects.filter(o=>!before.has(o)); const n=await inkifyPage(pg,'',nw); commit(); if(n) toast('Handschrift abgelöst – du kannst sie jetzt radieren'); } return; }
+  const pg=await pdfToPage(doc,pdfA.id,''); if(S.pdfInk!==false) await inkifyPage(pg,'');
   if(where==='new'){ const n=createNote(f.name.replace(/\.pdf$/i,''),{folder:curFolder}); n.pages=[pg]; fitView(pg); DB.put(n); openNote(n); }
   else { fitView(pg); note.pages.splice(pageIdx+1,0,pg); gotoPage(pageIdx+1); scheduleSave(); }
   { const k=doc.numPages-(pg.cut||0); toast('PDF eingefügt ('+k+' Seite'+(k>1?'n':'')+')'+(pg.cut?' · '+pg.cut+' leere Seite'+(pg.cut>1?'n':'')+' am Ende weggelassen':'')); }
@@ -2832,7 +2934,7 @@ async function importOne(f,folderId,pre){ const title=f.name.replace(/^.*\//,'')
   toast(pre+'„'+title+'“ wird geladen …'); const lib=await getPdfLib();
   const buf=await f.arrayBuffer(); const doc=await lib.getDocument({data:buf.slice(0)}).promise;
   const pdfA={id:'a'+uid(), pdf:await fileToDataURL(f)}; await DB.putAsset(pdfA);
-  const pg=await pdfToPage(doc,pdfA.id,pre); fitView(pg); const n=createNote(title,{folder:folderId}); n.pages=[pg]; await DB.put(n); }
+  const pg=await pdfToPage(doc,pdfA.id,pre); if(S.pdfInk!==false) await inkifyPage(pg,pre); fitView(pg); const n=createNote(title,{folder:folderId}); n.pages=[pg]; await DB.put(n); }
 async function importMany(files){
   const base=(libView==='home'?curFolder:null)||null; let ok=0, skip=0, total=0, first=null;
   const zips=files.filter(f=>/\.zip$/i.test(f.name)||/zip/.test(f.type)), plain=files.filter(f=>!zips.includes(f)&&(isPdfName(f.name)||/pdf$/i.test(f.type)||/^image\//.test(f.type)||isImgName(f.name)));
@@ -3251,7 +3353,7 @@ $('#sciTabs').onclick=e=>{ const b=e.target.closest('[data-st]'); if(!b) return;
 renderUnits(false);
 function applyBar(){ document.body.classList.toggle('bar-right',S.barPos==='right'); document.body.classList.toggle('bar-bottom',S.barPos==='bottom'); $$('#barChips [data-bp]').forEach(b=>b.classList.toggle('on',b.dataset.bp===(S.barPos||'left'))); }
 $('#barChips').onclick=e=>{ const b=e.target.closest('[data-bp]'); if(!b) return; S.barPos=b.dataset.bp; saveSettings(); applyBar(); clampView(); render(); drawLive(); };
-function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 37 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
+function renderSettings(){ applyBar(); { let av='–'; try{ if(window.AndroidApp) av=AndroidApp.version?AndroidApp.version():'alt'; if(!window.AndroidApp) av='keine (Browser)'; else if(parseFloat(av)<2.9||av==='alt') av+=' – neue APK verfügbar'; }catch(e){ av='älter als 2.2 – bitte neu installieren'; } $('#aboutVer').textContent='Web-Version 38 · Android-App: '+av; } $$('[data-set]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.set])); $('#smRange').value=S.smooth; $('#smLbl').textContent=S.smooth==0?'aus':S.smooth<=3?'leicht ('+S.smooth+')':S.smooth<=6?'mittel ('+S.smooth+')':'stark ('+S.smooth+')'; $('#holdRange').value=S.holdMs; $('#holdLbl').textContent=fmt(S.holdMs/1000,2).replace(/0$/,'')+' s'; }
 $$('[data-set]').forEach(b=>b.onclick=()=>{ S[b.dataset.set]=!S[b.dataset.set]; saveSettings(); renderSettings(); });
 $('#smRange').oninput=e=>{ S.smooth=+e.target.value; saveSettings(); renderSettings(); };
 $('#holdRange').oninput=e=>{ S.holdMs=+e.target.value; saveSettings(); renderSettings(); };
